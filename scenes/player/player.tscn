@@ -1,0 +1,70 @@
+[gd_scene format=3 uid="uid://frjixxads4gc"]
+
+[ext_resource type="Script" uid="uid://c3ntarwwm4osc" path="res://scripts/player/player.gd" id="1_p47bc"]
+[ext_resource type="Script" uid="uid://dkj6oxyx45f0f" path="res://scripts/player/states/state_machine.gd" id="2_75vfm"]
+[ext_resource type="Script" uid="uid://bmv7tkmaqc4if" path="res://scripts/player/states/idle.gd" id="3_0owmy"]
+[ext_resource type="Script" uid="uid://5yukys8qf2m4" path="res://scripts/player/states/run.gd" id="4_qek5x"]
+[ext_resource type="Script" uid="uid://ht8b054618jy" path="res://scripts/player/states/air.gd" id="5_5gtgg"]
+[ext_resource type="Script" path="res://scripts/player/states/dash.gd" id="6_dash"]
+[ext_resource type="Script" path="res://scripts/player/states/climb.gd" id="7_climb"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_p47bc"]
+size = Vector2(12, 21)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_75vfm"]
+radius = 18.0
+
+[node name="Player" type="CharacterBody2D" unique_id=1956478963]
+floor_snap_length = 4.0
+script = ExtResource("1_p47bc")
+
+[node name="Visuals" type="Node2D" parent="." unique_id=202044081]
+
+[node name="Body" type="ColorRect" parent="Visuals" unique_id=911849482]
+offset_left = -6.0
+offset_top = -21.0
+offset_right = 6.0
+color = Color(0.4, 0.9, 0.4, 1)
+
+[node name="Nose" type="ColorRect" parent="Visuals" unique_id=1820420494]
+offset_left = 3.0
+offset_top = -15.0
+offset_right = 6.0
+offset_bottom = -12.0
+color = Color(1, 0.9, 0.2, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1875973933]
+position = Vector2(0, -10.5)
+shape = SubResource("RectangleShape2D_p47bc")
+
+[node name="CarryAnchor" type="Marker2D" parent="." unique_id=1423458969]
+position = Vector2(0, -27)
+
+[node name="GrabDetector" type="Area2D" parent="." unique_id=721890188]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="GrabDetector" unique_id=684444366]
+position = Vector2(0, -10.5)
+shape = SubResource("CircleShape2D_75vfm")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=2064523003]
+position = Vector2(0, -45)
+zoom = Vector2(2, 2)
+
+[node name="StateMachine" type="Node" parent="." unique_id=1454553803 node_paths=PackedStringArray("initial_state")]
+script = ExtResource("2_75vfm")
+initial_state = NodePath("Idle")
+
+[node name="Idle" type="Node" parent="StateMachine" unique_id=2099146232]
+script = ExtResource("3_0owmy")
+
+[node name="Run" type="Node" parent="StateMachine" unique_id=1651257690]
+script = ExtResource("4_qek5x")
+
+[node name="Air" type="Node" parent="StateMachine" unique_id=301609705]
+script = ExtResource("5_5gtgg")
+
+[node name="Dash" type="Node" parent="StateMachine"]
+script = ExtResource("6_dash")
+
+[node name="Climb" type="Node" parent="StateMachine"]
+script = ExtResource("7_climb")
