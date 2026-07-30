@@ -1,0 +1,120 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://scenes/components/theo.tscn" id="2_theo"]
+[ext_resource type="PackedScene" path="res://scenes/components/jellyfish.tscn" id="3_jelly"]
+
+[sub_resource type="RectangleShape2D" id="FloorShape"]
+size = Vector2(1200, 30)
+
+[sub_resource type="RectangleShape2D" id="Platform3x1"]
+size = Vector2(45, 15)
+
+[sub_resource type="RectangleShape2D" id="Platform4x1"]
+size = Vector2(60, 15)
+
+[sub_resource type="RectangleShape2D" id="Platform6x1"]
+size = Vector2(90, 15)
+
+[sub_resource type="RectangleShape2D" id="Wall1x8"]
+size = Vector2(15, 120)
+
+[sub_resource type="RectangleShape2D" id="Wall2x10"]
+size = Vector2(30, 150)
+
+[node name="TestRoom" type="Node2D"]
+
+[node name="Floor" type="StaticBody2D" parent="."]
+position = Vector2(600, 330)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor"]
+shape = SubResource("FloorShape")
+
+[node name="Visual" type="Polygon2D" parent="Floor"]
+polygon = PackedVector2Array(-600, -15, 600, -15, 600, 15, -600, 15)
+color = Color(0.22, 0.25, 0.32, 1)
+
+[node name="JumpStep" type="StaticBody2D" parent="."]
+position = Vector2(210, 285)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="JumpStep"]
+shape = SubResource("Platform3x1")
+
+[node name="Visual" type="Polygon2D" parent="JumpStep"]
+polygon = PackedVector2Array(-22.5, -7.5, 22.5, -7.5, 22.5, 7.5, -22.5, 7.5)
+color = Color(0.31, 0.53, 0.74, 1)
+
+[node name="DashPlatform" type="StaticBody2D" parent="."]
+position = Vector2(345, 240)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DashPlatform"]
+shape = SubResource("Platform4x1")
+
+[node name="Visual" type="Polygon2D" parent="DashPlatform"]
+polygon = PackedVector2Array(-30, -7.5, 30, -7.5, 30, 7.5, -30, 7.5)
+color = Color(0.31, 0.53, 0.74, 1)
+
+[node name="ClimbWall" type="StaticBody2D" parent="."]
+position = Vector2(480, 255)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ClimbWall"]
+shape = SubResource("Wall1x8")
+
+[node name="Visual" type="Polygon2D" parent="ClimbWall"]
+polygon = PackedVector2Array(-7.5, -60, 7.5, -60, 7.5, 60, -7.5, 60)
+color = Color(0.67, 0.39, 0.39, 1)
+
+[node name="ClimbLedge" type="StaticBody2D" parent="."]
+position = Vector2(555, 165)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ClimbLedge"]
+shape = SubResource("Platform6x1")
+
+[node name="Visual" type="Polygon2D" parent="ClimbLedge"]
+polygon = PackedVector2Array(-45, -7.5, 45, -7.5, 45, 7.5, -45, 7.5)
+color = Color(0.44, 0.45, 0.67, 1)
+
+[node name="CornerCeiling" type="StaticBody2D" parent="."]
+position = Vector2(705, 225)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CornerCeiling"]
+shape = SubResource("Platform6x1")
+
+[node name="Visual" type="Polygon2D" parent="CornerCeiling"]
+polygon = PackedVector2Array(-45, -7.5, 45, -7.5, 45, 7.5, -45, 7.5)
+color = Color(0.53, 0.53, 0.63, 1)
+
+[node name="WallJumpShaft" type="StaticBody2D" parent="."]
+position = Vector2(870, 240)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="WallJumpShaft"]
+shape = SubResource("Wall2x10")
+
+[node name="Visual" type="Polygon2D" parent="WallJumpShaft"]
+polygon = PackedVector2Array(-15, -75, 15, -75, 15, 75, -15, 75)
+color = Color(0.67, 0.39, 0.39, 1)
+
+[node name="FinishLedge" type="StaticBody2D" parent="."]
+position = Vector2(990, 135)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="FinishLedge"]
+shape = SubResource("Platform6x1")
+
+[node name="Visual" type="Polygon2D" parent="FinishLedge"]
+polygon = PackedVector2Array(-45, -7.5, 45, -7.5, 45, 7.5, -45, 7.5)
+color = Color(0.31, 0.53, 0.74, 1)
+
+[node name="Grid" type="Node2D" parent="."]
+
+[node name="HintLabel" type="Label" parent="."]
+position = Vector2(15, 15)
+text = "15px 网格测试房 | A/D 移动 | J 跳跃 | K 八向冲刺 | Shift 抓墙 / 拾取 / 抛出 | F5 重载参数"
+
+[node name="Theo" parent="." instance=ExtResource("2_theo")]
+position = Vector2(120, 285)
+
+[node name="Jellyfish" parent="." instance=ExtResource("3_jelly")]
+position = Vector2(285, 195)
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(45, 315)

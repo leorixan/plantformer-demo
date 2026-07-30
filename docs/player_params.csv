@@ -1,0 +1,44 @@
+category,name,value,type,description
+Movement,max_speed,180.0,float,地面最高速度 = 12 格/秒（调大 → 跑得更快）
+Movement,acceleration,2000.0,float,地面加速度（大 → 起步更干脆）
+Movement,deceleration,2400.0,float,地面减速度（大 → 停止更干脆）
+Movement,air_accel_mult,0.9,float,空中加速度倍率（<1 → 空中操控略钝）
+Movement,over_speed_decel,300.0,float,超速衰减（保动量，兔子跳的土壤）
+Jump,jump_force,450.0,float,起跳速度（当前约 4.5 格高）
+Jump,jump_cut_mult,0.4,float,松键截断倍率（越小可变跳高范围越大）
+Jump,jump_speed_boost,40.0,float,起跳水平加成（兔子跳根源，Celeste 参考 +40）
+Gravity,gravity,1500.0,float,基础重力（大 → 跳跃更锐利不飘）
+Gravity,fall_gravity_mult,1.4,float,下落重力倍率（>1 → 下落更快更扎实）
+Gravity,apex_gravity_mult,0.8,float,顶点重力倍率（<1 → 顶点悬浮感）
+Gravity,apex_threshold,50.0,float,顶点判定阈值 |vy| 小于此值视为顶点
+Gravity,max_fall_speed,320.0,float,最大下落速度
+Feel,coyote_time,0.1,float,土狼时间：离开边缘后仍可起跳的宽限（秒）
+Feel,jump_buffer_time,0.12,float,输入缓存：落地前按跳落地自动起跳（秒）
+Feel,corner_correction_px,8.0,float,角落修正：跳跃撞头时横向可挤出的最大像素
+Dash,max_dashes,1,int,最大空中冲刺次数（落地恢复）
+Dash,dash_speed,420.0,float,八向冲刺速度
+Dash,dash_duration,0.15,float,冲刺持续秒数
+Dash,dash_freeze_time,0.04,float,冲刺起手冻结秒数
+Dash,dash_end_speed,240.0,float,冲刺结束保留速度
+Dash,dash_attack_time,0.3,float,冲刺攻击窗口秒数
+Dash,super_jump_speed,260.0,float,水平冲刺跳跃速度
+Dash,ultra_min_speed,170.0,float,Ultra 生效最低水平速度
+Dash,ultra_speed_mult,1.2,float,斜下冲刺落地水平速度倍率
+Dash,cb_bonus_speed,40.0,float,冲刺墙跳保速奖励
+Climb,max_stamina,110.0,float,最大攀爬体力
+Climb,climb_grab_y_mult,0.2,float,抓墙时纵向速度保留倍率
+Climb,climb_no_move_time,0.1,float,抓墙后滑落延迟秒数
+Climb,climb_up_speed,45.0,float,向上攀爬速度
+Climb,climb_down_speed,80.0,float,向下攀爬速度
+Climb,climb_slip_speed,30.0,float,无输入时滑落速度
+Climb,climb_acceleration,900.0,float,攀爬纵向加速度
+Climb,climb_up_stamina_cost,45.0,float,向上攀爬每秒体力消耗
+Climb,climb_still_stamina_cost,10.0,float,静止攀爬每秒体力消耗
+Climb,climb_jump_stamina_cost,27.5,float,墙跳体力消耗
+Climb,wall_check_distance,3.0,float,墙体探测距离
+Climb,wall_jump_speed,220.0,float,墙跳水平速度
+Climb,wall_jump_force,450.0,float,墙跳向上速度
+Climb,climb_hop_x,100.0,float,翻越墙顶水平推出速度
+Climb,climb_hop_y,120.0,float,翻越墙顶向上速度
+Carry,throw_speed,300.0,float,抛出水平速度
+Carry,throw_lift,220.0,float,抛出初始向上速度
