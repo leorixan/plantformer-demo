@@ -20,11 +20,14 @@ Dash,dash_speed,420.0,float,八向冲刺速度
 Dash,dash_duration,0.15,float,冲刺持续秒数
 Dash,dash_freeze_time,0.04,float,冲刺起手冻结秒数
 Dash,dash_end_speed,240.0,float,冲刺结束保留速度
-Dash,dash_attack_time,0.3,float,冲刺攻击窗口秒数
+Dash,dash_attack_time,0.3,float,冲刺攻击窗口秒数（支持 Super / 墙跳）
+Dash,dash_buffer_time,0.12,float,冲刺输入缓存秒数（冻结期或状态切换不漏按）
 Dash,super_jump_speed,260.0,float,水平冲刺跳跃速度
+Dash,hyper_speed_mult,1.2,float,下斜冲刺落地跳跃的水平速度倍率
 Dash,ultra_min_speed,170.0,float,Ultra 生效最低水平速度
-Dash,ultra_speed_mult,1.2,float,斜下冲刺落地水平速度倍率
-Dash,cb_bonus_speed,40.0,float,冲刺墙跳保速奖励
+Dash,ultra_speed_mult,1.2,float,斜下冲刺落地后 Ultra 跳跃水平速度倍率
+Dash,ultra_window_time,0.10,float,斜下冲刺着地后 Ultra 跳跃窗口秒数
+Dash,cb_bonus_speed,40.0,float,冲刺窗口墙跳保速奖励
 Climb,max_stamina,110.0,float,最大攀爬体力
 Climb,climb_grab_y_mult,0.2,float,抓墙时纵向速度保留倍率
 Climb,climb_no_move_time,0.1,float,抓墙后滑落延迟秒数

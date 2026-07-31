@@ -13,15 +13,16 @@
 - [x] 15×15 网格基准、相机 zoom 2、角色 12×21
 - [x] 测试房重建：Jump / Dash / Climb / Corner / Carry 分区全部按 15px 网格
 - [x] CSV 参数驱动：`documents/player_params.csv` + F5 热重载
-- [x] 用 Celeste 官方 Player.cs 精确算法重写角落修正
 - [x] 下载 Celeste Player.cs 作为参考：`documents/CelestePlayerReference.txt`
+- [x] M2 控制重构：统一 J/K 输入缓存；同向超速 Dash、冻结期、结束速度；Super / Hyper / Ultra / CB；墙跳、攀爬、翻越
+- [x] Player 子节点 UI：Dash pips、stamina bar，数值驱动且不随角色翻面
 
 ---
 
 ## 当前待办（按优先级）
 
-- [ ] **试玩验证**：冲刺冻结、8 向方向、空中次数、落地刷新、Super / Ultra
-- [ ] **试玩验证**：Shift 抓墙、上下攀爬、体力耗尽、墙跳、墙顶翻越与 CB
+- [ ] **手动试玩验证**：按测试房路线验证 Super、Hyper、Ultra、CB 的手感与参数窗口
+- [ ] **手动试玩验证**：Shift 抓墙、上下攀爬、体力耗尽、墙跳、墙顶翻越
 - [ ] **试玩验证**：Theo 与 Jellyfish 拾取、抛出、Jellyfish 先升后浮
 - [ ] **试玩验证**：角落修正是否吸附角色；频繁顶头是否造成 x 轴漂移
 
