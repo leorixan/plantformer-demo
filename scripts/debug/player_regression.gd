@@ -71,6 +71,7 @@ class Harness extends Node:
 		await _case_dash_refill_cooldown()
 		await _case_dash_refill_after_super()
 		await _case_dash_refill_after_hyper()
+		await _case_dash_refill_after_wavedash()
 		await _case_carryable_not_solid()
 		await _case_wall_speed_retention()
 		await _case_duck()
@@ -550,6 +551,33 @@ class Harness extends Node:
 		_check("Hyper 起飞后仍持有 dash", player.last_technique == "Hyper" and player.dash_count == player.max_dashes, "tech=%s count=%d" % [player.last_technique, player.dash_count])
 		var landed_refill: bool = await _wait_until(func() -> bool: return player._on_ground() and player.dash_count == player.max_dashes, 60)
 		_check("Hyper 落地后 dash 保持满", landed_refill, "count=%d on_ground=%s" % [player.dash_count, player._on_ground()])
+		_release_all()
+
+	# Wavedash（跳 → 空中斜下 Dash 撞地 → 立刻跳）之后的 dash 恢复时机。
+	# 参考 DashBegin 3451：每次起手都会写 dashRefillCooldownTimer = 0.1s，
+	# 而补充条件（718-739）是"冷却结束 且 onGround 且 脚下 1px 有实体"。
+	# 所以 Wavedash 起飞那一刻 dash 必然还是 0（冷却没走完），落地后才补满 —— 这与 Celeste 一致。
+	func _case_dash_refill_after_wavedash() -> void:
+		await _reset(Vector2(0.0, 0.0))
+		Input.action_press("move_right")
+		await _step(25)
+		Input.action_press("jump")
+		await _step(3)
+		Input.action_release("jump")
+		Input.action_press("move_down")
+		Input.action_press("dash")
+		await _wait_dash_launch()
+		Input.action_release("dash")
+		var slid: bool = await _wait_until(func() -> bool: return player._on_ground() and player.is_ducking, 20)
+		_check("Wavedash 空中斜下 Dash 撞地转成滑行", slid, "on_ground=%s ducking=%s" % [player._on_ground(), player.is_ducking])
+		Input.action_press("jump")
+		await _wait_dash_exit()
+		Input.action_release("move_down")
+		Input.action_release("jump")
+		_check("Wavedash 触发 Ultra", player.last_technique == "Ultra", "tech=%s" % player.last_technique)
+		_check("Wavedash 起飞时 dash 仍在补充冷却里", player.dash_count == 0, "count=%d cd=%.3f" % [player.dash_count, player._dash_refill_cooldown_timer])
+		var refilled: bool = await _wait_until(func() -> bool: return player.dash_count == player.max_dashes, 60)
+		_check("Wavedash 落地后 dash 恢复", refilled and player._on_ground(), "count=%d on_ground=%s" % [player.dash_count, player._on_ground()])
 		_release_all()
 
 	# 可携带物不能挡住角色（参考 Celeste：玩家只与 Solid 碰撞，Theo 是 Actor）。

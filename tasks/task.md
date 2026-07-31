@@ -52,6 +52,15 @@
 - [x] 回归扩到 80 条断言（新增 Super / Hyper 后仍持有 dash、水平 Dash 期间算站在地上、可携带物不阻挡角色），并经"故意把 Theo 改回层 1 → 断言变红"自检
 - [x] 测试房按技巧分区重建（参考 Strawberry Jam Collab 教学房）：`scripts/levels/test_room.gd`（`@tool`）用 ASCII 网格生成 11 个分区，每区带标题与操作要点标签、目标标记，区间 2 砖坑分界，掉坑在本区入口自动重生
 - [x] 调试字体不糊：`stretch/mode` 由 `viewport` 改 `canvas_items` + `scale_mode=integer`（启用动态字体 oversampling，按最终分辨率光栅化），`default_texture_filter=Nearest`；调试文字移到 `CanvasLayer` 固定屏幕左下、字号 6 + 黑描边
+- [x] 角落修正"多数时候不触发"定位并修好：`SHAPE_INSET` 0.2 → 1.0（物理盒 7 宽，给 1 砖缝留 1px 余量；Celeste 是整数坐标才能严丝合缝地钻），x 偏移 −3…+3 全部 9/9 穿过
+- [x] debug 文字出屏：`ControllerDebug` 移进 `CanvasLayer` 并加宽到 offset 3/146 → 317/178、行距 1，EVENT 行不再被裁
+- [x] 教学坑按实测射程重定（平地起跳点→落点：普通跳 40px / 跳+空中冲 65px / 光冲刺蹭台沿 10px / Super 85px / Hyper 110px / Wavedash·Ultra 114px）：Super、Hyper·Wavedash、Ultra 三区坑统一 10 砖（80px），跳与普通冲刺（含跳+空中冲、台子上起跳）全部跨不过，目标技巧留 20~30px 余量
+- [x] Ultra 区改造：起跳台缩到第 3~12 列（左端留出门洞入口），坑紧贴台子放，实测 Ultra 起手 x=1339.8 → 落点 1471.7（坑 [1360,1440]）
+- [x] 坑底加死亡带（第 17/18 行红色）+ 分区入口绿色存档立柱：掉坑 17 帧内在本区存档点复活并补满 dash / 体力
+- [x] 分区之间改成 2 砖厚高墙（第 0~11 行实体 + 第 12/13 行 16px 门洞 + 门洞地面），区 1 悬空台缩到第 21 列以免堵死门洞；11 个存档点站得住、10 道门洞全部走得通
+- [x] `dash_started_on_ground` 去掉土狼项（参考 `DashBegin` 3445 `dashStartedOnGround = onGround`）：跑出台沿再斜下冲撞地现在正确标成 Ultra 而不是 Hyper
+- [x] wavedash 冲刺恢复逐条对参考核实：`dashRefillCooldownTimer = DashRefillCooldown`(0.1s) 写在 `DashBegin`(3451)，补充条件在 718-739（冷却结束 + `onGround` + 脚下 1px 有实体）。**起飞瞬间 dash = 0 是 Celeste 原样行为**，落地即补满；先前"感觉没恢复"来自掉进无底坑一直下落（现已由死亡带解决）。新增 4 条断言把这个时序钉住
+- [x] 回归扩到 84 条断言；新增常驻 `scripts/debug/room_regression.gd`（测试房几何回归：坑宽把关 / 死亡复活 / 存档点与门洞），临时诊断脚本已删
 
 ---
 
@@ -64,7 +73,9 @@
 - [ ] **手动试玩验证**：对平台边缘上冲蹭墙跳是否稳定触发；墙跳后 `wall_jump_force_time` 0.16s 的输入接管是否别扭
 - [ ] **试玩验证**：Theo 与 Jellyfish 拾取、抛出、Jellyfish 先升后浮
 - [ ] **试玩验证**：测试房区 9 的 1 砖天花板缝（向上 K 冲刺），确认角落修正塞得进去且不吸附
-- [ ] **试玩验证**：新测试房 11 个分区的坑宽是否合适（headless 实测：区3 Dash+跳飞越 82px / 区4 Super 44px / 区5 Hyper 28px / 区6 Ultra 76px；坑分别 6/6/4/4 砖），偏难就调 `ZONES` 里的地面字符串
+- [ ] **试玩验证**：新测试房 11 个分区的坑宽手感（Super / Hyper·Wavedash / Ultra 三区均 10 砖 = 80px，headless 实测余量 20~30px），偏难就调 `ZONES` 里的地面字符串，改完必须重跑 `room_regression.gd`
+- [ ] **试玩验证**：分隔高墙 + 门洞的视觉分区是否清楚；绿色存档立柱是否显眼；死亡带红色带是否一眼看懂
+- [ ] **试玩验证**：掉坑复活是否够快（headless 17 帧），复活点是否总在"本区入口"而不是上一区
 - [ ] **试玩验证**：区 2 低通道（下蹲不能走，只能带速度滑进或蹲着 K 冲）是否易懂
 - [ ] **试玩验证**：跳高 3.6 砖是否偏矮；若偏矮只调 `var_jump_time`，不要改 `jump_speed`（会连带影响 Hyper 低跳）
 - [ ] **试玩验证**：320×180 视口下相机取景与 debug 文字可读性；S 下蹲手感与低通道通行
