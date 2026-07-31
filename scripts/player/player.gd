@@ -145,7 +145,7 @@ var _event_timer := 0.0
 @onready var grab_detector: Area2D = $GrabDetector
 @onready var dash_pips: Array[ColorRect] = [$UI/DashPip1, $UI/DashPip2, $UI/DashPip3]
 @onready var stamina_fill: ColorRect = $UI/StaminaBar/Fill
-@onready var debug_label: Label = get_node_or_null("ControllerDebug")
+@onready var debug_label: Label = get_node_or_null("DebugLayer/ControllerDebug")
 var carried_item: CarryItem
 
 func _ready() -> void:
@@ -157,7 +157,7 @@ func _ready() -> void:
 	stamina = max_stamina
 	_max_fall = max_fall_speed
 	_wall_slide_timer = wall_slide_time
-	_floor_last_frame = is_on_floor()
+	_floor_last_frame = _on_ground()
 	if debug_label: debug_label.visible = show_controller_debug
 	_update_indicators()
 
@@ -226,7 +226,7 @@ func _tick_timers(delta: float) -> void:
 		_wall_slide_timer = maxf(0.0, _wall_slide_timer - delta)
 		_wall_slide_dir = 0
 	# 参考 Update 顶部：空中下落时只要头顶有空间就自动站起来。
-	if is_ducking and velocity.y > 0.0 and not is_on_floor() and _can_unduck():
+	if is_ducking and velocity.y > 0.0 and not _on_ground() and _can_unduck():
 		_set_duck(false)
 	# 参考 Update 的 Wall Boost 段：中立爬墙跳后短时间内推离墙面 = 补回体力并转成墙跳。
 	# 这就是 Wallboost（无体力连续上墙）的来源；不设 forceMoveX，所以还能马上再推回墙面。
@@ -274,7 +274,7 @@ func _normal_update(delta: float) -> void:
 # 站不起来且完全静止时横向挪一点让位（DuckCorrectSlide）。
 func _update_ducking(delta: float) -> void:
 	if is_ducking:
-		if not is_on_floor() or move_y > 0.0: return
+		if not _on_ground() or move_y > 0.0: return
 		if _can_unduck():
 			_set_duck(false)
 			return
@@ -286,7 +286,7 @@ func _update_ducking(delta: float) -> void:
 			if _can_unduck_at(global_position - Vector2(i, 0.0)):
 				_slide_h(-duck_correct_slide * delta)
 				return
-	elif is_on_floor() and move_y > 0.0 and velocity.y >= 0.0:
+	elif _on_ground() and move_y > 0.0 and velocity.y >= 0.0:
 		_set_duck(true)
 
 func _slide_h(amount: float) -> void:
@@ -321,6 +321,14 @@ func _can_unduck() -> bool:
 func _can_unduck_at(at: Vector2) -> bool:
 	if not is_ducking: return true
 	return not _box_is_solid(at + Vector2(0.0, -stand_height * 0.5), Vector2(body_width, stand_height))
+
+# 参考 Update 顶部的 onGround：`Speed.Y >= 0 && CollideCheck<Solid>(Position + UnitY)` —— 是**几何探针**，
+# 不是"本帧有没有撞到地面"。Godot 的 is_on_floor() 属于后者：水平 Dash（vy=0 且关重力）、
+# 贴地滑行这类帧里根本没有向下位移，is_on_floor() 会变 false，于是 dash 次数、体力、土狼全都补不回来
+# —— Super / Hyper / Wavedash 之后 dash 不恢复就是这个原因。所有"是否站在地上"的判定统一走这里。
+func _on_ground() -> bool:
+	if velocity.y < 0.0: return false
+	return _box_is_solid(global_position + Vector2(0.0, 1.0 - _body_height() * 0.5), Vector2(body_width, _body_height()))
 
 # 参考 CollideCheck<Solid>：把当前碰撞盒整箱挪到 at 处，看是否无阻挡。
 func _body_fits_at(at: Vector2) -> bool:
@@ -405,7 +413,7 @@ func _climb_update(delta: float) -> void:
 		elif vertical > 0.0:
 			target = climb_down_speed
 			try_slip = false
-			if is_on_floor():
+			if _on_ground():
 				if velocity.y > 0.0: velocity.y = 0.0
 				target = 0.0
 	if try_slip and _slip_check(): target = climb_slip_speed
@@ -433,7 +441,7 @@ func _point_is_solid(point: Vector2) -> bool:
 	return not get_world_2d().direct_space_state.intersect_point(params, 1).is_empty()
 
 func _apply_horizontal(delta: float) -> void:
-	var grounded := is_on_floor()
+	var grounded := _on_ground()
 	if is_ducking and grounded:
 		velocity.x = move_toward(velocity.x, 0.0, duck_friction * delta)
 		return
@@ -450,7 +458,7 @@ func _apply_gravity(delta: float) -> void:
 	if move_y > 0.0 and velocity.y >= max_fall_speed:
 		target_max_fall = fast_max_fall_speed
 	_max_fall = move_toward(_max_fall, target_max_fall, fast_max_accel * delta)
-	if not is_on_floor():
+	if not _on_ground():
 		var limit := _max_fall
 		# 参考 Wall Slide：推向墙面（或无方向按住抓取）且没按下时，沿墙下落被压到 WallSlideStartMax。
 		if (move_x == facing or (move_x == 0.0 and Input.is_action_pressed("grab"))) and move_y <= 0.0:
@@ -534,7 +542,7 @@ func _wall_jump(direction: int, super_wall: bool) -> void:
 # 无方向输入的中立爬墙跳会武装 Wallboost 窗口：窗口内推离墙面即退回这次体力消耗。
 func _climb_jump() -> void:
 	mode = Mode.NORMAL
-	if not is_on_floor():
+	if not _on_ground():
 		stamina = maxf(0.0, stamina - climb_jump_stamina_cost)
 	_jump()
 	if move_x == 0.0:
@@ -564,15 +572,16 @@ func _consume_jump() -> void:
 	_coyote = 0.0
 	dash_attack_timer = 0.0
 	_var_jump_timer = var_jump_time
-	# 参考各 Jump 函数末尾：每次起跳都把沿墙下滑计时器重置满。
+	# 参考各 Jump 函数末尾：每次起跳都把沿墙下滑计时器重置满、并作废 Wallboost 窗口。
 	_wall_slide_timer = wall_slide_time
+	_wall_boost_timer = 0.0
 
 # 参考 DashBegin：起手只清速度与方向并进入冻结，真正起速留给 _launch_dash。
 func _try_start_dash() -> bool:
 	if _dash_buffer <= 0.0 or dash_count <= 0 or dash_cooldown_timer > 0.0: return false
 	_dash_buffer = 0.0
 	dash_count -= 1
-	dash_started_on_ground = is_on_floor() or _coyote > 0.0
+	dash_started_on_ground = _on_ground() or _coyote > 0.0
 	before_dash_speed = velocity
 	dash_dir = Vector2.ZERO
 	velocity = Vector2.ZERO
@@ -584,7 +593,7 @@ func _try_start_dash() -> bool:
 	_wall_slide_timer = wall_slide_time
 	mode = Mode.DASH
 	# 参考 DashBegin：空中起手的 Dash 只要能站起来就取消蹲伏。
-	if not is_on_floor() and _can_unduck(): _set_duck(false)
+	if not _on_ground() and _can_unduck(): _set_duck(false)
 	_event("Dash")
 	return true
 
@@ -598,7 +607,7 @@ func _launch_dash() -> void:
 	if dash_dir.x != 0.0:
 		facing = signf(dash_dir.x)
 		visuals.scale.x = facing
-	if is_on_floor() and dash_dir.x != 0.0 and dash_dir.y > 0.0 and velocity.y > 0.0:
+	if _on_ground() and dash_dir.x != 0.0 and dash_dir.y > 0.0 and velocity.y > 0.0:
 		_dash_slide()
 
 # 参考 Dash Slide：斜下 Dash 触地转为水平 Dash 并提速，绝不清零水平速度。
@@ -643,7 +652,9 @@ func _snap_to_wall(direction: int) -> void:
 	move_and_collide(Vector2(direction, 0.0) * climb_check_distance, false, CONTACT_MARGIN)
 
 func _resolve_collisions(pre_move_velocity: Vector2) -> void:
-	var landed := is_on_floor() and not _floor_last_frame
+	# landed 用 onGround 的前后沿：水平 Dash 期间 onGround 一直为真，所以不会被误判成刚落地。
+	var on_ground := _on_ground()
+	var landed := on_ground and not _floor_last_frame
 	var corrected := false
 	if pre_move_velocity.y < 0.0 and is_on_ceiling():
 		_upward_corner_correction(pre_move_velocity)
@@ -652,7 +663,7 @@ func _resolve_collisions(pre_move_velocity: Vector2) -> void:
 			corrected = true
 		elif dash_dir.x != 0.0 and dash_dir.y > 0.0:
 			_dash_slide()
-	var grounded := is_on_floor() and not corrected
+	var grounded := on_ground and not corrected
 	if grounded:
 		_coyote = coyote_time
 		# 参考 Update 的 Dashes 段：落地补 dash 要等 DashRefillCooldown，这是 Extended Dash 的窗口。

@@ -217,14 +217,20 @@ CSV 列：`category, name, value, type, description`。当前包含：
 1. **Dash 期间速度只在起手写一次**（参考 `DashCoroutine`），`_dash_update()` 绝不每帧重写 `velocity`，否则 Dash Slide 的 ×1.2 会被立刻覆盖。
 2. **`_finish_dash()` 只在 `dash_dir.y <= 0` 时改写速度**（参考同处判断）。斜下 Dash 触地后 `dash_dir.y` 已被 Dash Slide 置 0，所以水平速度**不会**被清零。
 3. **跳跃判定排在水平移动与重力之后**（参考 `NormalUpdate` 帧序），不需要额外的"落地摩擦宽限"补丁。
-4. **落地/角落这类结论只能来自本帧 `move_and_slide()` 之后**，禁止跨帧读 `is_on_floor()`。
+4. **"是否站在地上"必须用 Celeste 的几何探针 `_on_ground()`**（参考 `Update` 顶部 `onGround = Speed.Y >= 0 && CollideCheck<Solid>(Position + UnitY)`），
+   禁止用 Godot 的 `is_on_floor()` 做逻辑判定：水平 Dash（vy=0、关重力）、Dash Slide 这类帧里没有向下位移，
+   `is_on_floor()` 为假 → dash 次数 / 体力 / 土狼时间全都补不回来，表现为"Super / Hyper / Wavedash 之后冲刺不恢复"。
+   `is_on_floor()` 只允许用于 `is_on_ceiling()` / `is_on_wall()` 这类本帧碰撞事实。
 5. **Hyper / Ultra 的输入窗口就是 `dash_duration`（0.15s）本身**，不额外开 `ultra_window`；`jump_buffer_time` 负责容错。
 6. **参数直接照搬 Celeste 原值**（1 砖 = 8px，见 §4.2），不要自己拍数、也不要再乘缩放倍数。
 7. **Facing 在 Dash 期间必须继续跟随 `moveX`**（只有 Climb 例外），否则反向 Super / 反向 Hyper 永远做不出来。
 8. **Dash 方向必须在冻结结束后才采样**（参考 `DashCoroutine` 的 `yield return null`），否则同帧按下的方向键会被漏掉，表现为"方向判定有延迟"。
 9. **重力必须用 `Calc.Approach` 语义**（`move_toward`），不能写成 `min(vy + g*dt, maxfall)`，否则贴墙下滑与 Fastfall 的上限变化无法生效。
+10. **玩家只与 Solid 碰撞**（参考 Celeste：Theo 是 Actor，不是 Solid）。碰撞层分配：地形 = 层 1；
+   玩家 = 层 2 / 掩码 1；可携带物 = 层 3（值 4）/ 掩码 1；GrabDetector = 层 0 / 掩码 4。
+   同层时角色会被 Theo 的圆形碰撞体顶在半空，同样导致 dash / 体力补不回来。
 
-**自动化验收**：`scripts/debug/player_regression.gd`（真实物理回归，**71 条断言**）
+**自动化验收**：`scripts/debug/player_regression.gd`（真实物理回归，**80 条断言**）
 
 ```
 godot --headless --path . --script res://scripts/debug/player_regression.gd
@@ -237,7 +243,9 @@ godot --headless --path . --script res://scripts/debug/player_regression.gd
 冻结期补按方向仍被采纳、墙沿持续按上只 hop 一次且不抽体力、纯上 Dash 蹭平台侧面触发 SuperWallJump、
 `NormalUpdate` 贴墙按住抓取起跳走 ClimbJump 而非被弹开、Wallboost 退还体力且不锁输入、
 贴墙下滑被压到 WallSlideStartMax、按住下方向 Fastfall 到 240 不超、`dash_refill_cooldown` 期间不补 dash、
-撞墙速度保留窗口、下蹲（碰撞箱变矮 / 底边不动 / 摩擦 / 自动站起 / 低通道内站不起来）。
+撞墙速度保留窗口、下蹲（碰撞箱变矮 / 底边不动 / 摩擦 / 自动站起 / 低通道内站不起来）、
+**Super / Hyper 起飞后仍持有 dash（水平 Dash 与 Dash Slide 期间 `_on_ground()` 为真）**、
+**可携带物不阻挡角色**（碰撞层分离，防回归到"被 Theo 顶住导致 dash 不恢复"）。
 
 
 ---
@@ -257,7 +265,18 @@ godot --headless --path . --script res://scripts/debug/player_regression.gd
 ## 6. 关卡与复活
 
 - **网格基准**：`8×8 px = 1 砖`，视口 `320×180`（与 Celeste 同规格）。关卡几何全部按 8 的倍数摆放；
-  角色碰撞箱站立 8×11（1×1.375 砖）、下蹲 8×6。窗口默认 1280×720（4 倍整数放大，`stretch/mode = viewport`）。
+  角色碰撞箱站立 8×11（1×1.375 砖）、下蹲 8×6。窗口默认 1280×720（4 倍整数放大，
+  `stretch/mode = canvas_items` + `scale_mode = integer`）。用 `canvas_items` 而不是 `viewport`：
+  `viewport` 会把文字先渲进 320×180 缓冲再整体放大，5~6px 的调试字必然糊成一团；
+  `canvas_items` 下 Godot 的动态字体 oversampling 会按最终设备分辨率重新光栅化，字才清晰。
+  另外 `textures/canvas_textures/default_texture_filter = Nearest`，保证像素图不被插值。
+- **测试房（灰盒）**：`scenes/levels/test_room.tscn` = `Node2D` 根 + `scripts/levels/test_room.gd`（`@tool`）。
+  房间由脚本按 ASCII 网格生成（图例：`#` 实体 / `.` 空 / `P` 出生 / `T` Theo / `J` 水母 / `x` 目标标记），
+  每区 16 行、地面固定在第 14/15 行（顶面 y=112），横向 `'#'` 连段合并成一个矩形碰撞体 + 一个 ColorRect。
+  参考 Strawberry Jam Collab 的教学房，按技巧分 11 区（跑跳土狼 / 下蹲低通道 / Dash / Super / Hyper·Wavedash /
+  Ultra / 墙跳·SuperWallJump / 攀爬·Wallboost / 角落修正 / Cornerboost / 抛接），区间留 2 砖坑分界，
+  每区左上角有标题 + 操作要点标签。掉出世界底部（y > 220）自动在**所在分区入口**重生。
+  `@tool` 的意义：编辑器打开场景就能看到生成结果（编辑器里只铺地形/标记/文字，不放角色与道具）。
 - **关卡场景**：`Node2D` 根 + `TileMapLayer`（地形）+ 机关实例 + `Checkpoint` 节点 + `Camera2D`。
 - **检查点**：Area2D，进入时 `Game.set_checkpoint()`。
 - **死亡**：碰到 Hazard（尖刺等）或掉出边界 → `Game.record_death(global_position)` → **立即**在检查点重生（无 UI、无延迟、无惩罚）。
@@ -296,7 +315,7 @@ godot --headless --path . --script res://scripts/debug/player_regression.gd
 | 里程碑 | 内容 | 验收 |
 |---|---|---|
 | **M1 角色核心** | Player Mode 状态机 + 土狼/缓存/角落修正/可变跳高 + 灰盒测试场景 | ✅ 测试场景内跑跳手感可调；headless 回归覆盖跳高与角落修正 |
-| **M2 动作扩展** | Dash（8向）+ 墙抓/爬/墙跳 + 下蹲 + 物品抓取抛接（Theo/水母）+ §4.6 高级技巧 | ✅ Super/Hyper/Ultra/反向 Hyper/SuperWallJump/Wallboost/Cornerboost/Wall Slide/Fastfall/下蹲 已实现且回归 71/71 通过；抛接待手动试玩 |
+| **M2 动作扩展** | Dash（8向）+ 墙抓/爬/墙跳 + 下蹲 + 物品抓取抛接（Theo/水母）+ §4.6 高级技巧 | ✅ Super/Hyper/Ultra/反向 Hyper/SuperWallJump/Wallboost/Cornerboost/Wall Slide/Fastfall/下蹲 已实现且回归 80/80 通过；抛接待手动试玩 |
 | **M3 首个关卡** | 起承转合四段式关卡 + 尖刺/检查点/即时复活 + 相机 | 完整通关流程 |
 | **M4 作品集功能** | 参数仪表盘、死亡记录、辅助模式 | 可出截图与数据 |
 | **M5+** | 各关环境机制、更多关卡、美术 | — |

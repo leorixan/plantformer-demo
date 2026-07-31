@@ -69,6 +69,9 @@ class Harness extends Node:
 		await _case_wall_slide()
 		await _case_fast_fall()
 		await _case_dash_refill_cooldown()
+		await _case_dash_refill_after_super()
+		await _case_dash_refill_after_hyper()
+		await _case_carryable_not_solid()
 		await _case_wall_speed_retention()
 		await _case_duck()
 		print("---- PLAYER REGRESSION %d passed, %d failed ----" % [passes, failures.size()])
@@ -508,6 +511,61 @@ class Harness extends Node:
 		await _step(12)
 		_check("冷却结束后落地补回 dash", player.dash_count == player.max_dashes, "dash_count=%d cooldown=%.3f" % [player.dash_count, player._dash_refill_cooldown_timer])
 		_release_all()
+
+	# Super / Hyper / Wavedash 之后 dash 必须恢复。
+	# 参考 Update 顶部的 onGround 是几何探针（脚下 1px 有实体且 vy>=0），水平 Dash 期间照样算站在地上，
+	# 所以 DashRefillCooldown 一过就补回 dash。用 Godot 的 is_on_floor() 则永远补不上（Dash 帧没有向下位移）。
+	func _case_dash_refill_after_super() -> void:
+		await _reset(Vector2(0.0, 0.0))
+		Input.action_press("move_right")
+		await _step(25)
+		Input.action_press("dash")
+		await _wait_dash_launch()
+		Input.action_release("dash")
+		_check("水平地面 Dash 期间仍算站在地上", player._on_ground(), "on_ground=%s is_on_floor=%s vy=%.1f" % [player._on_ground(), player.is_on_floor(), player.velocity.y])
+		_check("Dash 起手扣掉次数（冷却中不补）", player.dash_count == 0, "count=%d cd=%.3f" % [player.dash_count, player._dash_refill_cooldown_timer])
+		await _step(8)
+		_check("地面 Dash 中冷却结束即补回 dash", player.dash_count == player.max_dashes, "count=%d cd=%.3f" % [player.dash_count, player._dash_refill_cooldown_timer])
+		Input.action_press("jump")
+		await _wait_dash_exit()
+		Input.action_release("jump")
+		_check("Super 起飞后仍持有 dash", player.last_technique == "Super" and player.dash_count == player.max_dashes, "tech=%s count=%d" % [player.last_technique, player.dash_count])
+		_release_all()
+
+	# Hyper / Ultra（斜下 Dash 触地滑行 + 跳）之后 dash 同样要恢复
+	func _case_dash_refill_after_hyper() -> void:
+		await _reset(Vector2(0.0, 0.0))
+		Input.action_press("move_right")
+		await _step(25)
+		Input.action_press("move_down")
+		Input.action_press("dash")
+		await _wait_dash_launch()
+		Input.action_release("dash")
+		Input.action_release("move_down")
+		_check("触地滑行期间仍算站在地上", player._on_ground() and player.is_ducking, "on_ground=%s ducking=%s" % [player._on_ground(), player.is_ducking])
+		await _step(8)
+		Input.action_press("jump")
+		await _wait_dash_exit()
+		Input.action_release("jump")
+		_check("Hyper 起飞后仍持有 dash", player.last_technique == "Hyper" and player.dash_count == player.max_dashes, "tech=%s count=%d" % [player.last_technique, player.dash_count])
+		var landed_refill: bool = await _wait_until(func() -> bool: return player._on_ground() and player.dash_count == player.max_dashes, 60)
+		_check("Hyper 落地后 dash 保持满", landed_refill, "count=%d on_ground=%s" % [player.dash_count, player._on_ground()])
+		_release_all()
+
+	# 可携带物不能挡住角色（参考 Celeste：玩家只与 Solid 碰撞，Theo 是 Actor）。
+	# 同层时角色会被 Theo 的圆形碰撞体卡在半空，is_on_floor() 为假 → dash 与体力都补不回来。
+	func _case_carryable_not_solid() -> void:
+		var theo: Node2D = load("res://scenes/components/theo.tscn").instantiate()
+		theo.global_position = Vector2(60.0, -6.0)
+		get_parent().add_child(theo)
+		await _reset(Vector2(0.0, 0.0))
+		Input.action_press("move_right")
+		await _step(80)
+		_check("可携带物不阻挡角色", player.global_position.x > 100.0, "x=%.1f（被 Theo 卡住会停在 50 附近）" % player.global_position.x)
+		_check("经过可携带物时仍算站在地上", player._on_ground(), "on_ground=%s y=%.1f" % [player._on_ground(), player.global_position.y])
+		_release_all()
+		theo.queue_free()
+		await _step(2)
 
 	# Wall Speed Retention：撞墙瞬间存下水平速度（Cornerboost 的来源）
 	func _case_wall_speed_retention() -> void:
