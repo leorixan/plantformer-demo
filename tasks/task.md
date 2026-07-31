@@ -17,16 +17,25 @@
 - [x] M2 控制完全重构：此前高级技巧实现已替换；Player 单一帧模拟、参考比例参数、Super/Hyper/Ultra/Dash 保速回归测试已通过
 - [x] Player 子节点 UI：Dash pips、stamina bar，数值驱动且不随角色翻面
 - [x] 测试房控制 debug：仅测试房显示模式、速度、Dash 方向、最近技巧/事件
+- [x] 参数按 15px 网格统一缩放 ×1.875（Celeste 8px 砖 → 本项目 15px 格），`player.gd` 默认值与 CSV 一致；实测按住跳 53.5px = 3.6 格
+- [x] Hyper / Ultra 改为参考真实路径：Dash Slide（×1.2 + Ducking）+ Ducking SuperJump（×1.25, ×0.5），不再用自造的 ultra 窗口
+- [x] Dash 期间速度只在起手写一次（参考 DashCoroutine），修掉每帧重写导致 Dash Slide 提速被覆盖
+- [x] 恢复上升角落修正（UpwardCornerCorrection）+ 新增空中 Dash 撞地角修正（DashCornerCorrection，用 `dash_started_on_ground` 门控）
+- [x] 爬墙跳 / 翻墙 hop 扣 `climb_jump_stamina_cost`，死参数清零
+- [x] 删除空壳 `scripts/player/states/`，TDD §4.1 改为记录 Player 内 Mode 状态机（与 Celeste 的 `int State` 一致）
+- [x] 假回归测试重写为真实 headless 物理回归：25 条断言全部通过，且经"故意改坏 → 断言变红"自检
 
 ---
 
 ## 当前待办（按优先级）
 
 - [x] 高级技巧审计修复：旧状态分散实现已被单一 Player 模拟替换；Super/Hyper/Ultra/Dash 保速用 headless 回归覆盖
-- [ ] **手动试玩验证**：测试房按提示确认 Super、Hyper、Ultra 触发窗口、debug 事件和实际手感
-- [ ] **手动试玩验证**：Shift 抓墙、上下攀爬、体力耗尽、墙跳、墙顶翻越
+- [ ] **手动试玩验证**：测试房确认 Super（地面横 K + J）、Hyper（地面斜下 K + J）、Ultra（空中斜下 K 撞地 + J）的窗口手感，窗口 = `dash_duration` 0.15s
+- [ ] **手动试玩验证**：Shift 抓墙、上下攀爬、体力耗尽、墙跳、墙顶 hop
 - [ ] **试玩验证**：Theo 与 Jellyfish 拾取、抛出、Jellyfish 先升后浮
-- [ ] **试玩验证**：角落修正是否吸附角色；频繁顶头是否造成 x 轴漂移
+- [ ] **试玩验证**：测试房 x=735~750 的 1 格天花板缝，确认角落修正塞得进去且不吸附
+- [ ] **试玩验证**：跳高 3.6 格是否偏矮；若偏矮只调 `var_jump_time`，不要改 `jump_speed`（会连带影响 Hyper 低跳）
+
 
 ---
 
@@ -35,7 +44,7 @@
 - [ ] 基于试玩反馈调校 Dash / Climb / Carryable CSV 参数与碰撞细节
 - [ ] 实现尖刺、检查点、掉落边界与即时复活
 - [ ] 设计首个起承转合关卡
-- [ ] 验证高级技巧自然涌现：super / hyper / ultra / CB / 咖啡跳 / 兔子跳
+- [ ] 给回归测试补 SuperWallJump、咖啡跳（Cornerkick）、兔子跳链式保速三条断言
 
 ---
 
