@@ -8,6 +8,10 @@ func physics_update(delta: float) -> void:
 	player.apply_ground_movement(delta)
 	player.velocity.y = 0.0
 	player.move_and_slide()
+	if player.has_jump_buffer() and player.can_ultra_jump():
+		player.do_ultra_jump()
+		state_machine.transition_to("Air")
+		return
 	if player.wants_jump():
 		player.do_jump()
 		state_machine.transition_to("Air")
