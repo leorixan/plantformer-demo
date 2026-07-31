@@ -29,6 +29,12 @@
 - [x] 爬墙跳与墙跳分离：拉离墙 = `WallJump`（水平弹开、不扣体力），无方向 = `ClimbJump`（垂直、扣体力）
 - [x] 反向 Hyper / 反向 Super：Facing 在 Dash 期间继续跟随 `moveX`（只有 Climb 例外）
 - [x] 回归扩到 34 条断言，新增反向 Hyper、抓墙贴合、抓墙不下滑、爬墙跳 / 墙跳分离；两次故意改坏均被断言抓住
+- [x] 输入缓存双路采样：`_unhandled_input` 捕获按下事件（不丢快速点按）+ 物理帧 `is_action_just_pressed` 补采样，写同一个缓存计时器
+- [x] `move_x` / `move_y` 单点采样 + `forceMoveX`（墙跳 0.16 / SuperWallJump 0.2 / 翻墙 hop 0.2 归零），facing / 加速 / 跳跃加成 / 爬墙跳判定统一读同一份
+- [x] Dash 起手冻结 `dash_freeze_time` 0.05s（参考 `Celeste.Freeze` + `DashCoroutine` 的 `yield return null`），**方向留到冻结结束才采样** → 修掉八向方向判定延迟
+- [x] 墙沿反复 ClimbHop 抽干体力：补上参考的"上升中 / 离墙中不许抓墙"守卫（`Speed.Y >= 0 && sign(Speed.X) != -Facing`）；ClimbHop 改为免费动作（不扣体力、不算跳跃）+ `hopWaitX` 越沿才推速度
+- [x] 墙面检测顺序对齐参考（先右后左），`_wall_jump_check` 统一 WallJumpCheckDist
+- [x] 回归扩到 45 条断言，新增冻结期补按方向、墙沿只 hop 一次不抽体力、纯上 Dash 蹭平台侧面 SuperWallJump；三次故意改坏均被断言抓住
 
 ---
 
@@ -36,7 +42,9 @@
 
 - [x] 高级技巧审计修复：旧状态分散实现已被单一 Player 模拟替换；Super/Hyper/Ultra/Dash 保速用 headless 回归覆盖
 - [ ] **手动试玩验证**：测试房确认 Super（地面横 K + J）、Hyper（地面斜下 K + J）、Ultra（空中斜下 K 撞地 + J）、反向 Hyper（Dash 中回拉 + J）的窗口手感，窗口 = `dash_duration` 0.15s
-- [ ] **手动试玩验证**：Shift 抓墙贴合无缝、静止不下滑、上下攀爬、体力耗尽、爬墙跳 vs 墙跳、墙顶 hop
+- [ ] **手动试玩验证**：Shift 抓墙贴合无缝、静止不下滑、上下攀爬、体力耗尽、爬墙跳 vs 墙跳、墙顶 hop（确认只翻一次且不掉体力）
+- [ ] **手动试玩验证**：K 与方向键同时按下的八向方向是否还有延迟感；冻结 0.05s 的顿感是否合适（嫌顿改 `dash_freeze_time`）
+- [ ] **手动试玩验证**：对平台边缘上冲蹭墙跳是否稳定触发；墙跳后 `wall_jump_force_time` 0.16s 的输入接管是否别扭
 - [ ] **试玩验证**：Theo 与 Jellyfish 拾取、抛出、Jellyfish 先升后浮
 - [ ] **试玩验证**：测试房 x=735~750 的 1 格天花板缝，确认角落修正塞得进去且不吸附
 - [ ] **试玩验证**：跳高 3.6 格是否偏矮；若偏矮只调 `var_jump_time`，不要改 `jump_speed`（会连带影响 Hyper 低跳）
