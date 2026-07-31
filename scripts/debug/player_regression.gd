@@ -17,6 +17,8 @@ func _initialize() -> void:
 	# 天花板 y -60..-45，中间留 1494..1510 的缺口给角落修正用
 	world.add_child(_solid(Vector2(1147.0, -52.5), Vector2(694.0, 15.0)))
 	world.add_child(_solid(Vector2(1855.0, -52.5), Vector2(690.0, 15.0)))
+	# 悬空 1 格平台，x 600..615 / y -60..-45，用来测上冲蹭平台边缘墙跳
+	world.add_child(_solid(Vector2(607.5, -52.5), Vector2(15.0, 15.0)))
 
 	var player: Player = load(PLAYER_SCENE).instantiate()
 	player.global_position = Vector2(0.0, 0.0)
@@ -57,6 +59,9 @@ class Harness extends Node:
 		await _case_climb_jump_stamina()
 		await _case_climb_wall_jump()
 		await _case_reverse_hyper()
+		await _case_dash_freeze_direction()
+		await _case_climb_hop_no_drain()
+		await _case_dash_up_wall_jump()
 		print("---- PLAYER REGRESSION %d passed, %d failed ----" % [passes, failures.size()])
 		if failures.is_empty():
 			get_tree().quit(0)
@@ -87,11 +92,16 @@ class Harness extends Node:
 		player.dash_dir = Vector2.ZERO
 		player.facing = 1.0
 		player.last_technique = "None"
+		player.move_x = 0.0
+		player.move_y = 0.0
 		player._coyote = 0.0
 		player._jump_buffer = 0.0
 		player._dash_buffer = 0.0
 		player._var_jump_timer = 0.0
 		player._climb_lock = 0.0
+		player._dash_freeze = 0.0
+		player._force_move_x_timer = 0.0
+		player._hop_wait_x = 0
 		player._floor_last_frame = false
 		await _step(3)
 
@@ -108,6 +118,10 @@ class Harness extends Node:
 
 	func _wait_dash_start() -> bool:
 		return await _wait_until(func() -> bool: return player.mode == Player.Mode.DASH)
+
+	# Dash 起手有 dash_freeze_time 的冻结期，速度与方向要等冻结结束才写入。
+	func _wait_dash_launch() -> bool:
+		return await _wait_until(func() -> bool: return player.mode == Player.Mode.DASH and player.dash_dir != Vector2.ZERO, 12)
 
 	func _wait_dash_exit() -> bool:
 		return await _wait_until(func() -> bool: return player.mode != Player.Mode.DASH)
@@ -126,7 +140,7 @@ class Harness extends Node:
 		Input.action_press("move_right")
 		await _step(25)
 		Input.action_press("dash")
-		var dashing: bool = await _wait_dash_start()
+		var dashing: bool = await _wait_dash_launch()
 		Input.action_release("dash")
 		_check("水平 Dash 起手", dashing, "mode=%s" % Player.Mode.keys()[player.mode])
 		var dash_vx: float = player.velocity.x
@@ -145,7 +159,7 @@ class Harness extends Node:
 		await _step(25)
 		Input.action_press("move_down")
 		Input.action_press("dash")
-		await _wait_dash_start()
+		await _wait_dash_launch()
 		Input.action_release("dash")
 		Input.action_release("move_down")
 		var slide_vx: float = player.velocity.x
@@ -168,7 +182,7 @@ class Harness extends Node:
 		await _step(4)
 		Input.action_press("move_down")
 		Input.action_press("dash")
-		await _wait_dash_start()
+		await _wait_dash_launch()
 		Input.action_release("dash")
 		_check("Dash 起手在空中", not player.dash_started_on_ground, "dash_started_on_ground=%s" % player.dash_started_on_ground)
 		await _wait_until(func() -> bool: return player.is_ducking, 12)
@@ -188,7 +202,7 @@ class Harness extends Node:
 		Input.action_press("move_right")
 		await _step(25)
 		Input.action_press("dash")
-		await _wait_dash_start()
+		await _wait_dash_launch()
 		Input.action_release("dash")
 		await _wait_until(func() -> bool: return player.mode != Player.Mode.DASH, 20)
 		_check("Dash 结束后仍高于跑速", player.velocity.x > player.max_speed, "vx=%.1f max_speed=%.1f" % [player.velocity.x, player.max_speed])
@@ -288,7 +302,7 @@ class Harness extends Node:
 		await _step(25)
 		Input.action_press("move_down")
 		Input.action_press("dash")
-		await _wait_dash_start()
+		await _wait_dash_launch()
 		Input.action_release("dash")
 		Input.action_release("move_down")
 		_check("反向 Hyper 前置：已进入触地滑行", player.is_ducking, "ducking=%s" % player.is_ducking)
@@ -302,4 +316,52 @@ class Harness extends Node:
 		var expected_x: float = -player.super_jump_speed * player.duck_super_jump_x_mult
 		_check("反向 Hyper 触发", player.last_technique == "Hyper", "tech=%s" % player.last_technique)
 		_check("反向 Hyper 水平速度反向", absf(player.velocity.x - expected_x) < 2.0, "vx=%.1f 期望≈%.1f" % [player.velocity.x, expected_x])
+		_release_all()
+
+	# 冻结期补按方向：K 先按、方向键晚一帧，仍要吃到正确的八向方向
+	func _case_dash_freeze_direction() -> void:
+		await _reset(Vector2(0.0, 0.0))
+		Input.action_press("dash")
+		var started: bool = await _wait_dash_start()
+		_check("Dash 起手立刻进入冻结", started and player._dash_freeze > 0.0 and player.dash_dir == Vector2.ZERO, "freeze=%.3f dash_dir=(%.2f, %.2f)" % [player._dash_freeze, player.dash_dir.x, player.dash_dir.y])
+		_check("冻结期速度归零", player.velocity == Vector2.ZERO, "v=(%.1f, %.1f)" % [player.velocity.x, player.velocity.y])
+		Input.action_release("dash")
+		await _step(1)
+		Input.action_press("move_up")
+		await _wait_dash_launch()
+		_check("冻结期补按的方向被采纳", player.dash_dir.y < -0.9 and absf(player.dash_dir.x) < 0.1, "dash_dir=(%.2f, %.2f)" % [player.dash_dir.x, player.dash_dir.y])
+		_check("上冲速度写入 DashSpeed", player.velocity.y < -player.dash_speed + 1.0, "vy=%.1f 期望≈%.1f" % [player.velocity.y, -player.dash_speed])
+		_release_all()
+
+	# 墙沿持续按上：ClimbHop 只触发一次，且不扣体力
+	func _case_climb_hop_no_drain() -> void:
+		await _reset(Vector2(-183.0, -90.0))
+		player.facing = -1.0
+		player.climb_hops = 0
+		Input.action_press("grab")
+		await _wait_until(func() -> bool: return player.mode == Player.Mode.CLIMB)
+		var before: float = player.stamina
+		Input.action_press("move_up")
+		var hopped: bool = await _wait_until(func() -> bool: return player.climb_hops > 0, 60)
+		_check("到墙沿触发 ClimbHop", hopped, "climb_hops=%d" % player.climb_hops)
+		var after_hop: float = player.stamina
+		await _step(60)
+		_check("ClimbHop 不重复触发", player.climb_hops == 1, "climb_hops=%d" % player.climb_hops)
+		_check("ClimbHop 本身不扣体力", after_hop > before - 20.0, "hop 前=%.1f hop 后=%.1f" % [before, after_hop])
+		_check("持续按上不会抽干体力", player.stamina > player.max_stamina * 0.5, "stamina=%.1f / %.1f" % [player.stamina, player.max_stamina])
+		_release_all()
+
+	# 上冲蹭平台侧面：move_and_slide 一帧跨过整段位移，必须补移动后采样才能触发
+	func _case_dash_up_wall_jump() -> void:
+		await _reset(Vector2(593.0, 0.0))
+		Input.action_press("move_up")
+		Input.action_press("dash")
+		await _wait_dash_launch()
+		Input.action_release("dash")
+		_check("纯上 Dash 方向正确", absf(player.dash_dir.x) < 0.1 and player.dash_dir.y < -0.9, "dash_dir=(%.2f, %.2f)" % [player.dash_dir.x, player.dash_dir.y])
+		Input.action_press("jump")
+		var jumped: bool = await _wait_until(func() -> bool: return player.mode != Player.Mode.DASH, 14)
+		Input.action_release("jump")
+		_check("上冲蹭平台边缘触发墙跳", jumped and player.last_technique == "SuperWallJump", "tech=%s" % player.last_technique)
+		_check("墙跳方向背离平台", player.velocity.x < -1.0 and player.velocity.y < 0.0, "v=(%.1f, %.1f)" % [player.velocity.x, player.velocity.y])
 		_release_all()

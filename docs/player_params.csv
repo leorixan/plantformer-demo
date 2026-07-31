@@ -17,7 +17,8 @@ Dash,max_dashes,1,int,落地恢复
 Dash,dash_speed,450.0,float,px/s；Celeste DashSpeed 240 ×1.875
 Dash,dash_end_speed,300.0,float,px/s；Celeste EndDashSpeed 160 ×1.875；仅 dash_dir.y<=0 时写入
 Dash,end_dash_up_mult,0.75,float,Celeste EndDashUpMult；无单位
-Dash,dash_duration,0.15,float,秒；Celeste DashTime；也是 Super/Hyper/Ultra 的输入窗口
+Dash,dash_duration,0.15,float,秒；Celeste DashTime
+Dash,dash_freeze_time,0.05,float,秒；Celeste DashBegin 的 Freeze(.05)，冻结期可补按方向键；也是 Super/Hyper/Ultra 的输入窗口
 Dash,dash_cooldown,0.20,float,秒；Celeste DashCooldown
 Dash,dash_attack_time,0.30,float,秒；Celeste DashAttackTime
 Dash,dash_buffer_time,0.12,float,秒；K 输入缓存
@@ -43,7 +44,10 @@ Climb,wall_check_distance,5.625,float,px；Celeste WallJumpCheckDist 3 ×1.875
 Climb,wall_jump_speed,243.75,float,px/s；Celeste MaxRun+JumpHBoost = 130 ×1.875
 Climb,climb_hop_x,187.5,float,px/s；Celeste ClimbHopX 100 ×1.875
 Climb,climb_hop_y,225.0,float,px/s 向上；Celeste ClimbHopY 120 ×1.875
+Climb,climb_hop_force_time,0.2,float,秒；Celeste ClimbHopForceTime，翻墙后水平输入被强制归零
 Feel,corner_correction_px,7.5,float,px；Celeste UpwardCornerCorrection 4 ×1.875
 Feel,dash_corner_correction_px,7.5,float,px；Celeste DashCornerCorrection 4 ×1.875
+Feel,wall_jump_force_time,0.16,float,秒；Celeste WallJumpForceTime，墙跳后水平输入被强制推离墙
+Feel,super_wall_jump_force_time,0.2,float,秒；Celeste SuperWallJumpForceTime
 Carry,throw_speed,300.0,float,px/s
 Carry,throw_lift,220.0,float,px/s 向上

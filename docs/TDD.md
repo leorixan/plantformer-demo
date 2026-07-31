@@ -98,16 +98,24 @@ CSV 列：`category, name, value, type, description`。当前包含：
 | Movement | `duck_friction` | Dash Slide 后下蹲滑行的地面摩擦 |
 | Jump | `jump_speed` / `jump_speed_boost` / `var_jump_time` / `coyote_time` / `jump_buffer_time` / `ceiling_var_jump_grace` | 起跳、水平加成、可变跳高、土狼、缓存 |
 | Gravity | `gravity` / `max_fall_speed` / `half_gravity_threshold` | 顶点半重力（按住跳时） |
-| Dash | `dash_speed` / `dash_end_speed` / `end_dash_up_mult` / `dash_duration` / `dash_cooldown` / `dash_attack_time` / `dash_buffer_time` | 冲刺本体 |
+| Dash | `dash_speed` / `dash_end_speed` / `end_dash_up_mult` / `dash_duration` / `dash_freeze_time` / `dash_cooldown` / `dash_attack_time` / `dash_buffer_time` | 冲刺本体 |
 | Dash | `super_jump_speed` / `dodge_slide_speed_mult` / `duck_super_jump_x_mult` / `duck_super_jump_y_mult` | Super / Hyper / Ultra |
 | Dash | `super_wall_jump_speed` / `super_wall_jump_horizontal` | 上冲刺撞墙的 SuperWallJump |
 | Climb | `max_stamina` / `climb_*_speed` / `climb_acceleration` / `climb_*_stamina_cost` / `climb_check_distance` / `slip_check_depth` / `wall_check_distance` / `wall_jump_speed` / `climb_hop_x` / `climb_hop_y` | 墙抓攀爬与墙跳 |
-| Feel | `corner_correction_px` / `dash_corner_correction_px` | 上升撞顶修正 / 空中 Dash 撞地角修正 |
+| Feel | `corner_correction_px` / `dash_corner_correction_px` / `wall_jump_force_time` / `super_wall_jump_force_time` | 上升撞顶修正 / 空中 Dash 撞地角修正 / 墙跳后水平输入接管 |
 | Carry | `throw_speed` / `throw_lift` | 抛物 |
 
 手感机制实现要点：
 - **土狼时间**：离开平台边缘后计时器内仍允许起跳。
-- **输入缓存**：跳跃/冲刺输入在 `_physics_process` 里采样（`is_action_just_pressed`），一帧一次判定，落地瞬间自动起跳。
+- **输入缓存（双路采样）**：按下事件在 `_unhandled_input` 里捕获写入缓存计时器（`InputEvent` 不受物理帧节奏影响，两个物理帧之间"按下即松开"的快速点按不会丢），
+  同时 `_poll_input` 在物理帧里用 `is_action_just_pressed` 补采样一次（让 headless 回归的 `Input.action_press` 也能驱动）。两条路径写同一个计时器，任一命中都算按下。
+- **moveX / moveY 单点采样**：参考 `Update` 的 `moveX` —— 每帧只算一次 `move_x`（受 `forceMoveX` 覆盖）与 `move_y`（原始），
+  facing / 水平加速 / 跳跃水平加成 / 爬墙跳判定全部读同一份，避免各处 `Input.get_axis` 读到不一致的值。
+  `forceMoveX` 在墙跳（`wall_jump_force_time` 0.16）、SuperWallJump（0.2）、翻墙 hop（`climb_hop_force_time` 0.2 强制归零）后短时间接管水平输入。
+  Dash 方向另用**原始**输入（参考 `Input.GetAimVector` 读 `Input.MoveX.Value`，不吃 `forceMoveX`）。
+- **Dash 起手冻结**：参考 `DashBegin` 的 `Celeste.Freeze(.05)` + `DashCoroutine` 开头的 `yield return null` ——
+  按下 K 立刻清零速度与 `dash_dir` 并冻结 `dash_freeze_time`（0.05s ≈ 3 帧），**方向留到冻结结束才采样**。
+  这是"八向方向判定没有延迟"的关键：K 与方向键同帧甚至晚一两帧按下都能吃到正确方向。
 - **可变跳高**：照搬参考的 `varJumpTimer` —— 按住跳时 `velocity.y = min(velocity.y, varJumpSpeed)` 维持 `var_jump_time`，松手立即清零。这是跳高的主要来源，不是 `jump_cut_mult`。
 - **角落修正**：参考 `Player.cs` 的 `OnCollideV`。上升撞顶时用**移动前**的 `vy` 判定，逐像素探测 **(±i, -1)** 是否为空并整体平移；修正失败才按 `ceiling_var_jump_grace` 掐掉可变跳。另有 `DashCornerCorrection`：空中起手的 Dash 撞地角时横移让位（`dash_started_on_ground` 为 false 才生效）。
 - **无落地硬直**：落地不打断输入，保证响应度。
@@ -116,9 +124,9 @@ CSV 列：`category, name, value, type, description`。当前包含：
 ### 4.3 冲刺（Dash）
 
 - 8 向（读 `move_*` 四方向输入组合），无方向输入时默认朝面向。
-- 流程：触发 → `dash_freeze_frames` 冻结 → 固定速度直线冲 `dash_duration` → 回到 Air。
+- 流程：触发 → `dash_freeze_time`（0.05s）冻结且速度归零 → 冻结结束才采样方向并写入速度 → 固定速度直线冲 `dash_duration` → 回到 Normal。
 - 落地刷新次数；`Assist.infinite_dash` 开启时无限。
-- 冲刺期间关闭重力。
+- 冲刺期间关闭重力；速度只在冻结结束那一帧写一次，之后绝不每帧重写。
 
 ### 4.4 抓（Grab）：墙抓攀爬
 
@@ -134,6 +142,10 @@ CSV 列：`category, name, value, type, description`。当前包含：
    攀爬中的"是否还有墙可抓"用 **1px** 邻接判定（参考 `CollideCheck<Solid>(Position + UnitX * Facing)`）。
 3. **爬墙跳 ≠ 墙跳**：参考 `moveX == -Facing ? WallJump(-Facing) : ClimbJump()`。
    拉离墙方向 = 墙跳（水平弹开 `wall_jump_speed`，不扣体力）；无方向或按向墙 = `ClimbJump`（垂直起跳，扣 `climb_jump_stamina_cost`）。
+4. **翻墙 hop 是免费动作**：参考 `ClimbHop` 不扣体力、不算跳跃。水平速度先由 `hopWaitX` 压住，
+   越过墙沿（侧向 1px 无墙）后才推上平台；同时 `forceMoveX = 0` 维持 `climb_hop_force_time`。
+5. **上升中不许抓墙**：参考 `NormalUpdate` 的 `if (Speed.Y >= 0 && Math.Sign(Speed.X) != -Facing)`。
+   缺这条守卫，翻墙 hop 刚起跳就会被立刻重新抓住 → 反复 hop，体力被瞬间抽干。
 
 ### 4.5 抓取物品与抛接（Carryable）
 
@@ -180,8 +192,9 @@ CSV 列：`category, name, value, type, description`。当前包含：
 5. **Hyper / Ultra 的输入窗口就是 `dash_duration`（0.15s）本身**，不额外开 `ultra_window`；`jump_buffer_time` 负责容错。
 6. **参数按 §4.2 的 ×1.875 基准**，倍率类参数原样照搬 Celeste，不要自己拍数。
 7. **Facing 在 Dash 期间必须继续跟随 `moveX`**（只有 Climb 例外），否则反向 Super / 反向 Hyper 永远做不出来。
+8. **Dash 方向必须在冻结结束后才采样**（参考 `DashCoroutine` 的 `yield return null`），否则同帧按下的方向键会被漏掉，表现为"方向判定有延迟"。
 
-**自动化验收**：`scripts/debug/player_regression.gd`（真实物理回归，34 条断言）
+**自动化验收**：`scripts/debug/player_regression.gd`（真实物理回归，45 条断言）
 
 ```
 godot --headless --path . --script res://scripts/debug/player_regression.gd
@@ -190,7 +203,8 @@ godot --headless --path . --script res://scripts/debug/player_regression.gd
 它会在 headless 场景里搭地板/墙/带缺口的天花板，实例化 `player.tscn`，
 用 `Input.action_press` 逐物理帧驱动，覆盖：Super / Hyper / Ultra / 反向 Hyper 的精确速度、
 斜下 Dash 触地不清零水平速度、Dash 自然结束保速、按住跳 vs 点按跳高、
-上升角落修正穿缝、抓墙贴合无空隙、抓墙静止不下滑、爬墙跳扣体力、墙跳弹开不扣体力。
+上升角落修正穿缝、抓墙贴合无空隙、抓墙静止不下滑、爬墙跳扣体力、墙跳弹开不扣体力、
+冻结期补按方向仍被采纳、墙沿持续按上只 hop 一次且不抽体力、纯上 Dash 蹭平台侧面触发 SuperWallJump。
 
 
 ---
@@ -248,7 +262,7 @@ godot --headless --path . --script res://scripts/debug/player_regression.gd
 | 里程碑 | 内容 | 验收 |
 |---|---|---|
 | **M1 角色核心** | Player Mode 状态机 + 土狼/缓存/角落修正/可变跳高 + 灰盒测试场景 | ✅ 测试场景内跑跳手感可调；headless 回归覆盖跳高与角落修正 |
-| **M2 动作扩展** | Dash（8向）+ 墙抓/爬/墙跳 + 物品抓取抛接（Theo/水母）+ §4.6 高级技巧 | ✅ Super/Hyper/Ultra/反向 Hyper/SuperWallJump 已实现且回归 34/34 通过；抛接待手动试玩 |
+| **M2 动作扩展** | Dash（8向）+ 墙抓/爬/墙跳 + 物品抓取抛接（Theo/水母）+ §4.6 高级技巧 | ✅ Super/Hyper/Ultra/反向 Hyper/SuperWallJump 已实现且回归 45/45 通过；抛接待手动试玩 |
 | **M3 首个关卡** | 起承转合四段式关卡 + 尖刺/检查点/即时复活 + 相机 | 完整通关流程 |
 | **M4 作品集功能** | 参数仪表盘、死亡记录、辅助模式 | 可出截图与数据 |
 | **M5+** | 各关环境机制、更多关卡、美术 | — |

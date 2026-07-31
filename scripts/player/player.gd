@@ -32,6 +32,7 @@ enum Mode { NORMAL, DASH, CLIMB }
 @export var dash_end_speed := 300.0 # EndDashSpeed 160
 @export var end_dash_up_mult := 0.75 # EndDashUpMult
 @export var dash_duration := 0.15 # DashTime
+@export var dash_freeze_time := 0.05 # DashBegin 的 Celeste.Freeze(.05)
 @export var dash_cooldown := 0.20 # DashCooldown
 @export var dash_attack_time := 0.30 # DashAttackTime
 @export var dash_buffer_time := 0.12
@@ -59,10 +60,13 @@ enum Mode { NORMAL, DASH, CLIMB }
 @export var wall_jump_speed := 243.75 # MaxRun + JumpHBoost
 @export var climb_hop_x := 187.5 # ClimbHopX 100
 @export var climb_hop_y := 225.0 # ClimbHopY 120
+@export var climb_hop_force_time := 0.20 # ClimbHopForceTime
 
 @export_category("Feel")
 @export var corner_correction_px := 7.5 # UpwardCornerCorrection 4
 @export var dash_corner_correction_px := 7.5 # DashCornerCorrection 4
+@export var wall_jump_force_time := 0.16 # WallJumpForceTime
+@export var super_wall_jump_force_time := 0.20 # SuperWallJumpForceTime
 
 @export_category("Carry")
 @export var throw_speed := 300.0
@@ -76,6 +80,8 @@ var dash_count := 1
 var stamina := 110.0
 var facing := 1.0
 var is_ducking := false
+var move_x := 0.0 # 参考 moveX：受 forceMoveX 覆盖后的有效水平输入
+var move_y := 0.0 # 参考 Input.MoveY.Value：原始纵向输入
 var dash_dir := Vector2.ZERO
 var dash_started_on_ground := false
 var before_dash_speed := Vector2.ZERO
@@ -85,9 +91,17 @@ var dash_attack_timer := 0.0
 var last_technique := "None"
 var corner_corrections := 0
 var dash_corner_corrections := 0
+var climb_hops := 0
 
 var _jump_buffer := 0.0
 var _dash_buffer := 0.0
+var _grab_pressed := false
+var _raw_move_x := 0.0
+var _force_move_x := 0.0
+var _force_move_x_timer := 0.0
+var _dash_freeze := 0.0
+var _hop_wait_x := 0
+var _hop_wait_x_speed := 0.0
 var _coyote := 0.0
 var _var_jump_timer := 0.0
 var _var_jump_speed := 0.0
@@ -122,13 +136,18 @@ func _ready() -> void:
 	if debug_label: debug_label.visible = show_controller_debug
 	_update_indicators()
 
+# 按下事件在这里捕获：InputEvent 不受物理帧节奏影响，
+# 一次两帧之间按下又松开的快速点按也不会被 is_action_just_pressed 漏掉。
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("reload_config"):
+	if event.is_action_pressed("jump"): _jump_buffer = jump_buffer_time
+	elif event.is_action_pressed("dash"): _dash_buffer = dash_buffer_time
+	elif event.is_action_pressed("grab"): _grab_pressed = true
+	elif event.is_action_pressed("reload_config"):
 		var config := get_node_or_null("/root/Config")
 		if config: config.reload_and_apply(self)
 
 func _physics_process(delta: float) -> void:
-	_poll_input()
+	_poll_input(delta)
 	_tick_timers(delta)
 	_update_facing()
 	match mode:
@@ -141,17 +160,32 @@ func _physics_process(delta: float) -> void:
 	_update_indicators()
 	_update_debug()
 
-# 输入在物理帧采样：一帧一次判定，也让 headless 回归能用 Input.action_press 驱动。
-func _poll_input() -> void:
+# 物理帧补采样：与 _unhandled_input 写同一个缓存计时器，两条路径任一命中都算按下，
+# 这样 headless 回归的 Input.action_press（不产生 InputEvent）也能驱动。
+func _poll_input(delta: float) -> void:
 	if Input.is_action_just_pressed("jump"): _jump_buffer = jump_buffer_time
 	if Input.is_action_just_pressed("dash"): _dash_buffer = dash_buffer_time
-	if Input.is_action_just_pressed("grab"):
+	if Input.is_action_just_pressed("grab"): _grab_pressed = true
+	_raw_move_x = signf(Input.get_axis("move_left", "move_right"))
+	move_y = signf(Input.get_axis("move_up", "move_down"))
+	# 参考 Update 的 forceMoveX 段：墙跳 / 翻墙 hop 后短时间内接管水平输入。
+	if _force_move_x_timer > 0.0:
+		_force_move_x_timer = maxf(0.0, _force_move_x_timer - delta)
+		move_x = _force_move_x
+	else:
+		move_x = _raw_move_x
+	if _grab_pressed:
+		_grab_pressed = false
 		if carried_item: throw_carried_item()
 		elif has_nearby_item(): pick_up_nearest_item()
 
 func _tick_timers(delta: float) -> void:
 	_jump_buffer = maxf(0.0, _jump_buffer - delta)
 	_dash_buffer = maxf(0.0, _dash_buffer - delta)
+	# 参考 Celeste.Freeze：冻结期只有输入继续走，游戏内计时器全部停住。
+	if _dash_freeze > 0.0:
+		_dash_freeze = maxf(0.0, _dash_freeze - delta)
+		return
 	_coyote = maxf(0.0, _coyote - delta)
 	_var_jump_timer = maxf(0.0, _var_jump_timer - delta)
 	_climb_lock = maxf(0.0, _climb_lock - delta)
@@ -159,34 +193,56 @@ func _tick_timers(delta: float) -> void:
 	dash_cooldown_timer = maxf(0.0, dash_cooldown_timer - delta)
 	_event_timer = maxf(0.0, _event_timer - delta)
 	if mode == Mode.DASH: dash_timer = maxf(0.0, dash_timer - delta)
+	# 参考 Update 的 Climb hop 段：翻墙时水平速度先压住，越过墙沿才推上平台。
+	if _hop_wait_x != 0:
+		if signf(velocity.x) == -float(_hop_wait_x) or velocity.y > 0.0:
+			_hop_wait_x = 0
+		elif not test_move(global_transform, Vector2(_hop_wait_x, 0.0)):
+			velocity.x = _hop_wait_x_speed
+			_hop_wait_x = 0
 
 # 参考 Update 的 Facing 段：除 Climb 外所有状态（含 Dash）都跟随 moveX，
 # 这是反向 Super / 反向 Hyper 的唯一来源 —— Dash 途中回拉方向即可反向起跳。
 func _update_facing() -> void:
 	if mode == Mode.CLIMB: return
-	var x := Input.get_axis("move_left", "move_right")
-	if x != 0.0: facing = signf(x)
+	if move_x != 0.0: facing = move_x
 	visuals.scale.x = facing
 
 # 参考 NormalUpdate 帧序：先水平移动与重力，最后跳跃判定，跳跃速度不会再被摩擦吃掉。
 func _normal_update(delta: float) -> void:
 	if _try_start_dash(): return
 	if _try_start_climb(): return
-	if is_ducking and is_on_floor() and Input.get_axis("move_up", "move_down") <= 0.0:
+	if is_ducking and is_on_floor() and move_y <= 0.0:
 		is_ducking = false
 	_apply_horizontal(delta)
 	_apply_gravity(delta)
 	_try_jump()
 
-# 参考 DashUpdate：Dash 期间速度只在起手写一次，本函数只做跳跃派生技巧。
+# 参考 DashUpdate：Dash 期间速度只在起手写一次，本函数只做冻结、起速与跳跃派生技巧。
 func _dash_update() -> void:
+	# 参考 DashBegin 的 Celeste.Freeze(.05)：冻结期原地不动，方向键还能继续补按。
+	if _dash_freeze > 0.0:
+		velocity = Vector2.ZERO
+		return
+	# 参考 DashCoroutine 开头的 yield return null：方向留到冻结结束才采样，
+	# 所以 K 与方向键同帧按下（或方向晚一两帧）都能吃到正确的八向方向。
+	if dash_dir == Vector2.ZERO: _launch_dash()
 	if _jump_buffer <= 0.0: return
 	if dash_dir.y == 0.0 and _coyote > 0.0:
 		_super_jump()
 		return
-	var wall := get_wall_direction()
-	if wall != 0:
-		_wall_jump(-wall, dash_dir.x == 0.0 and dash_dir.y < 0.0)
+	_try_dash_wall_jump()
+
+# 参考 DashUpdate 的墙跳分支：先右后左检测；纯上 Dash 撞墙走 SuperWallJump。
+func _try_dash_wall_jump() -> bool:
+	var super_wall := dash_dir.x == 0.0 and dash_dir.y < 0.0
+	if _wall_jump_check(1):
+		_wall_jump(-1, super_wall)
+		return true
+	if _wall_jump_check(-1):
+		_wall_jump(1, super_wall)
+		return true
+	return false
 
 # 参考 ClimbUpdate：target 默认 0（抓住不动），只有 SlipCheck 命中（手高过墙沿）才下滑。
 func _climb_update(delta: float) -> void:
@@ -198,7 +254,7 @@ func _climb_update(delta: float) -> void:
 		return
 	if _jump_buffer > 0.0:
 		# 参考 Wall Jump 分支：拉离墙 = 墙跳弹开，其余 = 垂直爬墙跳。
-		if signf(Input.get_axis("move_left", "move_right")) == -float(wall):
+		if move_x == -float(wall):
 			_wall_jump(-wall, false)
 		else:
 			_climb_jump()
@@ -211,7 +267,7 @@ func _climb_update(delta: float) -> void:
 			mode = Mode.NORMAL
 			_event("Climb end")
 		return
-	var vertical := Input.get_axis("move_up", "move_down")
+	var vertical := move_y
 	var target := 0.0
 	var try_slip := true
 	if _climb_lock <= 0.0:
@@ -261,7 +317,7 @@ func _apply_horizontal(delta: float) -> void:
 	if is_ducking and grounded:
 		velocity.x = move_toward(velocity.x, 0.0, duck_friction * delta)
 		return
-	var direction := Input.get_axis("move_left", "move_right")
+	var direction := move_x
 	var mult := 1.0 if grounded else air_accel_mult
 	var rate := acceleration
 	if absf(velocity.x) > max_speed and signf(velocity.x) == signf(direction):
@@ -290,7 +346,7 @@ func _jump() -> void:
 	_consume_jump()
 	is_ducking = false
 	velocity.y = -jump_speed
-	velocity.x += jump_speed_boost * Input.get_axis("move_left", "move_right")
+	velocity.x += jump_speed_boost * move_x
 	_var_jump_speed = velocity.y
 	_event("Jump")
 
@@ -321,6 +377,10 @@ func _wall_jump(direction: int, super_wall: bool) -> void:
 	_var_jump_speed = velocity.y
 	facing = direction
 	visuals.scale.x = facing
+	# 参考 WallJump / SuperWallJump：短时间接管水平输入，防止刚弹开就被拉回墙上。
+	if move_x != 0.0:
+		_force_move_x = float(direction)
+		_force_move_x_timer = super_wall_jump_force_time if super_wall else wall_jump_force_time
 	_event("SuperWallJump" if super_wall else "WallJump")
 	mode = Mode.NORMAL
 
@@ -332,12 +392,20 @@ func _climb_jump() -> void:
 	_jump()
 	_event("ClimbJump")
 
+# 参考 ClimbHop：翻墙沿是免费动作 —— 不扣体力、不算跳跃。
+# 水平速度先由 hopWaitX 压住，越过墙沿才推上平台；forceMoveX 期间不吃水平输入。
 func _climb_hop() -> void:
-	_consume_jump()
-	stamina = maxf(0.0, stamina - climb_jump_stamina_cost)
-	velocity.x = climb_hop_x * facing
-	velocity.y = -climb_hop_y
-	_var_jump_speed = velocity.y
+	if test_move(global_transform, Vector2(facing, 0.0)):
+		_hop_wait_x = int(facing)
+		_hop_wait_x_speed = climb_hop_x * facing
+		velocity.x = 0.0
+	else:
+		_hop_wait_x = 0
+		velocity.x = climb_hop_x * facing
+	velocity.y = minf(velocity.y, -climb_hop_y)
+	_force_move_x = 0.0
+	_force_move_x_timer = climb_hop_force_time
+	climb_hops += 1
 	mode = Mode.NORMAL
 	_event("ClimbHop")
 
@@ -347,18 +415,27 @@ func _consume_jump() -> void:
 	dash_attack_timer = 0.0
 	_var_jump_timer = var_jump_time
 
+# 参考 DashBegin：起手只清速度与方向并进入冻结，真正起速留给 _launch_dash。
 func _try_start_dash() -> bool:
 	if _dash_buffer <= 0.0 or dash_count <= 0 or dash_cooldown_timer > 0.0: return false
 	_dash_buffer = 0.0
 	dash_count -= 1
 	dash_started_on_ground = is_on_floor() or _coyote > 0.0
 	before_dash_speed = velocity
-	dash_dir = get_dash_direction()
+	dash_dir = Vector2.ZERO
+	velocity = Vector2.ZERO
 	dash_timer = dash_duration
 	dash_cooldown_timer = dash_cooldown
 	dash_attack_timer = dash_attack_time
+	_dash_freeze = dash_freeze_time
 	mode = Mode.DASH
-	# 参考 DashCoroutine：同向且更快的旧速度保留，绝不降速。
+	if not is_on_floor(): is_ducking = false
+	_event("Dash")
+	return true
+
+# 参考 DashCoroutine：冻结结束后才读方向、写速度，同向更快的旧速度保留，绝不降速。
+func _launch_dash() -> void:
+	dash_dir = get_dash_direction()
 	var new_speed := dash_dir * dash_speed
 	if signf(before_dash_speed.x) == signf(new_speed.x) and absf(before_dash_speed.x) > absf(new_speed.x):
 		new_speed.x = before_dash_speed.x
@@ -366,10 +443,8 @@ func _try_start_dash() -> bool:
 	if dash_dir.x != 0.0:
 		facing = signf(dash_dir.x)
 		visuals.scale.x = facing
-	_event("Dash")
 	if is_on_floor() and dash_dir.x != 0.0 and dash_dir.y > 0.0 and velocity.y > 0.0:
 		_dash_slide()
-	return true
 
 # 参考 Dash Slide：斜下 Dash 触地转为水平 Dash 并提速，绝不清零水平速度。
 func _dash_slide() -> void:
@@ -386,8 +461,12 @@ func _finish_dash() -> void:
 	_event("Dash end")
 
 func _try_start_climb() -> bool:
-	if not Input.is_action_pressed("grab") or carried_item != null or stamina <= 0.0: return false
-	# 参考 NormalUpdate 的 ClimbCheck：只检测面朝一侧，距离用 ClimbCheckDist。
+	if not Input.is_action_pressed("grab") or carried_item != null or stamina <= 0.0 or is_ducking:
+		return false
+	# 参考 NormalUpdate 的 Climbing 段：上升中或正在离墙时不许抓墙。
+	# 缺这条，翻墙 hop 刚起跳就会被重新抓住 → 反复 hop 把体力抽干。
+	if velocity.y < 0.0 or signf(velocity.x) == -facing: return false
+	# 参考 ClimbCheck：只检测面朝一侧，距离用 ClimbCheckDist。
 	var wall := get_climb_wall_direction()
 	if wall == 0: return false
 	mode = Mode.CLIMB
@@ -467,12 +546,17 @@ func _dash_corner_correction(pre_move_velocity: Vector2) -> bool:
 	return false
 
 func get_dash_direction() -> Vector2:
-	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	# 参考 Input.GetAimVector：无方向输入时退回面朝方向；用原始输入，不受 forceMoveX 影响。
+	var direction := Vector2(_raw_move_x, move_y)
 	return (direction if direction != Vector2.ZERO else Vector2(facing, 0.0)).normalized()
 
+# 参考 WallJumpCheck：以 WallJumpCheckDist 做整箱检测。
+func _wall_jump_check(direction: int) -> bool:
+	return test_move(global_transform, Vector2(direction, 0.0) * wall_check_distance)
+
 func get_wall_direction() -> int:
-	if test_move(global_transform, Vector2.LEFT * wall_check_distance): return -1
-	if test_move(global_transform, Vector2.RIGHT * wall_check_distance): return 1
+	if _wall_jump_check(1): return 1
+	if _wall_jump_check(-1): return -1
 	return 0
 
 # 抓墙用 ClimbCheckDist（比墙跳的 WallJumpCheckDist 短），且只认面朝方向。
