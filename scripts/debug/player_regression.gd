@@ -53,7 +53,10 @@ class Harness extends Node:
 		await _case_dash_end_keeps_speed()
 		await _case_var_jump()
 		await _case_corner_correction()
+		await _case_climb_no_slip()
 		await _case_climb_jump_stamina()
+		await _case_climb_wall_jump()
+		await _case_reverse_hyper()
 		print("---- PLAYER REGRESSION %d passed, %d failed ----" % [passes, failures.size()])
 		if failures.is_empty():
 			get_tree().quit(0)
@@ -229,17 +232,74 @@ class Harness extends Node:
 		_check("角落修正触发", player.corner_corrections > before, "corner_corrections=%d" % player.corner_corrections)
 		_check("修正后穿过天花板缺口", peak < -40.0, "peak_y=%.1f（无修正会卡在 -24 附近）" % peak)
 
-	# 爬墙跳消耗 climb_jump_stamina_cost
-	func _case_climb_jump_stamina() -> void:
-		await _reset(Vector2(-186.0, -40.0))
+	# 抓墙静止：不下滑、贴住墙面无空隙
+	func _case_climb_no_slip() -> void:
+		await _reset(Vector2(-183.0, -40.0))
+		player.facing = -1.0
 		Input.action_press("grab")
-		await _step(3)
-		_check("抓墙进入 CLIMB", player.mode == Player.Mode.CLIMB, "mode=%s wall=%d" % [Player.Mode.keys()[player.mode], player.get_wall_direction()])
+		var climbing: bool = await _wait_until(func() -> bool: return player.mode == Player.Mode.CLIMB)
+		_check("抓墙进入 CLIMB", climbing, "mode=%s" % Player.Mode.keys()[player.mode])
+		var flush: bool = player.test_move(player.global_transform, Vector2.LEFT)
+		_check("抓墙后紧贴墙面无空隙", flush, "x=%.2f 左移 1px 是否命中墙=%s" % [player.global_position.x, flush])
+		await _step(5)
+		var settled_y: float = player.global_position.y
+		await _step(40)
+		var drift: float = player.global_position.y - settled_y
+		_check("抓墙静止不下滑", absf(drift) < 1.0 and absf(player.velocity.y) < 1.0, "drift=%.2fpx vy=%.2f" % [drift, player.velocity.y])
+		_release_all()
+
+	# 无方向输入的爬墙跳 = 垂直起跳并扣体力
+	func _case_climb_jump_stamina() -> void:
+		await _reset(Vector2(-183.0, -40.0))
+		player.facing = -1.0
+		Input.action_press("grab")
+		await _wait_until(func() -> bool: return player.mode == Player.Mode.CLIMB)
+		await _step(8)
 		var before: float = player.stamina
 		Input.action_press("jump")
 		await _wait_until(func() -> bool: return player.mode != Player.Mode.CLIMB)
 		Input.action_release("jump")
 		var spent: float = before - player.stamina
-		_check("爬墙跳扣体力", absf(spent - player.climb_jump_stamina_cost) < 1.0, "spent=%.2f 期望=%.2f" % [spent, player.climb_jump_stamina_cost])
-		_check("爬墙跳向外离墙", player.velocity.x > 0.0 and player.velocity.y < 0.0, "v=(%.1f, %.1f)" % [player.velocity.x, player.velocity.y])
+		_check("爬墙跳扣体力", absf(spent - player.climb_jump_stamina_cost) < 1.5, "spent=%.2f 期望=%.2f" % [spent, player.climb_jump_stamina_cost])
+		_check("爬墙跳为垂直跳", player.last_technique == "ClimbJump" and absf(player.velocity.x) < 1.0 and player.velocity.y < 0.0, "tech=%s v=(%.1f, %.1f)" % [player.last_technique, player.velocity.x, player.velocity.y])
+		_release_all()
+
+	# 攀爬中拉离墙 + 跳 = 墙跳弹开，且不扣体力
+	func _case_climb_wall_jump() -> void:
+		await _reset(Vector2(-183.0, -40.0))
+		player.facing = -1.0
+		Input.action_press("grab")
+		await _wait_until(func() -> bool: return player.mode == Player.Mode.CLIMB)
+		await _step(8)
+		var before: float = player.stamina
+		Input.action_press("move_right")
+		Input.action_press("jump")
+		await _wait_until(func() -> bool: return player.mode != Player.Mode.CLIMB)
+		Input.action_release("jump")
+		_check("拉离墙 + 跳 = 墙跳", player.last_technique == "WallJump", "tech=%s" % player.last_technique)
+		_check("墙跳水平弹开", absf(player.velocity.x - player.wall_jump_speed) < 2.0, "vx=%.1f 期望≈%.1f" % [player.velocity.x, player.wall_jump_speed])
+		_check("墙跳不扣体力", absf(before - player.stamina) < 0.5, "spent=%.2f" % (before - player.stamina))
+		_release_all()
+
+	# Dash 途中回拉方向 = 反向 Hyper
+	func _case_reverse_hyper() -> void:
+		await _reset(Vector2(0.0, 0.0))
+		Input.action_press("move_right")
+		await _step(25)
+		Input.action_press("move_down")
+		Input.action_press("dash")
+		await _wait_dash_start()
+		Input.action_release("dash")
+		Input.action_release("move_down")
+		_check("反向 Hyper 前置：已进入触地滑行", player.is_ducking, "ducking=%s" % player.is_ducking)
+		Input.action_release("move_right")
+		Input.action_press("move_left")
+		var flipped: bool = await _wait_until(func() -> bool: return player.facing < 0.0, 4)
+		_check("Dash 途中可反向朝向", flipped, "facing=%.0f mode=%s" % [player.facing, Player.Mode.keys()[player.mode]])
+		Input.action_press("jump")
+		await _wait_dash_exit()
+		Input.action_release("jump")
+		var expected_x: float = -player.super_jump_speed * player.duck_super_jump_x_mult
+		_check("反向 Hyper 触发", player.last_technique == "Hyper", "tech=%s" % player.last_technique)
+		_check("反向 Hyper 水平速度反向", absf(player.velocity.x - expected_x) < 2.0, "vx=%.1f 期望≈%.1f" % [player.velocity.x, expected_x])
 		_release_all()

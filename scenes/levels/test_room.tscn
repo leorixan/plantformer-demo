@@ -120,6 +120,7 @@ color = Color(0.31, 0.53, 0.74, 1)
 position = Vector2(15, 15)
 text = "15px 网格测试房 | A/D 移动 | J 跳跃 | K 八向冲刺 | Shift 抓墙 / 拾取 / 抛出 | F5 重载参数
 Super：地面横向 K，Dash 未结束时按 J。Hyper：地面斜下 K 立刻按 J。Ultra：空中斜下 K 撞地后按 J。
+反向 Hyper：斜下 K 后回拉反方向再按 J。抓墙：Shift 贴住不下滑；J 垂直爬墙跳，拉离墙 + J 墙跳。
 x=735~750 是 1 格天花板缝，起跳略偏也能被角落修正塞进去。"
 
 [node name="Theo" parent="." instance=ExtResource("2_theo")]
