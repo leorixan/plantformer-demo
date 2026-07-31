@@ -108,7 +108,17 @@ color = Color(0.31, 0.53, 0.74, 1)
 
 [node name="HintLabel" type="Label" parent="."]
 position = Vector2(15, 15)
-text = "15px 网格测试房 | A/D 移动 | J 跳跃 | K 八向冲刺 | Shift 抓墙 / 拾取 / 抛出 | F5 重载参数"
+text = "15px 网格测试房 | A/D 移动 | J 跳跃 | K 八向冲刺 | Shift 抓墙 / 拾取 / 抛出 | F5 重载参数\n横向 K + J = Super；斜下 K 首次落地 + J = Hyper；斜下 K 落地后短按 J = Ultra。"
+
+[node name="TechniqueFloor" type="StaticBody2D" parent="."]
+position = Vector2(720, 300)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TechniqueFloor"]
+shape = SubResource("Platform6x1")
+
+[node name="Visual" type="Polygon2D" parent="TechniqueFloor"]
+polygon = PackedVector2Array(-45, -7.5, 45, -7.5, 45, 7.5, -45, 7.5)
+color = Color(0.8, 0.48, 0.2, 1)
 
 [node name="Theo" parent="." instance=ExtResource("2_theo")]
 position = Vector2(120, 285)
@@ -118,3 +128,4 @@ position = Vector2(285, 195)
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
 position = Vector2(45, 315)
+show_controller_debug = true

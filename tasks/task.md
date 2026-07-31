@@ -14,15 +14,16 @@
 - [x] 测试房重建：Jump / Dash / Climb / Corner / Carry 分区全部按 15px 网格
 - [x] CSV 参数驱动：`documents/player_params.csv` + F5 热重载
 - [x] 下载 Celeste Player.cs 作为参考：`documents/CelestePlayerReference.txt`
-- [x] M2 控制重构：统一 J/K 输入缓存；同向超速 Dash、冻结期、结束速度；Super / Hyper / Ultra / CB；墙跳、攀爬、翻越（已按 Celeste 帧时序修复并完成 headless 验证）
+- [x] M2 控制完全重构：此前高级技巧实现已替换；Player 单一帧模拟、参考比例参数、Super/Hyper/Ultra/Dash 保速回归测试已通过
 - [x] Player 子节点 UI：Dash pips、stamina bar，数值驱动且不随角色翻面
+- [x] 测试房控制 debug：仅测试房显示模式、速度、Dash 方向、最近技巧/事件
 
 ---
 
 ## 当前待办（按优先级）
 
-- [x] 高级技巧审计修复：SuperWallJump、VarJump、Ultra 本帧落地、CB dash 攻击资格、Cornerkick 有效冲刺资格与 CSV 同步
-- [ ] **手动试玩验证**：按测试房路线验证 Super、Hyper、Ultra、CB、Cornerkick 的手感与参数窗口
+- [x] 高级技巧审计修复：旧状态分散实现已被单一 Player 模拟替换；Super/Hyper/Ultra/Dash 保速用 headless 回归覆盖
+- [ ] **手动试玩验证**：测试房按提示确认 Super、Hyper、Ultra 触发窗口、debug 事件和实际手感
 - [ ] **手动试玩验证**：Shift 抓墙、上下攀爬、体力耗尽、墙跳、墙顶翻越
 - [ ] **试玩验证**：Theo 与 Jellyfish 拾取、抛出、Jellyfish 先升后浮
 - [ ] **试玩验证**：角落修正是否吸附角色；频繁顶头是否造成 x 轴漂移
