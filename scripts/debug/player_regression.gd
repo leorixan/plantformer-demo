@@ -1,7 +1,6 @@
 extends SceneTree
 ## Headless 物理回归：真实实例化 player.tscn + StaticBody2D 地形，
-## 用 Input.action_press 逐物理帧驱动，断言 Super / Hyper / Ultra / Dash 保速 /
-## 可变跳高 / 上升角落修正 / 爬墙跳体力消耗。
+## 用 Input.action_press 逐物理帧驱动。尺度与 Celeste 一致（1 砖 = 8px，角色 8x11）。
 ## 运行：godot --headless --path . --script res://scripts/debug/player_regression.gd
 
 const PLAYER_SCENE := "res://scenes/player/player.tscn"
@@ -10,15 +9,17 @@ func _initialize() -> void:
 	var world := Node2D.new()
 	world.name = "World"
 	root.add_child(world)
-	# 地板顶面 y=0，x -1000..2000
-	world.add_child(_solid(Vector2(500.0, 7.5), Vector2(3000.0, 15.0)))
-	# 左侧墙，x -207.5..-192.5，y -120..0
-	world.add_child(_solid(Vector2(-200.0, -60.0), Vector2(15.0, 120.0)))
-	# 天花板 y -60..-45，中间留 1494..1510 的缺口给角落修正用
-	world.add_child(_solid(Vector2(1147.0, -52.5), Vector2(694.0, 15.0)))
-	world.add_child(_solid(Vector2(1855.0, -52.5), Vector2(690.0, 15.0)))
-	# 悬空 1 格平台，x 600..615 / y -60..-45，用来测上冲蹭平台边缘墙跳
-	world.add_child(_solid(Vector2(607.5, -52.5), Vector2(15.0, 15.0)))
+	# 地板顶面 y=0，x -512..1024
+	world.add_child(_solid(Vector2(256.0, 4.0), Vector2(1536.0, 8.0)))
+	# 左侧墙，x -112..-104，y -64..0
+	world.add_child(_solid(Vector2(-108.0, -32.0), Vector2(8.0, 64.0)))
+	# 天花板 y -32..-24，中间留 796..804 的 1 格缝给角落修正用
+	world.add_child(_solid(Vector2(598.0, -28.0), Vector2(396.0, 8.0)))
+	world.add_child(_solid(Vector2(1002.0, -28.0), Vector2(396.0, 8.0)))
+	# 悬空 1 格平台，x 320..328 / y -32..-24，用来测上冲蹭平台边缘墙跳
+	world.add_child(_solid(Vector2(324.0, -28.0), Vector2(8.0, 8.0)))
+	# 低矮通道：底面 y=-8，只有蹲下（6px）能进，站立（11px）进不去
+	world.add_child(_solid(Vector2(600.0, -12.0), Vector2(64.0, 8.0)))
 
 	var player: Player = load(PLAYER_SCENE).instantiate()
 	player.global_position = Vector2(0.0, 0.0)
@@ -62,6 +63,14 @@ class Harness extends Node:
 		await _case_dash_freeze_direction()
 		await _case_climb_hop_no_drain()
 		await _case_dash_up_wall_jump()
+		await _case_wall_jump_var_height()
+		await _case_climb_jump_from_normal()
+		await _case_wall_boost()
+		await _case_wall_slide()
+		await _case_fast_fall()
+		await _case_dash_refill_cooldown()
+		await _case_wall_speed_retention()
+		await _case_duck()
 		print("---- PLAYER REGRESSION %d passed, %d failed ----" % [passes, failures.size()])
 		if failures.is_empty():
 			get_tree().quit(0)
@@ -83,7 +92,7 @@ class Harness extends Node:
 		player.global_position = position
 		player.velocity = Vector2.ZERO
 		player.mode = Player.Mode.NORMAL
-		player.is_ducking = false
+		player._set_duck(false)
 		player.dash_count = player.max_dashes
 		player.stamina = player.max_stamina
 		player.dash_timer = 0.0
@@ -103,6 +112,13 @@ class Harness extends Node:
 		player._force_move_x_timer = 0.0
 		player._hop_wait_x = 0
 		player._floor_last_frame = false
+		player._max_fall = player.max_fall_speed
+		player._wall_slide_timer = player.wall_slide_time
+		player._wall_slide_dir = 0
+		player._wall_boost_timer = 0.0
+		player._wall_speed_retention_timer = 0.0
+		player._wall_speed_retained = 0.0
+		player._dash_refill_cooldown_timer = 0.0
 		await _step(3)
 
 	# Input.action_press 到玩家 is_action_just_pressed 之间存在一帧延迟，
@@ -177,7 +193,7 @@ class Harness extends Node:
 
 	# 空中斜下 Dash 撞地 + 跳 = Ultra
 	func _case_ultra() -> void:
-		await _reset(Vector2(300.0, -50.0))
+		await _reset(Vector2(160.0, -27.0))
 		Input.action_press("move_right")
 		await _step(4)
 		Input.action_press("move_down")
@@ -213,10 +229,10 @@ class Harness extends Node:
 		var tap: float = await _measure_jump(2)
 		var hold: float = await _measure_jump(30)
 		_check("按住跳明显高于点按", hold > tap * 1.3, "点按=%.1fpx 按住=%.1fpx" % [tap, hold])
-		_check("按住跳高约 3-4 格", hold > 40.0 and hold < 90.0, "按住=%.1fpx = %.1f 格" % [hold, hold / 15.0])
+		_check("按住跳高约 3-4 格", hold > 20.0 and hold < 48.0, "按住=%.1fpx = %.1f 格" % [hold, hold / 8.0])
 
 	func _measure_jump(hold_frames: int) -> float:
-		await _reset(Vector2(400.0, 0.0))
+		await _reset(Vector2(213.0, 0.0))
 		var start_y: float = player.global_position.y
 		var peak: float = start_y
 		Input.action_press("jump")
@@ -233,9 +249,9 @@ class Harness extends Node:
 				break
 		return start_y - peak
 
-	# 上升撞天花板角落时逐像素横移穿过缺口
+	# 上升撞天花板角落时逐像素横移穿过缺口（缝 x 796..804，起跳点故意偏 3px）
 	func _case_corner_correction() -> void:
-		await _reset(Vector2(1508.0, 0.0))
+		await _reset(Vector2(803.0, 0.0))
 		var before: int = player.corner_corrections
 		var peak: float = player.global_position.y
 		Input.action_press("jump")
@@ -244,11 +260,11 @@ class Harness extends Node:
 			peak = minf(peak, player.global_position.y)
 		Input.action_release("jump")
 		_check("角落修正触发", player.corner_corrections > before, "corner_corrections=%d" % player.corner_corrections)
-		_check("修正后穿过天花板缺口", peak < -40.0, "peak_y=%.1f（无修正会卡在 -24 附近）" % peak)
+		_check("修正后穿过天花板缺口", peak < -21.0, "peak_y=%.1f（无修正会卡在 -13 附近）" % peak)
 
 	# 抓墙静止：不下滑、贴住墙面无空隙
 	func _case_climb_no_slip() -> void:
-		await _reset(Vector2(-183.0, -40.0))
+		await _reset(Vector2(-99.0, -21.0))
 		player.facing = -1.0
 		Input.action_press("grab")
 		var climbing: bool = await _wait_until(func() -> bool: return player.mode == Player.Mode.CLIMB)
@@ -264,7 +280,7 @@ class Harness extends Node:
 
 	# 无方向输入的爬墙跳 = 垂直起跳并扣体力
 	func _case_climb_jump_stamina() -> void:
-		await _reset(Vector2(-183.0, -40.0))
+		await _reset(Vector2(-99.0, -21.0))
 		player.facing = -1.0
 		Input.action_press("grab")
 		await _wait_until(func() -> bool: return player.mode == Player.Mode.CLIMB)
@@ -280,7 +296,7 @@ class Harness extends Node:
 
 	# 攀爬中拉离墙 + 跳 = 墙跳弹开，且不扣体力
 	func _case_climb_wall_jump() -> void:
-		await _reset(Vector2(-183.0, -40.0))
+		await _reset(Vector2(-99.0, -21.0))
 		player.facing = -1.0
 		Input.action_press("grab")
 		await _wait_until(func() -> bool: return player.mode == Player.Mode.CLIMB)
@@ -335,7 +351,7 @@ class Harness extends Node:
 
 	# 墙沿持续按上：ClimbHop 只触发一次，且不扣体力
 	func _case_climb_hop_no_drain() -> void:
-		await _reset(Vector2(-183.0, -90.0))
+		await _reset(Vector2(-99.0, -48.0))
 		player.facing = -1.0
 		player.climb_hops = 0
 		Input.action_press("grab")
@@ -351,9 +367,9 @@ class Harness extends Node:
 		_check("持续按上不会抽干体力", player.stamina > player.max_stamina * 0.5, "stamina=%.1f / %.1f" % [player.stamina, player.max_stamina])
 		_release_all()
 
-	# 上冲蹭平台侧面：move_and_slide 一帧跨过整段位移，必须补移动后采样才能触发
+	# 上冲蹭 1 格平台侧面 = SuperWallJump
 	func _case_dash_up_wall_jump() -> void:
-		await _reset(Vector2(593.0, 0.0))
+		await _reset(Vector2(315.0, 0.0))
 		Input.action_press("move_up")
 		Input.action_press("dash")
 		await _wait_dash_launch()
@@ -364,4 +380,164 @@ class Harness extends Node:
 		Input.action_release("jump")
 		_check("上冲蹭平台边缘触发墙跳", jumped and player.last_technique == "SuperWallJump", "tech=%s" % player.last_technique)
 		_check("墙跳方向背离平台", player.velocity.x < -1.0 and player.velocity.y < 0.0, "v=(%.1f, %.1f)" % [player.velocity.x, player.velocity.y])
+		_release_all()
+
+	# 墙跳同样受按键时长控制（varJumpTimer）—— 覆盖空中墙跳、攀爬中墙跳、攀爬中垂直爬墙跳三条路径
+	func _case_wall_jump_var_height() -> void:
+		var tap: float = await _measure_wall_jump(2)
+		var hold: float = await _measure_wall_jump(30)
+		_check("空中墙跳按住明显高于点按", hold > tap * 1.3, "点按=%.1fpx 按住=%.1fpx" % [tap, hold])
+		var climb_tap: float = await _measure_climb_jump(2, true)
+		var climb_hold: float = await _measure_climb_jump(30, true)
+		_check("攀爬中墙跳按住明显高于点按", climb_hold > climb_tap * 1.3, "点按=%.1fpx 按住=%.1fpx" % [climb_tap, climb_hold])
+		var cj_tap: float = await _measure_climb_jump(2, false)
+		var cj_hold: float = await _measure_climb_jump(30, false)
+		_check("垂直爬墙跳按住明显高于点按", cj_hold > cj_tap * 1.3, "点按=%.1fpx 按住=%.1fpx" % [cj_tap, cj_hold])
+
+	func _measure_climb_jump(hold_frames: int, away_from_wall: bool) -> float:
+		await _reset(Vector2(-99.0, -32.0))
+		player.facing = -1.0
+		Input.action_press("grab")
+		var climbing: bool = await _wait_until(func() -> bool: return player.mode == Player.Mode.CLIMB)
+		if not climbing:
+			_check("抓墙成功（测量用）", false, "mode=%s" % Player.Mode.keys()[player.mode])
+			_release_all()
+			return 0.0
+		await _step(4)
+		var start_y: float = player.global_position.y
+		var peak: float = start_y
+		if away_from_wall: Input.action_press("move_right")
+		Input.action_press("jump")
+		await _wait_until(func() -> bool: return player.mode != Player.Mode.CLIMB, 6)
+		for _i in range(hold_frames):
+			await _step(1)
+			peak = minf(peak, player.global_position.y)
+		Input.action_release("jump")
+		for _i in range(40):
+			await _step(1)
+			peak = minf(peak, player.global_position.y)
+		_release_all()
+		return start_y - peak
+
+	func _measure_wall_jump(hold_frames: int) -> float:
+		await _reset(Vector2(-99.0, -21.0))
+		player.facing = -1.0
+		await _step(1)
+		var start_y: float = player.global_position.y
+		var peak: float = start_y
+		Input.action_press("jump")
+		var jumped: bool = await _wait_until(func() -> bool: return player.last_technique == "WallJump", 6)
+		if not jumped:
+			_check("墙跳触发（测量用）", false, "tech=%s wall=%d" % [player.last_technique, player.get_wall_direction()])
+			_release_all()
+			return 0.0
+		for _i in range(hold_frames):
+			await _step(1)
+			peak = minf(peak, player.global_position.y)
+		Input.action_release("jump")
+		for _i in range(40):
+			await _step(1)
+			peak = minf(peak, player.global_position.y)
+		_release_all()
+		return start_y - peak
+
+	# 非攀爬状态下面朝墙 + 按住抓取 + 有体力时按跳 = 垂直爬墙跳，不是被弹开的墙跳
+	func _case_climb_jump_from_normal() -> void:
+		await _reset(Vector2(-99.0, -21.0))
+		player.facing = -1.0
+		# 上升中不许抓墙（参考 NormalUpdate 的 Climbing 守卫），所以只会走 NormalUpdate 的跳跃分支
+		player.velocity = Vector2(0.0, -50.0)
+		Input.action_press("grab")
+		Input.action_press("jump")
+		await _wait_until(func() -> bool: return player.last_technique != "None", 6)
+		_check("面朝墙按住抓取按跳 = 爬墙跳", player.last_technique == "ClimbJump", "tech=%s mode=%s" % [player.last_technique, Player.Mode.keys()[player.mode]])
+		_check("爬墙跳不会被弹离墙面", absf(player.velocity.x) < 1.0, "vx=%.1f（普通墙跳会是 %.1f）" % [player.velocity.x, player.wall_jump_speed])
+		_release_all()
+
+	# Wallboost：中立爬墙跳后窗口内推离墙面 = 退还体力并转成墙跳（无体力连续上墙的来源）
+	func _case_wall_boost() -> void:
+		await _reset(Vector2(-99.0, -32.0))
+		player.facing = -1.0
+		Input.action_press("grab")
+		var climbing: bool = await _wait_until(func() -> bool: return player.mode == Player.Mode.CLIMB)
+		_check("Wallboost 前置：进入攀爬", climbing, "mode=%s" % Player.Mode.keys()[player.mode])
+		await _step(4)
+		var before: float = player.stamina
+		Input.action_press("jump")
+		await _wait_until(func() -> bool: return player.last_technique == "ClimbJump", 6)
+		Input.action_release("jump")
+		var after_jump: float = player.stamina
+		_check("Wallboost 前置：中立爬墙跳扣体力", before - after_jump > 20.0, "扣=%.1f" % (before - after_jump))
+		Input.action_press("move_right")
+		var boosted: bool = await _wait_until(func() -> bool: return player.last_technique == "WallBoost", 12)
+		_check("窗口内推离墙面触发 Wallboost", boosted, "tech=%s" % player.last_technique)
+		_check("Wallboost 退还爬墙跳体力", player.stamina > after_jump + player.climb_jump_stamina_cost - 1.0, "boost 前=%.1f 后=%.1f" % [after_jump, player.stamina])
+		# 触发帧写入 WallJumpHSpeed，同帧的超速减速会吃掉 RunReduce*AirMult/60≈4.3，留 6 的余量
+		_check("Wallboost 给出墙跳水平速度", absf(player.velocity.x - player.wall_jump_speed) < 6.0, "vx=%.1f 期望≈%.1f" % [player.velocity.x, player.wall_jump_speed])
+		_check("Wallboost 后不锁输入（可立刻回墙）", player._force_move_x_timer <= 0.0, "force_timer=%.3f" % player._force_move_x_timer)
+		_release_all()
+
+	# Wall Slide：推向墙面时下落被摩擦压到 WallSlideStartMax
+	func _case_wall_slide() -> void:
+		await _reset(Vector2(-100.0, -56.0))
+		Input.action_press("move_left")
+		await _step(20)
+		_check("贴墙下落被压到 WallSlideStartMax 附近", player.velocity.y < player.max_fall_speed * 0.4, "vy=%.1f max_fall=%.1f" % [player.velocity.y, player.max_fall_speed])
+		_check("贴墙下滑 20 帧仍在墙面高度内", player.global_position.y < -40.0, "y=%.1f（无摩擦会掉到 -10 以下）" % player.global_position.y)
+		_release_all()
+
+	# Fastfalling：按住下方向时下落上限渐进到 FastMaxFall
+	func _case_fast_fall() -> void:
+		await _reset(Vector2(213.0, -160.0))
+		Input.action_press("move_down")
+		await _step(40)
+		_check("按住下落速度超过 MaxFall", player.velocity.y > player.max_fall_speed + 40.0, "vy=%.1f MaxFall=%.1f" % [player.velocity.y, player.max_fall_speed])
+		_check("下落速度不超过 FastMaxFall", player.velocity.y <= player.fast_max_fall_speed + 1.0, "vy=%.1f FastMaxFall=%.1f" % [player.velocity.y, player.fast_max_fall_speed])
+		_release_all()
+
+	# DashRefillCooldown：落地补 dash 有 0.1s 冷却（Extended Dash 的窗口）
+	func _case_dash_refill_cooldown() -> void:
+		await _reset(Vector2(0.0, 0.0))
+		Input.action_press("move_right")
+		await _step(10)
+		Input.action_press("dash")
+		await _wait_dash_launch()
+		Input.action_release("dash")
+		_check("Dash 起手扣掉次数", player.dash_count == 0, "dash_count=%d" % player.dash_count)
+		_check("冷却期内在地面也不补 dash", player.is_on_floor() and player.dash_count == 0, "on_floor=%s count=%d cooldown=%.3f" % [player.is_on_floor(), player.dash_count, player._dash_refill_cooldown_timer])
+		await _step(12)
+		_check("冷却结束后落地补回 dash", player.dash_count == player.max_dashes, "dash_count=%d cooldown=%.3f" % [player.dash_count, player._dash_refill_cooldown_timer])
+		_release_all()
+
+	# Wall Speed Retention：撞墙瞬间存下水平速度（Cornerboost 的来源）
+	func _case_wall_speed_retention() -> void:
+		await _reset(Vector2(-70.0, 0.0))
+		Input.action_press("move_left")
+		var armed: bool = await _wait_until(func() -> bool: return player._wall_speed_retention_timer > 0.0, 40)
+		_check("撞墙武装速度保留窗口", armed, "timer=%.3f" % player._wall_speed_retention_timer)
+		_check("保留的是撞墙前的跑速", player._wall_speed_retained < -player.max_speed * 0.8, "retained=%.1f max_speed=%.1f" % [player._wall_speed_retained, player.max_speed])
+		_release_all()
+
+	# 下蹲：地面按下变矮、松开站起、低通道内站不起来
+	func _case_duck() -> void:
+		await _reset(Vector2(0.0, 0.0))
+		Input.action_press("move_down")
+		var ducked: bool = await _wait_until(func() -> bool: return player.is_ducking, 6)
+		var rect: RectangleShape2D = player.collider.shape
+		_check("地面按下进入下蹲", ducked, "ducking=%s" % player.is_ducking)
+		_check("下蹲碰撞盒变矮", absf(rect.size.y - player.duck_height) < 0.01, "h=%.2f 期望=%.2f" % [rect.size.y, player.duck_height])
+		_check("下蹲碰撞盒底边不动", absf(player.collider.position.y + player.duck_height * 0.5) < 0.01 and absf(player.global_position.y) < 0.6, "shape_y=%.2f 脚底 y=%.2f" % [player.collider.position.y, player.global_position.y])
+		Input.action_press("move_right")
+		await _step(20)
+		_check("下蹲时地面摩擦压住水平速度", absf(player.velocity.x) < player.max_speed * 0.5, "vx=%.1f" % player.velocity.x)
+		Input.action_release("move_right")
+		Input.action_release("move_down")
+		var stood: bool = await _wait_until(func() -> bool: return not player.is_ducking, 6)
+		_check("松开下方向自动站起", stood and absf(rect.size.y - player.stand_height) < 0.01, "ducking=%s h=%.2f" % [player.is_ducking, rect.size.y])
+		# 低矮通道（净空 8px）：蹲着能待、站不起来
+		player.global_position = Vector2(600.0, 0.0)
+		player.velocity = Vector2.ZERO
+		player._set_duck(true)
+		await _step(3)
+		_check("低通道内站不起来", player.is_ducking and not player._can_unduck(), "ducking=%s can_unduck=%s" % [player.is_ducking, player._can_unduck()])
 		_release_all()
