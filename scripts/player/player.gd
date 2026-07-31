@@ -11,8 +11,8 @@ extends CharacterBody2D
 
 @export_category("Jump")
 @export var jump_force := 450.0
-@export var jump_cut_mult := 0.45
 @export var jump_speed_boost := 40.0
+@export var var_jump_time := 0.20
 
 @export_category("Gravity")
 @export var gravity := 1500.0
@@ -30,8 +30,10 @@ extends CharacterBody2D
 @export var dash_attack_time := 0.3
 @export var dash_buffer_time := 0.12
 @export var super_jump_speed := 260.0
+@export var super_wall_jump_force := 500.0
+@export var super_wall_jump_speed := 300.0
+@export var super_wall_var_jump_time := 0.25
 @export var hyper_speed_mult := 1.2
-@export var ultra_min_speed := 170.0
 @export var ultra_speed_mult := 1.2
 @export var ultra_window_time := 0.10
 @export var cb_bonus_speed := 40.0
@@ -74,16 +76,23 @@ var dash_freeze_timer := 0.0
 var dash_timer := 0.0
 var dash_active := false
 var before_dash_velocity := Vector2.ZERO
-var dash_momentum_x := 0.0
+var _var_jump_timer := 0.0
+var _var_jump_speed := 0.0
 var _coyote_timer := 0.0
 var _jump_buffer_timer := 0.0
 var _dash_buffer_timer := 0.0
 var _ultra_timer := 0.0
 var _ultra_speed_x := 0.0
 var _corner_kick_timer := 0.0
+var _corner_kick_wall_direction := 0
+var _cb_timer := 0.0
+var _cb_wall_direction := 0
+var _dash_attack_direction := Vector2.ZERO
+var _dash_attack_speed_x := 0.0
 var _bunnyhop_timer := 0.0
 var _climb_no_move_timer := 0.0
 var _was_on_floor := false
+var _landed_this_move := false
 var _wall_collision_direction := 0
 
 @onready var state_machine: StateMachine = $StateMachine
@@ -114,8 +123,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed("jump"):
 		_jump_buffer_timer = jump_buffer_time
-	elif event.is_action_released("jump") and velocity.y < 0.0:
-		velocity.y *= jump_cut_mult
+	elif event.is_action_released("jump"):
+		_var_jump_timer = 0.0
 	if event.is_action_pressed("dash"):
 		_dash_buffer_timer = dash_buffer_time
 	if event.is_action_pressed("grab"):
@@ -136,8 +145,10 @@ func _update_timers(delta: float) -> void:
 	dash_attack_timer = maxf(0.0, dash_attack_timer - delta)
 	_ultra_timer = maxf(0.0, _ultra_timer - delta)
 	_corner_kick_timer = maxf(0.0, _corner_kick_timer - delta)
+	_cb_timer = maxf(0.0, _cb_timer - delta)
 	_bunnyhop_timer = maxf(0.0, _bunnyhop_timer - delta)
 	_climb_no_move_timer = maxf(0.0, _climb_no_move_timer - delta)
+	_var_jump_timer = maxf(0.0, _var_jump_timer - delta)
 	if _was_on_floor and not is_on_floor():
 		_coyote_timer = coyote_time
 	if is_on_floor():
@@ -170,11 +181,23 @@ func consume_dash_buffer() -> bool:
 func wants_jump() -> bool:
 	return has_jump_buffer() and (is_on_floor() or _coyote_timer > 0.0)
 
+func _start_var_jump(speed: float, duration: float = var_jump_time) -> void:
+	_var_jump_speed = speed
+	_var_jump_timer = duration
+
+func apply_var_jump() -> void:
+	# Celeste-style hold: gravity cannot reduce an active upward jump below launch speed.
+	if _var_jump_timer > 0.0 and Input.is_action_pressed("jump") and velocity.y < 0.0:
+		velocity.y = minf(velocity.y, _var_jump_speed)
+	else:
+		_var_jump_timer = 0.0
+
 func do_jump() -> void:
 	consume_jump_buffer()
 	_coyote_timer = 0.0
 	dash_attack_timer = 0.0
 	velocity.y = -jump_force
+	_start_var_jump(velocity.y)
 	var direction := Input.get_axis("move_left", "move_right")
 	if direction != 0.0 and signf(velocity.x) != -signf(direction):
 		velocity.x = clampf(velocity.x + direction * jump_speed_boost, -(max_speed + jump_speed_boost), max_speed + jump_speed_boost)
@@ -184,6 +207,14 @@ func do_super_jump() -> void:
 	_coyote_timer = 0.0
 	dash_attack_timer = 0.0
 	velocity = Vector2(super_jump_speed * facing, -jump_force)
+	_start_var_jump(velocity.y)
+
+func do_super_wall_jump(direction: int) -> void:
+	consume_jump_buffer()
+	_coyote_timer = 0.0
+	dash_attack_timer = 0.0
+	velocity = Vector2(direction * super_wall_jump_speed, -super_wall_jump_force)
+	_start_var_jump(velocity.y, super_wall_var_jump_time)
 
 func do_hyper_jump() -> void:
 	consume_jump_buffer()
@@ -192,13 +223,14 @@ func do_hyper_jump() -> void:
 	var direction := signf(dash_direction.x if dash_direction.x != 0.0 else facing)
 	velocity.x = direction * maxf(absf(velocity.x), dash_speed * absf(dash_direction.x)) * hyper_speed_mult
 	velocity.y = -jump_force
+	_start_var_jump(velocity.y)
 
 func prepare_ultra(speed_x: float) -> void:
 	_ultra_speed_x = speed_x
 	_ultra_timer = ultra_window_time
 
 func can_ultra_jump() -> bool:
-	return _ultra_timer > 0.0 and absf(_ultra_speed_x) >= ultra_min_speed
+	return _ultra_timer > 0.0
 
 func do_ultra_jump() -> void:
 	consume_jump_buffer()
@@ -206,6 +238,7 @@ func do_ultra_jump() -> void:
 	dash_attack_timer = 0.0
 	velocity.x = _ultra_speed_x * ultra_speed_mult
 	velocity.y = -jump_force
+	_start_var_jump(velocity.y)
 	_ultra_timer = 0.0
 
 func start_dash(direction: Vector2) -> void:
@@ -213,7 +246,6 @@ func start_dash(direction: Vector2) -> void:
 	dash_count = maxi(0, dash_count - 1)
 	dash_started_on_ground = is_on_floor()
 	before_dash_velocity = velocity
-	dash_momentum_x = velocity.x
 	dash_direction = direction.normalized()
 	dash_attack_timer = dash_attack_time
 	dash_freeze_timer = dash_freeze_time
@@ -234,8 +266,8 @@ func update_dash(delta: float) -> bool:
 		dash_active = true
 	move_and_slide()
 	post_move()
-	if dash_direction.y > 0.0 and dash_direction.x != 0.0 and is_on_floor():
-		prepare_ultra(velocity.x)
+	if dash_direction.y > 0.0 and dash_direction.x != 0.0 and _landed_this_move:
+		prepare_ultra(_dash_attack_speed_x)
 	dash_timer -= delta
 	return dash_timer <= 0.0
 
@@ -244,7 +276,8 @@ func activate_dash() -> void:
 	if signf(before_dash_velocity.x) == signf(new_velocity.x) and absf(before_dash_velocity.x) > absf(new_velocity.x):
 		new_velocity.x = before_dash_velocity.x
 	velocity = new_velocity
-	dash_momentum_x = velocity.x
+	_dash_attack_direction = dash_direction
+	_dash_attack_speed_x = velocity.x
 
 func finish_dash() -> void:
 	# Celeste DashCoroutine only overwrites speed for non-downward dashes.
@@ -263,6 +296,13 @@ func can_dash() -> bool:
 	return dash_count > 0
 
 func begin_climb(wall_direction: int) -> void:
+	# CB only arms when dash attack actually drove into wall before grabbing it.
+	if dash_attack_timer > 0.0 and _dash_attack_speed_x != 0.0 and _dash_attack_direction.x != 0.0 and signf(_dash_attack_speed_x) == wall_direction:
+		_cb_timer = dash_attack_timer
+		_cb_wall_direction = wall_direction
+	else:
+		_cb_timer = 0.0
+		_cb_wall_direction = 0
 	facing = wall_direction
 	velocity.x = 0.0
 	velocity.y *= climb_grab_y_mult
@@ -280,14 +320,17 @@ func get_wall_direction() -> int:
 
 func post_move() -> void:
 	_wall_collision_direction = get_wall_direction()
-	if _wall_collision_direction != 0 and velocity.y < 0.0:
+	_landed_this_move = is_on_floor() and not _was_on_floor
+	# Cornerkick requires recent horizontal/down-diagonal dash into wall while rising.
+	if _wall_collision_direction != 0 and velocity.y < 0.0 and dash_attack_timer > 0.0 and dash_direction.x != 0.0 and dash_direction.y >= 0.0 and signf(dash_direction.x) == _wall_collision_direction:
 		_corner_kick_timer = corner_kick_window
-	if is_on_floor() and not _was_on_floor:
+		_corner_kick_wall_direction = _wall_collision_direction
+	if _landed_this_move:
 		_bunnyhop_timer = bunnyhop_grace_time
 	_was_on_floor = is_on_floor()
 
 func can_corner_kick() -> bool:
-	return _corner_kick_timer > 0.0 and _wall_collision_direction != 0
+	return _corner_kick_timer > 0.0 and _wall_collision_direction == _corner_kick_wall_direction
 
 func can_climb() -> bool:
 	return stamina > 0.0 and get_wall_direction() != 0
@@ -298,17 +341,21 @@ func do_wall_jump(direction: int) -> void:
 	dash_attack_timer = 0.0
 	velocity.x = direction * wall_jump_speed
 	velocity.y = -wall_jump_force
+	_start_var_jump(velocity.y)
 
 func do_climb_jump(direction: int) -> void:
 	consume_jump_buffer()
 	_coyote_timer = 0.0
-	# CB: dash-attack climb jump keeps dash horizontal speed, good edge contact adds bonus.
-	var retained_x := dash_momentum_x if dash_attack_timer > 0.0 else 0.0
-	if dash_attack_timer > 0.0 and absf(retained_x) > 0.0:
-		retained_x += signf(retained_x) * cb_bonus_speed
-	velocity.x = retained_x if absf(retained_x) >= wall_jump_speed else direction * wall_jump_speed
+	var has_cb := _cb_timer > 0.0 and _cb_wall_direction == -direction
+	if has_cb:
+		velocity.x = _dash_attack_speed_x + signf(_dash_attack_speed_x) * cb_bonus_speed
+	else:
+		velocity.x = direction * wall_jump_speed
 	velocity.y = -wall_jump_force
+	_start_var_jump(velocity.y)
 	dash_attack_timer = 0.0
+	_cb_timer = 0.0
+	_cb_wall_direction = 0
 	stamina = maxf(0.0, stamina - climb_jump_stamina_cost)
 
 func do_climb_hop(wall_direction: int) -> void:
@@ -339,6 +386,7 @@ func apply_gravity(delta: float) -> void:
 	elif absf(velocity.y) < apex_threshold:
 		current_gravity *= apex_gravity_mult
 	velocity.y = minf(velocity.y + current_gravity * delta, max_fall_speed)
+	apply_var_jump()
 
 func apply_corner_correction(pre_move_vy: float) -> void:
 	if pre_move_vy >= 0.0 or not is_on_ceiling():

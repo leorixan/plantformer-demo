@@ -5,8 +5,8 @@ Movement,deceleration,2400.0,float,地面减速度（大 → 停止更干脆）
 Movement,air_accel_mult,0.9,float,空中加速度倍率（<1 → 空中操控略钝）
 Movement,over_speed_decel,300.0,float,超速衰减（保动量，兔子跳的土壤）
 Jump,jump_force,450.0,float,起跳速度（当前约 4.5 格高）
-Jump,jump_cut_mult,0.4,float,松键截断倍率（越小可变跳高范围越大）
 Jump,jump_speed_boost,40.0,float,起跳水平加成（兔子跳根源，Celeste 参考 +40）
+Jump,var_jump_time,0.20,float,按住 J 时维持起跳初速的可变跳窗口
 Gravity,gravity,1500.0,float,基础重力（大 → 跳跃更锐利不飘）
 Gravity,fall_gravity_mult,1.4,float,下落重力倍率（>1 → 下落更快更扎实）
 Gravity,apex_gravity_mult,0.8,float,顶点重力倍率（<1 → 顶点悬浮感）
@@ -23,10 +23,12 @@ Dash,dash_end_speed,240.0,float,冲刺结束保留速度
 Dash,dash_attack_time,0.3,float,冲刺攻击窗口秒数（支持 Super / 墙跳）
 Dash,dash_buffer_time,0.12,float,冲刺输入缓存秒数（冻结期或状态切换不漏按）
 Dash,super_jump_speed,260.0,float,水平冲刺跳跃速度
-Dash,hyper_speed_mult,1.2,float,下斜冲刺落地跳跃的水平速度倍率
-Dash,ultra_min_speed,170.0,float,Ultra 生效最低水平速度
-Dash,ultra_speed_mult,1.2,float,斜下冲刺落地后 Ultra 跳跃水平速度倍率
-Dash,ultra_window_time,0.10,float,斜下冲刺着地后 Ultra 跳跃窗口秒数
+Dash,super_wall_jump_force,500.0,float,上冲贴墙 SuperWallJump 的向上速度
+Dash,super_wall_jump_speed,300.0,float,上冲贴墙 SuperWallJump 的离墙水平速度
+Dash,super_wall_var_jump_time,0.25,float,SuperWallJump 按住 J 的可变跳窗口
+Dash,hyper_speed_mult,1.2,float,下斜冲刺本帧落地跳跃的水平速度倍率
+Dash,ultra_speed_mult,1.2,float,有效下斜 dash 落地后 Ultra 跳跃水平速度倍率
+Dash,ultra_window_time,0.10,float,有效下斜 dash 落地后 Ultra 跳跃窗口秒数
 Dash,cb_bonus_speed,40.0,float,冲刺攻击内爬墙跳（CB）保留 dash 水平速度后额外奖励
 Dash,corner_kick_window,0.08,float,上升时擦墙角后允许墙跳的短窗口（咖啡跳）
 Dash,bunnyhop_grace_time,0.06,float,落地缓存跳跃期间跳过地面摩擦以保留超速（兔子跳）

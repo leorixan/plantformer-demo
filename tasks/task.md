@@ -21,7 +21,8 @@
 
 ## 当前待办（按优先级）
 
-- [ ] **手动试玩验证**：按测试房路线验证 Super、Hyper、Ultra、CB 的手感与参数窗口
+- [x] 高级技巧审计修复：SuperWallJump、VarJump、Ultra 本帧落地、CB dash 攻击资格、Cornerkick 有效冲刺资格与 CSV 同步
+- [ ] **手动试玩验证**：按测试房路线验证 Super、Hyper、Ultra、CB、Cornerkick 的手感与参数窗口
 - [ ] **手动试玩验证**：Shift 抓墙、上下攀爬、体力耗尽、墙跳、墙顶翻越
 - [ ] **试玩验证**：Theo 与 Jellyfish 拾取、抛出、Jellyfish 先升后浮
 - [ ] **试玩验证**：角落修正是否吸附角色；频繁顶头是否造成 x 轴漂移
