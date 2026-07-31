@@ -1,6 +1,6 @@
 # Plantformer Demo — 技术方案文档 (TDD)
 
-> 对应策划案：`documents/GDD.txt` v1.0
+> 对应策划案：`.claude/documents/GDD.txt` v1.0
 > 文档版本：v1.0 | 2026-07-30
 > 引擎：Godot 4.7（Forward Plus，GDScript）| 平台：PC
 
@@ -37,7 +37,7 @@ res://
 │   └── debug/               # player_regression.gd（headless 物理回归）
 ├── assets/
 │   ├── sprites/  audio/  fonts/   # 灰盒阶段用占位色块（PlaceholderTexture / ColorRect）
-└── documents/               # GDD.txt, TDD.md（本文件）
+└── .claude/documents/               # GDD.txt, TDD.md（本文件）
 ```
 
 原则：**场景与脚本分离**（scenes/ 与 scripts/ 平行），机关做成可复用的独立场景，关卡只负责摆放组合。
@@ -81,7 +81,7 @@ Player (CharacterBody2D, player.gd)          # 唯一写 velocity 的地方
 
 ### 4.2 手感系统（全部 @export 参数化 + CSV 集中配置）
 
-手感参数除在 `player.gd` 中保留 `@export` 默认值外，**集中管理在 `documents/player_params.csv`**：
+手感参数除在 `player.gd` 中保留 `@export` 默认值外，**集中管理在 `.claude/documents/player_params.csv`**：
 
 - 可用 **Excel / 任何表格软件** 打开编辑（标准 CSV 逗号分隔，UTF-8）。
 - 运行时由 `ConfigLoader` autoload 读取并覆盖到 Player。
@@ -190,7 +190,7 @@ CSV 列：`category, name, value, type, description`。当前包含：
 
 ### 4.6 高级技巧复现（Super / Hyper / Ultra / SuperWallJump / 兔子跳）
 
-> 参考：`documents/CelestePlayerReference.txt` 的 `DashCoroutine`(3548) / `DashUpdate`(3474) / `SuperJump`(1695) / `OnCollideV`(2504)。
+> 参考：`.claude/documents/CelestePlayerReference.txt` 的 `DashCoroutine`(3548) / `DashUpdate`(3474) / `SuperJump`(1695) / `OnCollideV`(2504)。
 > **已实现**。这些技巧不是独立动作，而是从 `Dash Slide + SuperJump + Ducking` 三条规则里**涌现**出来的。
 
 关键发现：Hyper 与 Ultra 在参考里**是同一段代码**。区别只在 Dash 起手位置：
