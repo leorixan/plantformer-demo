@@ -31,11 +31,10 @@ res://
 │   └── components/          # 可复用机关：spikes, spring, checkpoint, theo, jellyfish...
 ├── scripts/
 │   ├── player/
-│   │   ├── player.gd
-│   │   └── states/          # state_machine.gd, state.gd, idle/run/air/dash/grab.gd
+│   │   └── player.gd        # 单一模拟所有者，内含 Mode 状态机（见 §4.1）
 │   ├── components/          # 机关脚本，与场景一一对应
 │   ├── autoload/            # game.gd, assist.gd
-│   └── debug/               # param_dashboard.gd, death_recorder.gd
+│   └── debug/               # player_regression.gd（headless 物理回归）
 ├── assets/
 │   ├── sprites/  audio/  fonts/   # 灰盒阶段用占位色块（PlaceholderTexture / ColorRect）
 └── documents/               # GDD.txt, TDD.md（本文件）
@@ -56,27 +55,29 @@ res://
 
 ---
 
-## 4. 角色控制器：节点式 FSM
+## 4. 角色控制器：Player 单一模拟所有者（Mode 状态机）
 
 ### 4.1 架构
 
 ```
-Player (CharacterBody2D, player.gd)
-├── Sprite2D / CollisionShape2D
-├── CarryAnchor (Marker2D)                    # 持物跟随点（头顶/身前）
-├── GrabDetector (Area2D)                     # 探测附近可抓取物品
-├── StateMachine (Node, state_machine.gd)     # 通用、可复用，非玩家专用
-│   ├── Idle  (Node, idle.gd)
-│   ├── Run   (Node, run.gd)
-│   ├── Air   (Node, air.gd)                  # 跳跃上升/下落/土狼/缓存都在这里
-│   ├── Dash  (Node, dash.gd)
-│   └── Grab  (Node, grab.gd)                 # 墙抓/攀爬/墙跳
+Player (CharacterBody2D, player.gd)          # 唯一写 velocity 的地方
+├── Visuals (Node2D) / CollisionShape2D
+├── UI (DashPip1..3 + StaminaBar/Fill)       # 冲刺次数 + 体力条视觉指示器
+├── CarryAnchor (Marker2D)                   # 持物跟随点
+├── GrabDetector (Area2D)                    # 探测附近可抓取物品
+├── Camera2D
+└── ControllerDebug (Label)                  # show_controller_debug 打开
 ```
 
-- **StateMachine**：持有 `current_state`，转发 `_physics_process` / `_unhandled_input`，提供 `transition_to(name)`。进入/退出时调状态的 `enter()` / `exit()`。
-- **State 基类**（`state.gd`，`class_name State`）：虚函数 `enter()` `exit()` `physics_update(delta)` `handle_input(event)`；持有 `player` 引用。
-- **每个状态一个子节点一个脚本**：新增机制（如弹簧、绳索）= 新增一个状态节点，不改已有代码 → 满足"高解耦、易扩展"。
-- 状态切换只通过 `transition_to()`，状态间不直接引用。
+对齐 Celeste `Player.cs`：Celeste 的 `StateMachine` 只是 Player 内部的 `int State` + 回调表，
+**不是独立节点树**。原先的 `states/*.gd` 子节点方案会让多个节点在同一帧各写一次 `velocity`，
+并读到上一帧的 `is_on_floor()`，Super/Hyper/Ultra 因此永远无法稳定触发。故已删除
+`scripts/player/states/`，改为 Player 内 `enum Mode { NORMAL, DASH, CLIMB }`：
+
+- `_normal_update` / `_dash_update` / `_climb_update` 一一对应参考的 `NormalUpdate` / `DashUpdate` / `ClimbUpdate`。
+- 固定帧序（`_physics_process`）：采样输入 → 计时器 → 状态更新 → **一次** `move_and_slide()` → `_resolve_collisions()`。
+- 碰撞派生结论（落地、角落修正、Dash Slide）只在 `_resolve_collisions()` 里基于**本帧**碰撞事实做，不读上一帧状态。
+- 扩展新机制 = 加一个 `Mode` 分支 + 一个 `_xxx_update`，不影响既有分支。
 
 ### 4.2 手感系统（全部 @export 参数化 + CSV 集中配置）
 
@@ -85,24 +86,32 @@ Player (CharacterBody2D, player.gd)
 - 可用 **Excel / 任何表格软件** 打开编辑（标准 CSV 逗号分隔，UTF-8）。
 - 运行时由 `ConfigLoader` autoload 读取并覆盖到 Player。
 - 游戏中按 **F5** 即可重新加载 CSV 并应用，无需重启 Godot。
+- **数值基准**：Celeste 用 8px 砖，本项目用 15px 格，所以所有像素类参数 = **Celeste 原值 × 1.875**，
+  时间类参数（`*_time`、`dash_duration` 等）与倍率类参数（`*_mult`）原样照搬。
+  按住跳实测跳高 **53.5px ≈ 3.6 格**，与 Celeste 的 3.4 砖手感一致。
 
 CSV 列：`category, name, value, type, description`。当前包含：
 
 | 分类 | 参数 | 说明 |
 |---|---|---|
-| Movement | `max_speed` / `acceleration` / `deceleration` | 地面移动（加速度模型） |
-| Movement | `air_accel_mult` / `over_speed_decel` | 空中操控与超速保速（兔子跳） |
-| Jump | `jump_force` / `jump_cut_mult` / `jump_speed_boost` | 起跳、可变跳高、水平加成 |
-| Gravity | `gravity` / `fall_gravity_mult` / `apex_gravity_mult` / `apex_threshold` / `max_fall_speed` | 重力三分段 |
-| Feel | `coyote_time` / `jump_buffer_time` / `corner_correction_px` | 土狼、缓存、角落修正 |
-
-后续 Dash/Grab/Carryable 参数也将追加到同一张 CSV。
+| Movement | `max_speed` / `acceleration` / `over_speed_decel` / `air_accel_mult` | 对应 MaxRun / RunAccel / RunReduce / AirMult |
+| Movement | `duck_friction` | Dash Slide 后下蹲滑行的地面摩擦 |
+| Jump | `jump_speed` / `jump_speed_boost` / `var_jump_time` / `coyote_time` / `jump_buffer_time` / `ceiling_var_jump_grace` | 起跳、水平加成、可变跳高、土狼、缓存 |
+| Gravity | `gravity` / `max_fall_speed` / `half_gravity_threshold` | 顶点半重力（按住跳时） |
+| Dash | `dash_speed` / `dash_end_speed` / `end_dash_up_mult` / `dash_duration` / `dash_cooldown` / `dash_attack_time` / `dash_buffer_time` | 冲刺本体 |
+| Dash | `super_jump_speed` / `dodge_slide_speed_mult` / `duck_super_jump_x_mult` / `duck_super_jump_y_mult` | Super / Hyper / Ultra |
+| Dash | `super_wall_jump_speed` / `super_wall_jump_horizontal` | 上冲刺撞墙的 SuperWallJump |
+| Climb | `max_stamina` / `climb_*_speed` / `climb_acceleration` / `climb_*_stamina_cost` / `wall_check_distance` / `wall_jump_speed` / `climb_hop_x` / `climb_hop_y` | 墙抓攀爬与墙跳 |
+| Feel | `corner_correction_px` / `dash_corner_correction_px` | 上升撞顶修正 / 空中 Dash 撞地角修正 |
+| Carry | `throw_speed` / `throw_lift` | 抛物 |
 
 手感机制实现要点：
 - **土狼时间**：离开平台边缘后计时器内仍允许起跳。
-- **输入缓存**：落地前按下跳跃，落地瞬间自动起跳。
-- **角落修正**：直接参考 Celeste 官方开源 `Player.cs`（见 `documents/CelestePlayerReference.txt`）。撞头后记录移动前的 `vy`，然后探测 **(±i, -1)** 偏移是否为空；若空则移动过去。关键的 `-1` 像素确保角色不会被吸进天花板内部。
+- **输入缓存**：跳跃/冲刺输入在 `_physics_process` 里采样（`is_action_just_pressed`），一帧一次判定，落地瞬间自动起跳。
+- **可变跳高**：照搬参考的 `varJumpTimer` —— 按住跳时 `velocity.y = min(velocity.y, varJumpSpeed)` 维持 `var_jump_time`，松手立即清零。这是跳高的主要来源，不是 `jump_cut_mult`。
+- **角落修正**：参考 `Player.cs` 的 `OnCollideV`。上升撞顶时用**移动前**的 `vy` 判定，逐像素探测 **(±i, -1)** 是否为空并整体平移；修正失败才按 `ceiling_var_jump_grace` 掐掉可变跳。另有 `DashCornerCorrection`：空中起手的 Dash 撞地角时横移让位（`dash_started_on_ground` 为 false 才生效）。
 - **无落地硬直**：落地不打断输入，保证响应度。
+
 
 ### 4.3 冲刺（Dash）
 
@@ -130,30 +139,47 @@ CSV 列：`category, name, value, type, description`。当前包含：
 - **水母型（浮物）**：持有时玩家 `max_fall_speed` 降低（缓降）；抛出后先上升短程再缓落；上升途中可再次抓取，玩家随其获得升力 → 抛接进阶技巧的基础
 - 参数同样 `@export` 化：`throw_force` / `jelly_rise_speed` / `jelly_rise_time` / `jelly_float_fall_speed` / `regrab_cooldown`
 
-### 4.6 高级技巧复现（Super / Hyper / Ultra / CB / 咖啡跳 / 兔子跳）
+### 4.6 高级技巧复现（Super / Hyper / Ultra / SuperWallJump / 兔子跳）
 
-> 参考：[celeste.ink Tech wiki](https://celeste.ink/wiki/Tech)、[蔚蓝中文资料库·技巧](https://celestecn.miraheze.org/wiki/%E6%8A%80%E5%B7%A7)。
-> 这些技巧**不是独立动作**，而是从核心物理规则中**涌现**的组合技。本节只定义机制与实现约束，**暂不实现**，作为 M1–M2 物理规则的验收标准。
+> 参考：`documents/CelestePlayerReference.txt` 的 `DashCoroutine`(3548) / `DashUpdate`(3474) / `SuperJump`(1695) / `OnCollideV`(2504)。
+> **已实现**。这些技巧不是独立动作，而是从 `Dash Slide + SuperJump + Ducking` 三条规则里**涌现**出来的。
 
-| 技巧 | 操作 | 底层机制 |
-|---|---|---|
-| **Super（超级跳）** | 地面水平冲刺中按跳 | 冲刺速度保留进跳跃（不被 `max_speed` 覆盖）→ 远距平跳 |
-| **Hyper（冲刺跳）** | 下蹲 + 斜下冲刺触地即跳 | 低空长距跳（Celeste 参考值 325 px/s）；斜下冲刺 + 起跳速度保留 |
-| **Ultra（超级冲刺）** | 高速（>170 px/s）状态下斜下冲刺 | 触地时水平速度 ×1.2；冲刺须在落地**前**结束，否则丢失；落地后短暂窗口内起跳保留倍率；平地可无限链式（Celeste 中最快的平地移动，~390 px/s） |
-| **CB（Cornerboost）** | 带冲刺动量在墙顶边缘做爬墙跳 | 爬墙跳**取消冲刺但保留冲刺速度**，翻过墙顶时返还；与墙碰撞**前**起跳额外 +40（good CB） |
-| **咖啡跳（Cornerkick）** | 头顶蹭到墙角**下沿**瞬间按跳 | 角落修正把碰撞箱滑到墙侧 → 判定为贴墙 → 允许一次墙跳；起跳帧不按方向 = 中性咖啡跳（水平位移小）。建议支持**双跳跃键**（两次跳间隔极短） |
-| **兔子跳（Bunnyhop）** | 落地瞬间起跳、连续跳 | 每次起跳 +40 水平速度；落地即刻起跳不吃地面摩擦 → 保住 super/hyper 动量连续跳 |
+关键发现：Hyper 与 Ultra 在参考里**是同一段代码**。区别只在 Dash 起手位置：
 
-**实现约束（M1–M2 物理规则必须遵守）**：
+1. **Dash Slide**（`DashCoroutine` 尾部 + `OnCollideV`）：`dash_dir.x != 0 && dash_dir.y > 0` 且触地时 →
+   `dash_dir` 转为纯水平、`velocity.y = 0`、`velocity.x *= 1.2`、`is_ducking = true`。
+2. **SuperJump**（`DashUpdate` 里 `dash_dir.y == 0 && 土狼 > 0` 时按跳）：
+   `velocity = (super_jump_speed * facing, -jump_speed)`；若 `is_ducking` 则再乘 `(1.25, 0.5)`。
 
-1. **冲刺→跳跃速度保留**：冲刺结束或被跳跃取消时，水平速度不回落到 `max_speed`，进 Air 后按空中惯性自然衰减（Super/Hyper/兔子跳的根源）
-2. **斜下冲刺落地倍率**：`ultra_speed_mult`（参考 1.2）、`ultra_min_speed`（参考 170）@export 化（Ultra）
-3. **角落修正双向生效**：撞头上挤（§4.2 已有）+ 蹭角后短窗口内允许墙跳，窗口 `corner_kick_window` @export（咖啡跳）；墙跳判定基于**贴墙检测**（is_on_wall / 射线），不要求必须处于 Grab 状态
-4. **爬墙跳取消冲刺但保速**：墙跳执行时若处于冲刺或冲刺刚结束，保留冲刺速度；碰撞前起跳奖励 `cb_bonus_speed`（参考 +40）（CB）
-5. **起跳速度加成**：`jump_speed_boost`（参考 +40）+ 落地摩擦宽限（落地 N 帧内起跳不应用地面减速）（兔子跳）
-6. **土狼时间 / 输入缓存**（§4.2）独立可调 —— 是 extended hyper 等变体的土壤
+| 技巧 | 操作 | 底层机制 | 实测速度（15px 网格） |
+|---|---|---|---|
+| **Super（超级跳）** | 地面水平 Dash 未结束时按 J | 非 Ducking 的 SuperJump | `(487.5, -196.9)` |
+| **Hyper（冲刺跳）** | 地面斜下 Dash（起手即 Dash Slide）立刻按 J | Ducking 的 SuperJump | `(609.4, -98.4)` 低跳远距 |
+| **Ultra（超级冲刺）** | 空中斜下 Dash 撞地（Dash Slide）后按 J | 与 Hyper 同路径，仅 `dash_started_on_ground == false` | `(609.4, -98.4)`，触地滑行段 `381.8` |
+| **SuperWallJump** | 纯上 Dash 期间贴墙按 J | `DashUpdate` 的 `dash_dir == UP` 分支 | `(±318.75, -300)` |
+| **咖啡跳（Cornerkick）** | 蹭墙角上沿瞬间按 J | 上升角落修正把碰撞箱挪到墙侧 → `get_wall_direction()` 命中 → 普通墙跳 | `(±243.75, -196.9)` |
+| **兔子跳（Bunnyhop）** | 落地瞬间连续跳 | `_try_jump()` 排在水平摩擦**之后**，起跳写入的速度不会被地面摩擦吃掉；再 +`jump_speed_boost` | 保住上一次的 Super/Hyper 动量 |
 
-> 注：325、1.2、+40、170 为 Celeste 参考值；我们的绝对数值按自己的手感定，但**机制对应关系**保持一致。
+**实现约束（必须遵守，回归测试逐条守着）**：
+
+1. **Dash 期间速度只在起手写一次**（参考 `DashCoroutine`），`_dash_update()` 绝不每帧重写 `velocity`，否则 Dash Slide 的 ×1.2 会被立刻覆盖。
+2. **`_finish_dash()` 只在 `dash_dir.y <= 0` 时改写速度**（参考同处判断）。斜下 Dash 触地后 `dash_dir.y` 已被 Dash Slide 置 0，所以水平速度**不会**被清零。
+3. **跳跃判定排在水平移动与重力之后**（参考 `NormalUpdate` 帧序），不需要额外的"落地摩擦宽限"补丁。
+4. **落地/角落这类结论只能来自本帧 `move_and_slide()` 之后**，禁止跨帧读 `is_on_floor()`。
+5. **Hyper / Ultra 的输入窗口就是 `dash_duration`（0.15s）本身**，不额外开 `ultra_window`；`jump_buffer_time` 负责容错。
+6. **参数按 §4.2 的 ×1.875 基准**，倍率类参数原样照搬 Celeste，不要自己拍数。
+
+**自动化验收**：`scripts/debug/player_regression.gd`（真实物理回归，25 条断言）
+
+```
+godot --headless --path . --script res://scripts/debug/player_regression.gd
+```
+
+它会在 headless 场景里搭地板/墙/带缺口的天花板，实例化 `player.tscn`，
+用 `Input.action_press` 逐物理帧驱动，覆盖：Super / Hyper / Ultra 的精确速度、
+斜下 Dash 触地不清零水平速度、Dash 自然结束保速、按住跳 vs 点按跳高、
+上升角落修正穿缝、爬墙跳扣体力。
+
 
 ---
 
@@ -190,7 +216,7 @@ CSV 列：`category, name, value, type, description`。当前包含：
 ## 8. 代码规范
 
 - 全部使用**静态类型标注**（`var x: float` / `func f() -> void`）。
-- 可复用类声明 `class_name`（`StateMachine`、`State`）；单场景脚本不加。
+- 可复用类声明 `class_name`（`Player`、`CarryItem`、`ConfigLoader`）；单场景脚本不加。
 - 命名：类 PascalCase，变量/函数 snake_case，常量 CONSTANT_CASE，信号 snake_case 过去式（`player_died`）。
 - 通信方向：父调子用直接引用，子报父用信号；跨场景用 `Game` 的信号。
 - 手感参数注释用中文注明调参方向（例：`# 调大 → 跳得更高`）。
@@ -209,8 +235,8 @@ CSV 列：`category, name, value, type, description`。当前包含：
 
 | 里程碑 | 内容 | 验收 |
 |---|---|---|
-| **M1 角色核心** | StateMachine + Idle/Run/Air + 土狼/缓存/角落修正/可变跳高 + 灰盒测试场景 | 测试场景内跑跳手感可调 |
-| **M2 动作扩展** | Dash（8向+冻结帧）+ 墙抓/爬/墙跳 + 物品抓取抛接（Theo/水母） | 四动作+抛接连贯组合；物理规则满足 §4.6 技巧涌现条件 |
+| **M1 角色核心** | Player Mode 状态机 + 土狼/缓存/角落修正/可变跳高 + 灰盒测试场景 | ✅ 测试场景内跑跳手感可调；headless 回归覆盖跳高与角落修正 |
+| **M2 动作扩展** | Dash（8向）+ 墙抓/爬/墙跳 + 物品抓取抛接（Theo/水母）+ §4.6 高级技巧 | ✅ Super/Hyper/Ultra/SuperWallJump 已实现且回归 25/25 通过；抛接待手动试玩 |
 | **M3 首个关卡** | 起承转合四段式关卡 + 尖刺/检查点/即时复活 + 相机 | 完整通关流程 |
 | **M4 作品集功能** | 参数仪表盘、死亡记录、辅助模式 | 可出截图与数据 |
 | **M5+** | 各关环境机制、更多关卡、美术 | — |

@@ -1,46 +1,47 @@
 category,name,value,type,description
-Movement,max_speed,90.0,float,px/s；Celeste MaxRun；15px 网格为每秒 6 格
-Movement,acceleration,1000.0,float,px/s²；Celeste RunAccel
-Movement,deceleration,400.0,float,px/s²；Celeste RunReduce
-Movement,air_accel_mult,0.65,float,Celeste AirMult
-Movement,over_speed_decel,400.0,float,px/s²；超速同向保速衰减
-Jump,jump_speed,105.0,float,px/s 向上；Celeste JumpSpeed=-105；不再使用旧 450
-Jump,jump_speed_boost,40.0,float,px/s；Celeste JumpHBoost
-Jump,var_jump_time,0.20,float,秒；Celeste VarJumpTime
+Movement,max_speed,168.75,float,px/s；Celeste MaxRun 90 ×1.875；15px 网格约每秒 11 格
+Movement,acceleration,1875.0,float,px/s²；Celeste RunAccel 1000 ×1.875
+Movement,over_speed_decel,750.0,float,px/s²；Celeste RunReduce 400 ×1.875；超速同向时的衰减
+Movement,air_accel_mult,0.65,float,Celeste AirMult；无单位
+Movement,duck_friction,937.5,float,px/s²；Celeste DuckFriction 500 ×1.875
+Jump,jump_speed,196.875,float,px/s 向上；Celeste JumpSpeed 105 ×1.875
+Jump,jump_speed_boost,75.0,float,px/s；Celeste JumpHBoost 40 ×1.875
+Jump,var_jump_time,0.20,float,秒；Celeste VarJumpTime；决定跳跃高度上限
 Jump,coyote_time,0.10,float,秒；Celeste JumpGraceTime
-Jump,jump_buffer_time,0.12,float,秒；输入缓存
-Gravity,gravity,900.0,float,px/s²；Celeste Gravity
-Gravity,max_fall_speed,160.0,float,px/s；Celeste MaxFall
-Gravity,half_gravity_threshold,40.0,float,px/s；按住 J 时半重力阈值
+Jump,jump_buffer_time,0.12,float,秒；跳跃输入缓存
+Jump,ceiling_var_jump_grace,0.05,float,秒；Celeste CeilingVarJumpGrace
+Gravity,gravity,1687.5,float,px/s²；Celeste Gravity 900 ×1.875
+Gravity,max_fall_speed,300.0,float,px/s；Celeste MaxFall 160 ×1.875
+Gravity,half_gravity_threshold,75.0,float,px/s；Celeste HalfGravThreshold 40 ×1.875
 Dash,max_dashes,1,int,落地恢复
-Dash,dash_speed,240.0,float,px/s；Celeste DashSpeed
-Dash,dash_end_speed,160.0,float,px/s；Celeste EndDashSpeed；仅非下向 Dash 结束写入
-Dash,dash_duration,0.15,float,秒；Celeste DashTime
+Dash,dash_speed,450.0,float,px/s；Celeste DashSpeed 240 ×1.875
+Dash,dash_end_speed,300.0,float,px/s；Celeste EndDashSpeed 160 ×1.875；仅 dash_dir.y<=0 时写入
+Dash,end_dash_up_mult,0.75,float,Celeste EndDashUpMult；无单位
+Dash,dash_duration,0.15,float,秒；Celeste DashTime；也是 Super/Hyper/Ultra 的输入窗口
 Dash,dash_cooldown,0.20,float,秒；Celeste DashCooldown
 Dash,dash_attack_time,0.30,float,秒；Celeste DashAttackTime
 Dash,dash_buffer_time,0.12,float,秒；K 输入缓存
-Dash,super_jump_speed,260.0,float,px/s；Celeste SuperJumpH
-Dash,hyper_speed_mult,1.20,float,斜下 Dash 首次落地同帧 J 水平倍率
-Dash,ultra_speed_mult,1.20,float,斜下 Dash 首次落地后窗口 J 水平倍率
-Dash,ultra_window_time,0.10,float,秒；Ultra 窗口
-Dash,super_wall_jump_speed,160.0,float,px/s 向上；Celeste SuperWallJumpSpeed=-160
-Dash,super_wall_jump_horizontal,170.0,float,px/s；Celeste MaxRun + JumpHBoost*2
-Climb,max_stamina,110.0,float,Celeste ClimbMaxStamina
-Climb,climb_grab_y_mult,0.2,float,抓墙纵速保留
-Climb,climb_no_move_time,0.1,float,秒
-Climb,climb_up_speed,45.0,float,px/s；Celeste ClimbUpSpeed
-Climb,climb_down_speed,80.0,float,px/s；Celeste ClimbDownSpeed
-Climb,climb_slip_speed,30.0,float,px/s；Celeste ClimbSlipSpeed
-Climb,climb_acceleration,900.0,float,px/s²；Celeste ClimbAccel
-Climb,climb_up_stamina_cost,45.45,float,每秒；100/2.2
-Climb,climb_still_stamina_cost,10.0,float,每秒；100/10
-Climb,climb_jump_stamina_cost,27.5,float,每次；110/4
-Climb,wall_check_distance,3.0,float,px；Celeste WallJumpCheckDist
-Climb,wall_jump_speed,130.0,float,px/s；Celeste MaxRun + JumpHBoost
-Climb,climb_hop_x,100.0,float,px/s；Celeste ClimbHopX
-Climb,climb_hop_y,120.0,float,px/s 向上；Celeste ClimbHopY
-Feel,corner_correction_px,4.0,float,px；Celeste UpwardCornerCorrection
-Feel,corner_kick_window,0.08,float,秒；真实 dash attack 撞墙上升角资格
-Feel,bunnyhop_grace_time,0.06,float,秒；落地缓存跳免地面摩擦
+Dash,super_jump_speed,487.5,float,px/s；Celeste SuperJumpH 260 ×1.875
+Dash,dodge_slide_speed_mult,1.2,float,Celeste DodgeSlideSpeedMult；斜下 Dash 触地提速
+Dash,duck_super_jump_x_mult,1.25,float,Celeste DuckSuperJumpXMult；Hyper/Ultra 水平倍率
+Dash,duck_super_jump_y_mult,0.5,float,Celeste DuckSuperJumpYMult；Hyper/Ultra 纵向倍率
+Dash,super_wall_jump_speed,300.0,float,px/s 向上；Celeste SuperWallJumpSpeed 160 ×1.875
+Dash,super_wall_jump_horizontal,318.75,float,px/s；Celeste MaxRun+JumpHBoost*2 = 170 ×1.875
+Climb,max_stamina,110.0,float,Celeste ClimbMaxStamina；无单位
+Climb,climb_grab_y_mult,0.2,float,Celeste ClimbGrabYMult；抓墙纵速保留
+Climb,climb_no_move_time,0.1,float,秒；Celeste ClimbNoMoveTime
+Climb,climb_up_speed,84.375,float,px/s；Celeste ClimbUpSpeed 45 ×1.875
+Climb,climb_down_speed,150.0,float,px/s；Celeste ClimbDownSpeed 80 ×1.875
+Climb,climb_slip_speed,56.25,float,px/s；Celeste ClimbSlipSpeed 30 ×1.875
+Climb,climb_acceleration,1687.5,float,px/s²；Celeste ClimbAccel 900 ×1.875
+Climb,climb_up_stamina_cost,45.45,float,每秒；Celeste ClimbUpCost 100/2.2
+Climb,climb_still_stamina_cost,10.0,float,每秒；Celeste ClimbStillCost 100/10
+Climb,climb_jump_stamina_cost,27.5,float,每次；Celeste ClimbJumpCost 110/4
+Climb,wall_check_distance,5.625,float,px；Celeste WallJumpCheckDist 3 ×1.875
+Climb,wall_jump_speed,243.75,float,px/s；Celeste MaxRun+JumpHBoost = 130 ×1.875
+Climb,climb_hop_x,187.5,float,px/s；Celeste ClimbHopX 100 ×1.875
+Climb,climb_hop_y,225.0,float,px/s 向上；Celeste ClimbHopY 120 ×1.875
+Feel,corner_correction_px,7.5,float,px；Celeste UpwardCornerCorrection 4 ×1.875
+Feel,dash_corner_correction_px,7.5,float,px；Celeste DashCornerCorrection 4 ×1.875
 Carry,throw_speed,300.0,float,px/s
 Carry,throw_lift,220.0,float,px/s 向上

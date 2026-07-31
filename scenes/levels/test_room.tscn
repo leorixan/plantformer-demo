@@ -74,13 +74,23 @@ shape = SubResource("Platform6x1")
 polygon = PackedVector2Array(-45, -7.5, 45, -7.5, 45, 7.5, -45, 7.5)
 color = Color(0.44, 0.45, 0.67, 1)
 
-[node name="CornerCeiling" type="StaticBody2D" parent="."]
-position = Vector2(705, 225)
+[node name="CornerCeilingLeft" type="StaticBody2D" parent="."]
+position = Vector2(690, 262.5)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="CornerCeiling"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CornerCeilingLeft"]
 shape = SubResource("Platform6x1")
 
-[node name="Visual" type="Polygon2D" parent="CornerCeiling"]
+[node name="Visual" type="Polygon2D" parent="CornerCeilingLeft"]
+polygon = PackedVector2Array(-45, -7.5, 45, -7.5, 45, 7.5, -45, 7.5)
+color = Color(0.53, 0.53, 0.63, 1)
+
+[node name="CornerCeilingRight" type="StaticBody2D" parent="."]
+position = Vector2(795, 262.5)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CornerCeilingRight"]
+shape = SubResource("Platform6x1")
+
+[node name="Visual" type="Polygon2D" parent="CornerCeilingRight"]
 polygon = PackedVector2Array(-45, -7.5, 45, -7.5, 45, 7.5, -45, 7.5)
 color = Color(0.53, 0.53, 0.63, 1)
 
@@ -108,17 +118,9 @@ color = Color(0.31, 0.53, 0.74, 1)
 
 [node name="HintLabel" type="Label" parent="."]
 position = Vector2(15, 15)
-text = "15px 网格测试房 | A/D 移动 | J 跳跃 | K 八向冲刺 | Shift 抓墙 / 拾取 / 抛出 | F5 重载参数\n横向 K + J = Super；斜下 K 首次落地 + J = Hyper；斜下 K 落地后短按 J = Ultra。"
-
-[node name="TechniqueFloor" type="StaticBody2D" parent="."]
-position = Vector2(720, 300)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="TechniqueFloor"]
-shape = SubResource("Platform6x1")
-
-[node name="Visual" type="Polygon2D" parent="TechniqueFloor"]
-polygon = PackedVector2Array(-45, -7.5, 45, -7.5, 45, 7.5, -45, 7.5)
-color = Color(0.8, 0.48, 0.2, 1)
+text = "15px 网格测试房 | A/D 移动 | J 跳跃 | K 八向冲刺 | Shift 抓墙 / 拾取 / 抛出 | F5 重载参数
+Super：地面横向 K，Dash 未结束时按 J。Hyper：地面斜下 K 立刻按 J。Ultra：空中斜下 K 撞地后按 J。
+x=735~750 是 1 格天花板缝，起跳略偏也能被角落修正塞进去。"
 
 [node name="Theo" parent="." instance=ExtResource("2_theo")]
 position = Vector2(120, 285)
