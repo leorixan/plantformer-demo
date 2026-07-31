@@ -101,7 +101,7 @@ CSV 列：`category, name, value, type, description`。当前包含：
 | Dash | `dash_speed` / `dash_end_speed` / `end_dash_up_mult` / `dash_duration` / `dash_cooldown` / `dash_attack_time` / `dash_buffer_time` | 冲刺本体 |
 | Dash | `super_jump_speed` / `dodge_slide_speed_mult` / `duck_super_jump_x_mult` / `duck_super_jump_y_mult` | Super / Hyper / Ultra |
 | Dash | `super_wall_jump_speed` / `super_wall_jump_horizontal` | 上冲刺撞墙的 SuperWallJump |
-| Climb | `max_stamina` / `climb_*_speed` / `climb_acceleration` / `climb_*_stamina_cost` / `wall_check_distance` / `wall_jump_speed` / `climb_hop_x` / `climb_hop_y` | 墙抓攀爬与墙跳 |
+| Climb | `max_stamina` / `climb_*_speed` / `climb_acceleration` / `climb_*_stamina_cost` / `climb_check_distance` / `slip_check_depth` / `wall_check_distance` / `wall_jump_speed` / `climb_hop_x` / `climb_hop_y` | 墙抓攀爬与墙跳 |
 | Feel | `corner_correction_px` / `dash_corner_correction_px` | 上升撞顶修正 / 空中 Dash 撞地角修正 |
 | Carry | `throw_speed` / `throw_lift` | 抛物 |
 
@@ -122,8 +122,18 @@ CSV 列：`category, name, value, type, description`。当前包含：
 
 ### 4.4 抓（Grab）：墙抓攀爬
 
-按 Celeste 式**墙抓/攀爬/墙跳**设计（已确认）：按住 grab 贴墙 → Grab 状态（可上下爬、消耗体力可选）→ 跳跃键触发墙跳弹出。
+按 Celeste 式**墙抓/攀爬/墙跳**设计（已确认）：按住 grab 贴墙 → Climb 模式 → 跳跃键弹出。
 **持有物品期间禁用墙抓**（手被占用）——抛出物品后才能抓墙，这是"抛接"技巧循环的核心。
+
+对齐参考 `ClimbBegin` / `ClimbUpdate`（3056 / 3102）的三条硬约束：
+
+1. **抓住不下滑**：`ClimbUpdate` 的 `target` 默认 **0**，只有 `SlipCheck()` 命中（面墙一侧头顶探针为空 = 手已高过墙沿）才改成 `climb_slip_speed`。
+   另有 Up Limit（头顶顶住则停住）与 Down Limit（非主动下爬且脚边墙面到头则 `velocity.y = 0`），所以贴着墙面绝不会缓慢滑落。
+2. **贴墙无空隙**：抓墙检测距离用 `climb_check_distance`（ClimbCheckDist 2 ×1.875 = 3.75px）且**只看面朝一侧**；
+   墙跳检测另用 `wall_check_distance`（WallJumpCheckDist 3 ×1.875 = 5.625px）。抓墙瞬间照搬 `ClimbBegin` 末尾的逐像素吸附把身体推到贴住墙面；
+   攀爬中的"是否还有墙可抓"用 **1px** 邻接判定（参考 `CollideCheck<Solid>(Position + UnitX * Facing)`）。
+3. **爬墙跳 ≠ 墙跳**：参考 `moveX == -Facing ? WallJump(-Facing) : ClimbJump()`。
+   拉离墙方向 = 墙跳（水平弹开 `wall_jump_speed`，不扣体力）；无方向或按向墙 = `ClimbJump`（垂直起跳，扣 `climb_jump_stamina_cost`）。
 
 ### 4.5 抓取物品与抛接（Carryable）
 
@@ -155,6 +165,7 @@ CSV 列：`category, name, value, type, description`。当前包含：
 |---|---|---|---|
 | **Super（超级跳）** | 地面水平 Dash 未结束时按 J | 非 Ducking 的 SuperJump | `(487.5, -196.9)` |
 | **Hyper（冲刺跳）** | 地面斜下 Dash（起手即 Dash Slide）立刻按 J | Ducking 的 SuperJump | `(609.4, -98.4)` 低跳远距 |
+| **反向 Hyper / 反向 Super** | Dash 途中回拉反方向再按 J | 参考 `Update` 的 Facing 段除 Climb 外**所有状态**（含 Dash）都跟随 `moveX`，`SuperJump` 用 `facing` 定方向 | `(-609.4, -98.4)` |
 | **Ultra（超级冲刺）** | 空中斜下 Dash 撞地（Dash Slide）后按 J | 与 Hyper 同路径，仅 `dash_started_on_ground == false` | `(609.4, -98.4)`，触地滑行段 `381.8` |
 | **SuperWallJump** | 纯上 Dash 期间贴墙按 J | `DashUpdate` 的 `dash_dir == UP` 分支 | `(±318.75, -300)` |
 | **咖啡跳（Cornerkick）** | 蹭墙角上沿瞬间按 J | 上升角落修正把碰撞箱挪到墙侧 → `get_wall_direction()` 命中 → 普通墙跳 | `(±243.75, -196.9)` |
@@ -168,17 +179,18 @@ CSV 列：`category, name, value, type, description`。当前包含：
 4. **落地/角落这类结论只能来自本帧 `move_and_slide()` 之后**，禁止跨帧读 `is_on_floor()`。
 5. **Hyper / Ultra 的输入窗口就是 `dash_duration`（0.15s）本身**，不额外开 `ultra_window`；`jump_buffer_time` 负责容错。
 6. **参数按 §4.2 的 ×1.875 基准**，倍率类参数原样照搬 Celeste，不要自己拍数。
+7. **Facing 在 Dash 期间必须继续跟随 `moveX`**（只有 Climb 例外），否则反向 Super / 反向 Hyper 永远做不出来。
 
-**自动化验收**：`scripts/debug/player_regression.gd`（真实物理回归，25 条断言）
+**自动化验收**：`scripts/debug/player_regression.gd`（真实物理回归，34 条断言）
 
 ```
 godot --headless --path . --script res://scripts/debug/player_regression.gd
 ```
 
 它会在 headless 场景里搭地板/墙/带缺口的天花板，实例化 `player.tscn`，
-用 `Input.action_press` 逐物理帧驱动，覆盖：Super / Hyper / Ultra 的精确速度、
+用 `Input.action_press` 逐物理帧驱动，覆盖：Super / Hyper / Ultra / 反向 Hyper 的精确速度、
 斜下 Dash 触地不清零水平速度、Dash 自然结束保速、按住跳 vs 点按跳高、
-上升角落修正穿缝、爬墙跳扣体力。
+上升角落修正穿缝、抓墙贴合无空隙、抓墙静止不下滑、爬墙跳扣体力、墙跳弹开不扣体力。
 
 
 ---
@@ -236,7 +248,7 @@ godot --headless --path . --script res://scripts/debug/player_regression.gd
 | 里程碑 | 内容 | 验收 |
 |---|---|---|
 | **M1 角色核心** | Player Mode 状态机 + 土狼/缓存/角落修正/可变跳高 + 灰盒测试场景 | ✅ 测试场景内跑跳手感可调；headless 回归覆盖跳高与角落修正 |
-| **M2 动作扩展** | Dash（8向）+ 墙抓/爬/墙跳 + 物品抓取抛接（Theo/水母）+ §4.6 高级技巧 | ✅ Super/Hyper/Ultra/SuperWallJump 已实现且回归 25/25 通过；抛接待手动试玩 |
+| **M2 动作扩展** | Dash（8向）+ 墙抓/爬/墙跳 + 物品抓取抛接（Theo/水母）+ §4.6 高级技巧 | ✅ Super/Hyper/Ultra/反向 Hyper/SuperWallJump 已实现且回归 34/34 通过；抛接待手动试玩 |
 | **M3 首个关卡** | 起承转合四段式关卡 + 尖刺/检查点/即时复活 + 相机 | 完整通关流程 |
 | **M4 作品集功能** | 参数仪表盘、死亡记录、辅助模式 | 可出截图与数据 |
 | **M5+** | 各关环境机制、更多关卡、美术 | — |

@@ -24,14 +24,19 @@
 - [x] 爬墙跳 / 翻墙 hop 扣 `climb_jump_stamina_cost`，死参数清零
 - [x] 删除空壳 `scripts/player/states/`，TDD §4.1 改为记录 Player 内 Mode 状态机（与 Celeste 的 `int State` 一致）
 - [x] 假回归测试重写为真实 headless 物理回归：25 条断言全部通过，且经"故意改坏 → 断言变红"自检
+- [x] 抓墙不再自动下滑：`ClimbUpdate` 的 `target` 默认 0，只有 `SlipCheck()`（手高过墙沿）才 slip，另补 Up Limit / Down Limit
+- [x] 抓墙贴合无空隙：拆分 `climb_check_distance`(3.75) 与 `wall_check_distance`(5.625)，抓墙瞬间照 `ClimbBegin` 逐像素吸附，攀爬中用 1px 邻接判定
+- [x] 爬墙跳与墙跳分离：拉离墙 = `WallJump`（水平弹开、不扣体力），无方向 = `ClimbJump`（垂直、扣体力）
+- [x] 反向 Hyper / 反向 Super：Facing 在 Dash 期间继续跟随 `moveX`（只有 Climb 例外）
+- [x] 回归扩到 34 条断言，新增反向 Hyper、抓墙贴合、抓墙不下滑、爬墙跳 / 墙跳分离；两次故意改坏均被断言抓住
 
 ---
 
 ## 当前待办（按优先级）
 
 - [x] 高级技巧审计修复：旧状态分散实现已被单一 Player 模拟替换；Super/Hyper/Ultra/Dash 保速用 headless 回归覆盖
-- [ ] **手动试玩验证**：测试房确认 Super（地面横 K + J）、Hyper（地面斜下 K + J）、Ultra（空中斜下 K 撞地 + J）的窗口手感，窗口 = `dash_duration` 0.15s
-- [ ] **手动试玩验证**：Shift 抓墙、上下攀爬、体力耗尽、墙跳、墙顶 hop
+- [ ] **手动试玩验证**：测试房确认 Super（地面横 K + J）、Hyper（地面斜下 K + J）、Ultra（空中斜下 K 撞地 + J）、反向 Hyper（Dash 中回拉 + J）的窗口手感，窗口 = `dash_duration` 0.15s
+- [ ] **手动试玩验证**：Shift 抓墙贴合无缝、静止不下滑、上下攀爬、体力耗尽、爬墙跳 vs 墙跳、墙顶 hop
 - [ ] **试玩验证**：Theo 与 Jellyfish 拾取、抛出、Jellyfish 先升后浮
 - [ ] **试玩验证**：测试房 x=735~750 的 1 格天花板缝，确认角落修正塞得进去且不吸附
 - [ ] **试玩验证**：跳高 3.6 格是否偏矮；若偏矮只调 `var_jump_time`，不要改 `jump_speed`（会连带影响 Hyper 低跳）

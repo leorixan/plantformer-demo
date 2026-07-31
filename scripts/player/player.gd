@@ -53,7 +53,9 @@ enum Mode { NORMAL, DASH, CLIMB }
 @export var climb_up_stamina_cost := 45.45 # ClimbUpCost 100/2.2
 @export var climb_still_stamina_cost := 10.0 # ClimbStillCost 100/10
 @export var climb_jump_stamina_cost := 27.5 # ClimbJumpCost 110/4
+@export var climb_check_distance := 3.75 # ClimbCheckDist 2；抓墙检测 + 贴墙吸附距离
 @export var wall_check_distance := 5.625 # WallJumpCheckDist 3
+@export var slip_check_depth := 7.5 # SlipCheck 的 4px 探针深度 ×1.875
 @export var wall_jump_speed := 243.75 # MaxRun + JumpHBoost
 @export var climb_hop_x := 187.5 # ClimbHopX 100
 @export var climb_hop_y := 225.0 # ClimbHopY 120
@@ -93,10 +95,13 @@ var _climb_lock := 0.0
 var _floor_last_frame := false
 var _landed_this_move := false
 var _wall_direction := 0
+var _half_width := 6.0
+var _top_offset := -21.0
 var _event_text := ""
 var _event_timer := 0.0
 
 @onready var visuals: Node2D = $Visuals
+@onready var collider: CollisionShape2D = $CollisionShape2D
 @onready var carry_anchor: Marker2D = $CarryAnchor
 @onready var grab_detector: Area2D = $GrabDetector
 @onready var dash_pips: Array[ColorRect] = [$UI/DashPip1, $UI/DashPip2, $UI/DashPip3]
@@ -107,6 +112,10 @@ var carried_item: CarryItem
 func _ready() -> void:
 	var config := get_node_or_null("/root/Config")
 	if config: config.apply_to(self)
+	var rect := collider.shape as RectangleShape2D
+	if rect:
+		_half_width = rect.size.x * 0.5
+		_top_offset = collider.position.y - rect.size.y * 0.5
 	dash_count = max_dashes
 	stamina = max_stamina
 	_floor_last_frame = is_on_floor()
@@ -151,8 +160,10 @@ func _tick_timers(delta: float) -> void:
 	_event_timer = maxf(0.0, _event_timer - delta)
 	if mode == Mode.DASH: dash_timer = maxf(0.0, dash_timer - delta)
 
+# 参考 Update 的 Facing 段：除 Climb 外所有状态（含 Dash）都跟随 moveX，
+# 这是反向 Super / 反向 Hyper 的唯一来源 —— Dash 途中回拉方向即可反向起跳。
 func _update_facing() -> void:
-	if mode == Mode.DASH: return
+	if mode == Mode.CLIMB: return
 	var x := Input.get_axis("move_left", "move_right")
 	if x != 0.0: facing = signf(x)
 	visuals.scale.x = facing
@@ -177,30 +188,73 @@ func _dash_update() -> void:
 	if wall != 0:
 		_wall_jump(-wall, dash_dir.x == 0.0 and dash_dir.y < 0.0)
 
+# 参考 ClimbUpdate：target 默认 0（抓住不动），只有 SlipCheck 命中（手高过墙沿）才下滑。
 func _climb_update(delta: float) -> void:
 	if _try_start_dash(): return
-	var wall := get_wall_direction()
-	if not Input.is_action_pressed("grab") or stamina <= 0.0 or wall == 0:
-		if wall == 0 and velocity.y < 0.0 and Input.is_action_pressed("grab") and stamina > 0.0:
+	var wall := int(facing)
+	if not Input.is_action_pressed("grab") or stamina <= 0.0:
+		mode = Mode.NORMAL
+		_event("Climb end")
+		return
+	if _jump_buffer > 0.0:
+		# 参考 Wall Jump 分支：拉离墙 = 墙跳弹开，其余 = 垂直爬墙跳。
+		if signf(Input.get_axis("move_left", "move_right")) == -float(wall):
+			_wall_jump(-wall, false)
+		else:
+			_climb_jump()
+		return
+	# 参考 No wall to hold：贴墙检测只看 1px；上升中失去墙面视为翻过墙沿。
+	if not test_move(global_transform, Vector2(wall, 0.0)):
+		if velocity.y < 0.0:
 			_climb_hop()
 		else:
 			mode = Mode.NORMAL
 			_event("Climb end")
 		return
-	facing = wall
-	if _jump_buffer > 0.0:
-		_wall_jump(-wall, false)
-		return
-	velocity.x = 0.0
 	var vertical := Input.get_axis("move_up", "move_down")
-	var target := climb_slip_speed
+	var target := 0.0
+	var try_slip := true
 	if _climb_lock <= 0.0:
-		if vertical < 0.0: target = -climb_up_speed
-		elif vertical > 0.0: target = climb_down_speed
+		if vertical < 0.0:
+			target = -climb_up_speed
+			try_slip = false
+			# 参考 Up Limit：头顶顶住就停住；手已过墙沿则直接翻上去。
+			if test_move(global_transform, Vector2.UP):
+				if velocity.y < 0.0: velocity.y = 0.0
+				target = 0.0
+				try_slip = true
+			elif _slip_check():
+				_climb_hop()
+				return
+		elif vertical > 0.0:
+			target = climb_down_speed
+			try_slip = false
+			if is_on_floor():
+				if velocity.y > 0.0: velocity.y = 0.0
+				target = 0.0
+	if try_slip and _slip_check(): target = climb_slip_speed
 	velocity.y = move_toward(velocity.y, target, climb_acceleration * delta)
+	# 参考 Down Limit：不是主动下爬且脚边墙面到头了，立刻停住，不沿墙滑落。
+	if vertical <= 0.0 and velocity.y > 0.0 and not test_move(global_transform, Vector2(wall, 1.0)):
+		velocity.y = 0.0
 	if _climb_lock <= 0.0:
 		if vertical < 0.0: stamina = maxf(0.0, stamina - climb_up_stamina_cost * delta)
 		elif vertical == 0.0: stamina = maxf(0.0, stamina - climb_still_stamina_cost * delta)
+
+# 参考 SlipCheck：探针在面墙一侧的头顶与其下 4px（×1.875）处，两点都空才算手高过墙沿。
+func _slip_check(add_y := 0.0) -> bool:
+	var probe_x := global_position.x + facing * (_half_width + 1.0)
+	var top := global_position.y + _top_offset + add_y
+	return not _point_is_solid(Vector2(probe_x, top + slip_check_depth)) \
+		and not _point_is_solid(Vector2(probe_x, top))
+
+func _point_is_solid(point: Vector2) -> bool:
+	var params := PhysicsPointQueryParameters2D.new()
+	params.position = point
+	params.collision_mask = collision_mask
+	params.collide_with_areas = false
+	params.exclude = [get_rid()]
+	return not get_world_2d().direct_space_state.intersect_point(params, 1).is_empty()
 
 func _apply_horizontal(delta: float) -> void:
 	var grounded := is_on_floor()
@@ -266,12 +320,17 @@ func _wall_jump(direction: int, super_wall: bool) -> void:
 		velocity.y = -jump_speed
 	_var_jump_speed = velocity.y
 	facing = direction
-	if mode == Mode.CLIMB:
-		stamina = maxf(0.0, stamina - climb_jump_stamina_cost)
-		_event("ClimbJump")
-	else:
-		_event("SuperWallJump" if super_wall else "WallJump")
+	visuals.scale.x = facing
+	_event("SuperWallJump" if super_wall else "WallJump")
 	mode = Mode.NORMAL
+
+# 参考 ClimbJump：垂直起跳、不推离墙面，离地时才扣体力。
+func _climb_jump() -> void:
+	mode = Mode.NORMAL
+	if not is_on_floor():
+		stamina = maxf(0.0, stamina - climb_jump_stamina_cost)
+	_jump()
+	_event("ClimbJump")
 
 func _climb_hop() -> void:
 	_consume_jump()
@@ -328,16 +387,26 @@ func _finish_dash() -> void:
 
 func _try_start_climb() -> bool:
 	if not Input.is_action_pressed("grab") or carried_item != null or stamina <= 0.0: return false
-	var wall := get_wall_direction()
+	# 参考 NormalUpdate 的 ClimbCheck：只检测面朝一侧，距离用 ClimbCheckDist。
+	var wall := get_climb_wall_direction()
 	if wall == 0: return false
 	mode = Mode.CLIMB
 	facing = wall
+	visuals.scale.x = facing
 	is_ducking = false
 	velocity.x = 0.0
 	velocity.y *= climb_grab_y_mult
 	_climb_lock = climb_no_move_time
+	_snap_to_wall(wall)
 	_event("Climb")
 	return true
+
+# 参考 ClimbBegin 末尾：逐像素贴向墙面，抓墙后角色与墙之间不留空隙。
+func _snap_to_wall(direction: int) -> void:
+	var step := Vector2(direction, 0.0)
+	for _i in range(int(ceilf(climb_check_distance))):
+		if test_move(global_transform, step): return
+		global_position += step
 
 func _resolve_collisions(pre_move_velocity: Vector2) -> void:
 	var landed := is_on_floor() and not _floor_last_frame
@@ -404,6 +473,12 @@ func get_dash_direction() -> Vector2:
 func get_wall_direction() -> int:
 	if test_move(global_transform, Vector2.LEFT * wall_check_distance): return -1
 	if test_move(global_transform, Vector2.RIGHT * wall_check_distance): return 1
+	return 0
+
+# 抓墙用 ClimbCheckDist（比墙跳的 WallJumpCheckDist 短），且只认面朝方向。
+func get_climb_wall_direction() -> int:
+	var direction := int(facing)
+	if test_move(global_transform, Vector2(direction, 0.0) * climb_check_distance): return direction
 	return 0
 
 func _event(event_name: String) -> void:

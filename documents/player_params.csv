@@ -37,6 +37,8 @@ Climb,climb_acceleration,1687.5,float,px/s²；Celeste ClimbAccel 900 ×1.875
 Climb,climb_up_stamina_cost,45.45,float,每秒；Celeste ClimbUpCost 100/2.2
 Climb,climb_still_stamina_cost,10.0,float,每秒；Celeste ClimbStillCost 100/10
 Climb,climb_jump_stamina_cost,27.5,float,每次；Celeste ClimbJumpCost 110/4
+Climb,climb_check_distance,3.75,float,px；Celeste ClimbCheckDist 2 ×1.875；抓墙检测与贴墙吸附距离
+Climb,slip_check_depth,7.5,float,px；Celeste SlipCheck 的 4px 探针深度 ×1.875
 Climb,wall_check_distance,5.625,float,px；Celeste WallJumpCheckDist 3 ×1.875
 Climb,wall_jump_speed,243.75,float,px/s；Celeste MaxRun+JumpHBoost = 130 ×1.875
 Climb,climb_hop_x,187.5,float,px/s；Celeste ClimbHopX 100 ×1.875
