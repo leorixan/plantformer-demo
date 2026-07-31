@@ -33,6 +33,42 @@ offset_right = 6.0
 offset_bottom = -12.0
 color = Color(1, 0.9, 0.2, 1)
 
+[node name="UI" type="Node2D" parent="."]
+position = Vector2(-15, -33)
+
+[node name="DashPip1" type="ColorRect" parent="UI"]
+offset_right = 8.0
+offset_bottom = 3.0
+color = Color(0.968627, 0.839216, 0.352941, 1)
+mouse_filter = 2
+
+[node name="DashPip2" type="ColorRect" parent="UI"]
+offset_left = 11.0
+offset_right = 19.0
+offset_bottom = 3.0
+color = Color(0.301961, 0.321569, 0.380392, 1)
+mouse_filter = 2
+
+[node name="DashPip3" type="ColorRect" parent="UI"]
+offset_left = 22.0
+offset_right = 30.0
+offset_bottom = 3.0
+color = Color(0.301961, 0.321569, 0.380392, 1)
+mouse_filter = 2
+
+[node name="StaminaBar" type="ColorRect" parent="UI"]
+offset_top = 6.0
+offset_right = 30.0
+offset_bottom = 9.0
+color = Color(0.137255, 0.156863, 0.196078, 1)
+mouse_filter = 2
+
+[node name="Fill" type="ColorRect" parent="UI/StaminaBar"]
+offset_right = 30.0
+offset_bottom = 3.0
+color = Color(0.47451, 0.862745, 0.552941, 1)
+mouse_filter = 2
+
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1875973933]
 position = Vector2(0, -10.5)
 shape = SubResource("RectangleShape2D_p47bc")
