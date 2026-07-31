@@ -27,7 +27,9 @@ Dash,hyper_speed_mult,1.2,float,下斜冲刺落地跳跃的水平速度倍率
 Dash,ultra_min_speed,170.0,float,Ultra 生效最低水平速度
 Dash,ultra_speed_mult,1.2,float,斜下冲刺落地后 Ultra 跳跃水平速度倍率
 Dash,ultra_window_time,0.10,float,斜下冲刺着地后 Ultra 跳跃窗口秒数
-Dash,cb_bonus_speed,40.0,float,冲刺窗口墙跳保速奖励
+Dash,cb_bonus_speed,40.0,float,冲刺攻击内爬墙跳（CB）保留 dash 水平速度后额外奖励
+Dash,corner_kick_window,0.08,float,上升时擦墙角后允许墙跳的短窗口（咖啡跳）
+Dash,bunnyhop_grace_time,0.06,float,落地缓存跳跃期间跳过地面摩擦以保留超速（兔子跳）
 Climb,max_stamina,110.0,float,最大攀爬体力
 Climb,climb_grab_y_mult,0.2,float,抓墙时纵向速度保留倍率
 Climb,climb_no_move_time,0.1,float,抓墙后滑落延迟秒数

@@ -1,5 +1,5 @@
 extends State
-## Air handles buffered dash/jump, wall grab, gravity, corner correction, Ultra landing jump.
+## Air owns normal movement; Player owns all buffered input and post-collision facts.
 
 func physics_update(delta: float) -> void:
 	if player.consume_dash_buffer():
@@ -12,13 +12,12 @@ func physics_update(delta: float) -> void:
 	player.apply_air_movement(delta)
 	var pre_move_vy := player.velocity.y
 	player.move_and_slide()
+	player.post_move()
 	player.apply_corner_correction(pre_move_vy)
-
-	if player.wants_jump():
-		player.do_jump()
+	if player.has_jump_buffer() and player.can_corner_kick():
+		player.do_wall_jump(-player._wall_collision_direction)
 		return
 	if player.is_on_floor():
-		# Down-diagonal dash landing + buffered jump = Ultra.
 		if player.has_jump_buffer() and player.can_ultra_jump():
 			player.do_ultra_jump()
 			return

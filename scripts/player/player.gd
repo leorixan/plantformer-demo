@@ -35,6 +35,8 @@ extends CharacterBody2D
 @export var ultra_speed_mult := 1.2
 @export var ultra_window_time := 0.10
 @export var cb_bonus_speed := 40.0
+@export var corner_kick_window := 0.08
+@export var bunnyhop_grace_time := 0.06
 
 @export_category("Climb")
 @export var max_stamina := 110.0
@@ -66,7 +68,11 @@ var dash_count := 1
 var stamina := 110.0
 var facing := 1.0
 var dash_direction := Vector2.ZERO
+var dash_started_on_ground := false
 var dash_attack_timer := 0.0
+var dash_freeze_timer := 0.0
+var dash_timer := 0.0
+var dash_active := false
 var before_dash_velocity := Vector2.ZERO
 var dash_momentum_x := 0.0
 var _coyote_timer := 0.0
@@ -74,7 +80,11 @@ var _jump_buffer_timer := 0.0
 var _dash_buffer_timer := 0.0
 var _ultra_timer := 0.0
 var _ultra_speed_x := 0.0
+var _corner_kick_timer := 0.0
+var _bunnyhop_timer := 0.0
 var _climb_no_move_timer := 0.0
+var _was_on_floor := false
+var _wall_collision_direction := 0
 
 @onready var state_machine: StateMachine = $StateMachine
 @onready var visuals: Node2D = $Visuals
@@ -92,6 +102,7 @@ func _ready() -> void:
 	_update_indicators()
 
 func _physics_process(delta: float) -> void:
+	# Frame order: input buffers → state logic → move_and_slide in state → collision/landing bookkeeping.
 	_update_timers(delta)
 	_update_indicators()
 
@@ -124,7 +135,11 @@ func _update_timers(delta: float) -> void:
 	_dash_buffer_timer = maxf(0.0, _dash_buffer_timer - delta)
 	dash_attack_timer = maxf(0.0, dash_attack_timer - delta)
 	_ultra_timer = maxf(0.0, _ultra_timer - delta)
+	_corner_kick_timer = maxf(0.0, _corner_kick_timer - delta)
+	_bunnyhop_timer = maxf(0.0, _bunnyhop_timer - delta)
 	_climb_no_move_timer = maxf(0.0, _climb_no_move_timer - delta)
+	if _was_on_floor and not is_on_floor():
+		_coyote_timer = coyote_time
 	if is_on_floor():
 		_coyote_timer = coyote_time
 		dash_count = max_dashes
@@ -174,7 +189,8 @@ func do_hyper_jump() -> void:
 	consume_jump_buffer()
 	_coyote_timer = 0.0
 	dash_attack_timer = 0.0
-	velocity.x = signf(dash_direction.x if dash_direction.x != 0.0 else facing) * maxf(absf(velocity.x), dash_speed * absf(dash_direction.x)) * hyper_speed_mult
+	var direction := signf(dash_direction.x if dash_direction.x != 0.0 else facing)
+	velocity.x = direction * maxf(absf(velocity.x), dash_speed * absf(dash_direction.x)) * hyper_speed_mult
 	velocity.y = -jump_force
 
 func prepare_ultra(speed_x: float) -> void:
@@ -195,27 +211,49 @@ func do_ultra_jump() -> void:
 func start_dash(direction: Vector2) -> void:
 	consume_dash_buffer()
 	dash_count = maxi(0, dash_count - 1)
+	dash_started_on_ground = is_on_floor()
 	before_dash_velocity = velocity
 	dash_momentum_x = velocity.x
 	dash_direction = direction.normalized()
 	dash_attack_timer = dash_attack_time
+	dash_freeze_timer = dash_freeze_time
+	dash_timer = dash_duration
+	dash_active = false
 	velocity = Vector2.ZERO
 	if dash_direction.x != 0.0:
 		facing = signf(dash_direction.x)
 		visuals.scale.x = facing
 
+func update_dash(delta: float) -> bool:
+	# DashBegin freezes. DashCoroutine yields one frame, then sets first dash velocity.
+	if dash_freeze_timer > 0.0:
+		dash_freeze_timer = maxf(0.0, dash_freeze_timer - delta)
+		return false
+	if not dash_active:
+		activate_dash()
+		dash_active = true
+	move_and_slide()
+	post_move()
+	if dash_direction.y > 0.0 and dash_direction.x != 0.0 and is_on_floor():
+		prepare_ultra(velocity.x)
+	dash_timer -= delta
+	return dash_timer <= 0.0
+
 func activate_dash() -> void:
 	var new_velocity := dash_direction * dash_speed
-	# Celeste keeps faster same-direction horizontal speed instead of killing momentum.
 	if signf(before_dash_velocity.x) == signf(new_velocity.x) and absf(before_dash_velocity.x) > absf(new_velocity.x):
 		new_velocity.x = before_dash_velocity.x
 	velocity = new_velocity
 	dash_momentum_x = velocity.x
 
 func finish_dash() -> void:
-	if dash_direction != Vector2.ZERO:
+	# Celeste DashCoroutine only overwrites speed for non-downward dashes.
+	if dash_direction.y <= 0.0:
 		velocity = dash_direction * dash_end_speed
+		if velocity.y < 0.0:
+			velocity.y *= 0.75
 	dash_direction = Vector2.ZERO
+	dash_active = false
 
 func get_dash_direction() -> Vector2:
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -240,16 +278,37 @@ func get_wall_direction() -> int:
 		return 1
 	return 0
 
+func post_move() -> void:
+	_wall_collision_direction = get_wall_direction()
+	if _wall_collision_direction != 0 and velocity.y < 0.0:
+		_corner_kick_timer = corner_kick_window
+	if is_on_floor() and not _was_on_floor:
+		_bunnyhop_timer = bunnyhop_grace_time
+	_was_on_floor = is_on_floor()
+
+func can_corner_kick() -> bool:
+	return _corner_kick_timer > 0.0 and _wall_collision_direction != 0
+
 func can_climb() -> bool:
 	return stamina > 0.0 and get_wall_direction() != 0
 
 func do_wall_jump(direction: int) -> void:
-	var cb_speed := absf(dash_momentum_x) + cb_bonus_speed if dash_attack_timer > 0.0 else 0.0
 	consume_jump_buffer()
 	_coyote_timer = 0.0
 	dash_attack_timer = 0.0
-	velocity.x = direction * maxf(wall_jump_speed, cb_speed)
+	velocity.x = direction * wall_jump_speed
 	velocity.y = -wall_jump_force
+
+func do_climb_jump(direction: int) -> void:
+	consume_jump_buffer()
+	_coyote_timer = 0.0
+	# CB: dash-attack climb jump keeps dash horizontal speed, good edge contact adds bonus.
+	var retained_x := dash_momentum_x if dash_attack_timer > 0.0 else 0.0
+	if dash_attack_timer > 0.0 and absf(retained_x) > 0.0:
+		retained_x += signf(retained_x) * cb_bonus_speed
+	velocity.x = retained_x if absf(retained_x) >= wall_jump_speed else direction * wall_jump_speed
+	velocity.y = -wall_jump_force
+	dash_attack_timer = 0.0
 	stamina = maxf(0.0, stamina - climb_jump_stamina_cost)
 
 func do_climb_hop(wall_direction: int) -> void:
@@ -257,6 +316,9 @@ func do_climb_hop(wall_direction: int) -> void:
 	velocity.y = minf(velocity.y, -climb_hop_y)
 
 func apply_ground_movement(delta: float) -> void:
+	# Buffered landing jump skips ground friction; preserves bunnyhop/super/hyper momentum.
+	if _bunnyhop_timer > 0.0 and has_jump_buffer():
+		return
 	var direction := Input.get_axis("move_left", "move_right")
 	if direction != 0.0:
 		var rate := over_speed_decel if absf(velocity.x) > max_speed and signf(velocity.x) == signf(direction) else acceleration
@@ -323,9 +385,17 @@ func _get_nearest_item() -> CarryItem:
 func _update_indicators() -> void:
 	if not is_instance_valid(stamina_fill):
 		return
+	_ensure_dash_pips()
 	for index in dash_pips.size():
 		var pip := dash_pips[index]
 		pip.visible = index < max_dashes
 		pip.color = Color("f7d65a") if index < dash_count else Color("4d5261")
 	stamina_fill.size.x = 30.0 * clampf(stamina / maxf(max_stamina, 0.001), 0.0, 1.0)
 	stamina_fill.color = Color("79dc8d") if stamina > max_stamina * 0.2 else Color("ef8b62")
+
+func _ensure_dash_pips() -> void:
+	while dash_pips.size() < max_dashes:
+		var pip: ColorRect = dash_pips[0].duplicate()
+		pip.position = Vector2(dash_pips.size() * 11.0, 0.0)
+		$UI.add_child(pip)
+		dash_pips.append(pip)

@@ -14,7 +14,7 @@
 - [x] 测试房重建：Jump / Dash / Climb / Corner / Carry 分区全部按 15px 网格
 - [x] CSV 参数驱动：`documents/player_params.csv` + F5 热重载
 - [x] 下载 Celeste Player.cs 作为参考：`documents/CelestePlayerReference.txt`
-- [x] M2 控制重构：统一 J/K 输入缓存；同向超速 Dash、冻结期、结束速度；Super / Hyper / Ultra / CB；墙跳、攀爬、翻越
+- [x] M2 控制重构：统一 J/K 输入缓存；同向超速 Dash、冻结期、结束速度；Super / Hyper / Ultra / CB；墙跳、攀爬、翻越（已按 Celeste 帧时序修复并完成 headless 验证）
 - [x] Player 子节点 UI：Dash pips、stamina bar，数值驱动且不随角色翻面
 
 ---

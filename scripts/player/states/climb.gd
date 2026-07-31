@@ -5,7 +5,11 @@ func physics_update(delta: float) -> void:
 		state_machine.transition_to("Dash", {"direction": player.get_dash_direction()})
 		return
 	if player.has_jump_buffer():
-		player.do_wall_jump(-player.facing)
+		var away := Input.get_axis("move_left", "move_right") == -player.facing
+		if away:
+			player.do_wall_jump(-player.facing)
+		else:
+			player.do_climb_jump(-player.facing)
 		state_machine.transition_to("Air")
 		return
 	if not Input.is_action_pressed("grab") or player.stamina <= 0.0:
@@ -29,6 +33,7 @@ func physics_update(delta: float) -> void:
 	player.velocity.x = 0.0
 	player.velocity.y = move_toward(player.velocity.y, target, player.climb_acceleration * delta)
 	player.move_and_slide()
+	player.post_move()
 	if player.can_move_climb():
 		if vertical < 0.0:
 			player.stamina -= player.climb_up_stamina_cost * delta
