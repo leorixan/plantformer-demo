@@ -3,87 +3,87 @@
 [ext_resource type="Script" uid="uid://c3ntarwwm4osc" path="res://scripts/player/player.gd" id="1_p47bc"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_p47bc"]
-size = Vector2(12, 21)
+size = Vector2(8, 11)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_75vfm"]
-radius = 18.0
+radius = 10.0
 
 [node name="Player" type="CharacterBody2D" unique_id=1956478963]
-floor_snap_length = 4.0
+safe_margin = 0.001
+floor_snap_length = 2.0
 script = ExtResource("1_p47bc")
 
 [node name="Visuals" type="Node2D" parent="." unique_id=202044081]
 
 [node name="Body" type="ColorRect" parent="Visuals" unique_id=911849482]
-offset_left = -6.0
-offset_top = -21.0
-offset_right = 6.0
+offset_left = -4.0
+offset_top = -11.0
+offset_right = 4.0
 color = Color(0.4, 0.9, 0.4, 1)
 
 [node name="Nose" type="ColorRect" parent="Visuals" unique_id=1820420494]
-offset_left = 3.0
-offset_top = -15.0
-offset_right = 6.0
-offset_bottom = -12.0
+offset_left = 2.0
+offset_top = -8.0
+offset_right = 4.0
+offset_bottom = -6.0
 color = Color(1, 0.9, 0.2, 1)
 
 [node name="UI" type="Node2D" parent="."]
-position = Vector2(-15, -33)
+position = Vector2(-8, -18)
 
 [node name="DashPip1" type="ColorRect" parent="UI"]
-offset_right = 8.0
-offset_bottom = 3.0
+offset_right = 4.0
+offset_bottom = 2.0
 color = Color(0.968627, 0.839216, 0.352941, 1)
 mouse_filter = 2
 
 [node name="DashPip2" type="ColorRect" parent="UI"]
-offset_left = 11.0
-offset_right = 19.0
-offset_bottom = 3.0
+offset_left = 6.0
+offset_right = 10.0
+offset_bottom = 2.0
 color = Color(0.301961, 0.321569, 0.380392, 1)
 mouse_filter = 2
 
 [node name="DashPip3" type="ColorRect" parent="UI"]
-offset_left = 22.0
-offset_right = 30.0
-offset_bottom = 3.0
+offset_left = 12.0
+offset_right = 16.0
+offset_bottom = 2.0
 color = Color(0.301961, 0.321569, 0.380392, 1)
 mouse_filter = 2
 
 [node name="StaminaBar" type="ColorRect" parent="UI"]
-offset_top = 6.0
-offset_right = 30.0
-offset_bottom = 9.0
+offset_top = 3.0
+offset_right = 16.0
+offset_bottom = 5.0
 color = Color(0.137255, 0.156863, 0.196078, 1)
 mouse_filter = 2
 
 [node name="Fill" type="ColorRect" parent="UI/StaminaBar"]
-offset_right = 30.0
-offset_bottom = 3.0
+offset_right = 16.0
+offset_bottom = 2.0
 color = Color(0.47451, 0.862745, 0.552941, 1)
 mouse_filter = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1875973933]
-position = Vector2(0, -10.5)
+position = Vector2(0, -5.5)
 shape = SubResource("RectangleShape2D_p47bc")
 
 [node name="CarryAnchor" type="Marker2D" parent="." unique_id=1423458969]
-position = Vector2(0, -27)
+position = Vector2(0, -14)
 
 [node name="GrabDetector" type="Area2D" parent="." unique_id=721890188]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="GrabDetector" unique_id=684444366]
-position = Vector2(0, -10.5)
+position = Vector2(0, -5.5)
 shape = SubResource("CircleShape2D_75vfm")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=2064523003]
-position = Vector2(0, -45)
-zoom = Vector2(2, 2)
+position = Vector2(0, -24)
 
 [node name="ControllerDebug" type="Label" parent="."]
-position = Vector2(-75, -68)
-size = Vector2(240, 36)
+position = Vector2(-56, -46)
+size = Vector2(112, 24)
 theme_override_colors/font_color = Color(0.9, 0.95, 1, 1)
-theme_override_font_sizes/font_size = 9
+theme_override_font_sizes/font_size = 5
 text = "Controller debug"
 visible = false

@@ -22,7 +22,7 @@ func load_config() -> void:
 		push_error("ConfigLoader: 无法打开 " + CONFIG_PATH + " err=" + str(FileAccess.get_open_error()))
 		return
 
-	var headers := file.get_csv_line()
+	file.get_csv_line() # 跳过表头
 	while not file.eof_reached():
 		var line := file.get_csv_line()
 		if line.size() < 3 or line[0].is_empty() or line[0].begins_with("#"):
@@ -43,11 +43,6 @@ func _parse(value_str: String, type_name: String):
 			return value_str.to_lower() == "true"
 		_:
 			return value_str.to_float()
-
-## 取单个参数；若 CSV 未定义则返回 default
-func get_value(category: String, name: String, default_value: Variant) -> Variant:
-	var key := category + "/" + name
-	return _values.get(key, default_value)
 
 ## 将 CSV 中所有已知属性名覆盖到 target 对象（仅覆盖 target 已有的属性）
 func apply_to(target: Object) -> void:

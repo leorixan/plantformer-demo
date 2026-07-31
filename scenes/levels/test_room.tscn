@@ -5,130 +5,129 @@
 [ext_resource type="PackedScene" path="res://scenes/components/jellyfish.tscn" id="3_jelly"]
 
 [sub_resource type="RectangleShape2D" id="FloorShape"]
-size = Vector2(1200, 30)
+size = Vector2(640, 16)
 
 [sub_resource type="RectangleShape2D" id="Platform3x1"]
-size = Vector2(45, 15)
+size = Vector2(24, 8)
 
 [sub_resource type="RectangleShape2D" id="Platform4x1"]
-size = Vector2(60, 15)
+size = Vector2(32, 8)
 
 [sub_resource type="RectangleShape2D" id="Platform6x1"]
-size = Vector2(90, 15)
+size = Vector2(48, 8)
 
 [sub_resource type="RectangleShape2D" id="Wall1x8"]
-size = Vector2(15, 120)
+size = Vector2(8, 64)
 
 [sub_resource type="RectangleShape2D" id="Wall2x10"]
-size = Vector2(30, 150)
+size = Vector2(16, 80)
 
 [node name="TestRoom" type="Node2D"]
 
 [node name="Floor" type="StaticBody2D" parent="."]
-position = Vector2(600, 330)
+position = Vector2(320, 176)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Floor"]
 shape = SubResource("FloorShape")
 
 [node name="Visual" type="Polygon2D" parent="Floor"]
-polygon = PackedVector2Array(-600, -15, 600, -15, 600, 15, -600, 15)
+polygon = PackedVector2Array(-320, -8, 320, -8, 320, 8, -320, 8)
 color = Color(0.22, 0.25, 0.32, 1)
 
 [node name="JumpStep" type="StaticBody2D" parent="."]
-position = Vector2(210, 285)
+position = Vector2(112, 152)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="JumpStep"]
 shape = SubResource("Platform3x1")
 
 [node name="Visual" type="Polygon2D" parent="JumpStep"]
-polygon = PackedVector2Array(-22.5, -7.5, 22.5, -7.5, 22.5, 7.5, -22.5, 7.5)
+polygon = PackedVector2Array(-12, -4, 12, -4, 12, 4, -12, 4)
 color = Color(0.31, 0.53, 0.74, 1)
 
 [node name="DashPlatform" type="StaticBody2D" parent="."]
-position = Vector2(345, 240)
+position = Vector2(184, 128)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="DashPlatform"]
 shape = SubResource("Platform4x1")
 
 [node name="Visual" type="Polygon2D" parent="DashPlatform"]
-polygon = PackedVector2Array(-30, -7.5, 30, -7.5, 30, 7.5, -30, 7.5)
+polygon = PackedVector2Array(-16, -4, 16, -4, 16, 4, -16, 4)
 color = Color(0.31, 0.53, 0.74, 1)
 
 [node name="ClimbWall" type="StaticBody2D" parent="."]
-position = Vector2(480, 255)
+position = Vector2(256, 136)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="ClimbWall"]
 shape = SubResource("Wall1x8")
 
 [node name="Visual" type="Polygon2D" parent="ClimbWall"]
-polygon = PackedVector2Array(-7.5, -60, 7.5, -60, 7.5, 60, -7.5, 60)
+polygon = PackedVector2Array(-4, -32, 4, -32, 4, 32, -4, 32)
 color = Color(0.67, 0.39, 0.39, 1)
 
 [node name="ClimbLedge" type="StaticBody2D" parent="."]
-position = Vector2(555, 165)
+position = Vector2(296, 88)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="ClimbLedge"]
 shape = SubResource("Platform6x1")
 
 [node name="Visual" type="Polygon2D" parent="ClimbLedge"]
-polygon = PackedVector2Array(-45, -7.5, 45, -7.5, 45, 7.5, -45, 7.5)
+polygon = PackedVector2Array(-24, -4, 24, -4, 24, 4, -24, 4)
 color = Color(0.44, 0.45, 0.67, 1)
 
 [node name="CornerCeilingLeft" type="StaticBody2D" parent="."]
-position = Vector2(690, 262.5)
+position = Vector2(368, 140)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="CornerCeilingLeft"]
 shape = SubResource("Platform6x1")
 
 [node name="Visual" type="Polygon2D" parent="CornerCeilingLeft"]
-polygon = PackedVector2Array(-45, -7.5, 45, -7.5, 45, 7.5, -45, 7.5)
+polygon = PackedVector2Array(-24, -4, 24, -4, 24, 4, -24, 4)
 color = Color(0.53, 0.53, 0.63, 1)
 
 [node name="CornerCeilingRight" type="StaticBody2D" parent="."]
-position = Vector2(795, 262.5)
+position = Vector2(424, 140)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="CornerCeilingRight"]
 shape = SubResource("Platform6x1")
 
 [node name="Visual" type="Polygon2D" parent="CornerCeilingRight"]
-polygon = PackedVector2Array(-45, -7.5, 45, -7.5, 45, 7.5, -45, 7.5)
+polygon = PackedVector2Array(-24, -4, 24, -4, 24, 4, -24, 4)
 color = Color(0.53, 0.53, 0.63, 1)
 
 [node name="WallJumpShaft" type="StaticBody2D" parent="."]
-position = Vector2(870, 240)
+position = Vector2(464, 128)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="WallJumpShaft"]
 shape = SubResource("Wall2x10")
 
 [node name="Visual" type="Polygon2D" parent="WallJumpShaft"]
-polygon = PackedVector2Array(-15, -75, 15, -75, 15, 75, -15, 75)
+polygon = PackedVector2Array(-8, -40, 8, -40, 8, 40, -8, 40)
 color = Color(0.67, 0.39, 0.39, 1)
 
 [node name="FinishLedge" type="StaticBody2D" parent="."]
-position = Vector2(990, 135)
+position = Vector2(528, 72)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="FinishLedge"]
 shape = SubResource("Platform6x1")
 
 [node name="Visual" type="Polygon2D" parent="FinishLedge"]
-polygon = PackedVector2Array(-45, -7.5, 45, -7.5, 45, 7.5, -45, 7.5)
+polygon = PackedVector2Array(-24, -4, 24, -4, 24, 4, -24, 4)
 color = Color(0.31, 0.53, 0.74, 1)
 
-[node name="Grid" type="Node2D" parent="."]
-
 [node name="HintLabel" type="Label" parent="."]
-position = Vector2(15, 15)
-text = "15px 网格测试房 | A/D 移动 | J 跳跃 | K 八向冲刺 | Shift 抓墙 / 拾取 / 抛出 | F5 重载参数
+position = Vector2(8, 6)
+theme_override_font_sizes/font_size = 5
+text = "8px 网格（Celeste 规格）| A/D 移动 | S 下蹲 | J 跳跃 | K 八向冲刺 | Shift 抓墙 / 拾取 / 抛出 | F5 重载参数
 Super：地面横向 K，Dash 未结束时按 J。Hyper：地面斜下 K 立刻按 J。Ultra：空中斜下 K 撞地后按 J。
-反向 Hyper：斜下 K 后回拉反方向再按 J。抓墙：Shift 贴住不下滑；J 垂直爬墙跳，拉离墙 + J 墙跳。
-x=735~750 是 1 格天花板缝，起跳略偏也能被角落修正塞进去。"
+反向 Hyper：斜下 K 后回拉反方向再按 J。抓墙：Shift 贴住不下滑；J 垂直爬墙跳（松手推离墙面可退体力），拉离墙 + J 墙跳。
+x=392~400 是 1 格天花板缝，起跳略偏也能被角落修正塞进去。"
 
 [node name="Theo" parent="." instance=ExtResource("2_theo")]
-position = Vector2(120, 285)
+position = Vector2(64, 152)
 
 [node name="Jellyfish" parent="." instance=ExtResource("3_jelly")]
-position = Vector2(285, 195)
+position = Vector2(152, 104)
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
-position = Vector2(45, 315)
+position = Vector2(24, 168)
 show_controller_debug = true
