@@ -9,6 +9,8 @@ size = Vector2(8, 11)
 radius = 10.0
 
 [node name="Player" type="CharacterBody2D" unique_id=1956478963]
+collision_layer = 2
+collision_mask = 1
 safe_margin = 0.001
 floor_snap_length = 2.0
 script = ExtResource("1_p47bc")
@@ -72,6 +74,8 @@ shape = SubResource("RectangleShape2D_p47bc")
 position = Vector2(0, -14)
 
 [node name="GrabDetector" type="Area2D" parent="." unique_id=721890188]
+collision_layer = 0
+collision_mask = 4
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="GrabDetector" unique_id=684444366]
 position = Vector2(0, -5.5)
@@ -80,10 +84,16 @@ shape = SubResource("CircleShape2D_75vfm")
 [node name="Camera2D" type="Camera2D" parent="." unique_id=2064523003]
 position = Vector2(0, -24)
 
-[node name="ControllerDebug" type="Label" parent="."]
-position = Vector2(-56, -46)
-size = Vector2(112, 24)
+[node name="DebugLayer" type="CanvasLayer" parent="."]
+
+[node name="ControllerDebug" type="Label" parent="DebugLayer"]
+offset_left = 4.0
+offset_top = 150.0
+offset_right = 200.0
+offset_bottom = 178.0
 theme_override_colors/font_color = Color(0.9, 0.95, 1, 1)
-theme_override_font_sizes/font_size = 5
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 6
 text = "Controller debug"
 visible = false

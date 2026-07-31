@@ -48,6 +48,10 @@
 - [x] 清理过时代码：删除 `ConfigLoader.get_value` 死接口与未用局部变量、test_room 空 `Grid` 节点、CSV 被误当翻译表生成的 4 个 `.translation` 产物（改 importer=keep）
 - [x] 回归扩到 71 条断言（新增 Wallboost / Wall Slide / Fastfall / dash 补充冷却 / 撞墙速度保留 / 下蹲 6 条组），并经"故意改坏 3 处 → 8 条断言变红"自检
 - [x] Celeste wiki Tech 第 1/2/3 大条目逐项审计（见 §审计结论）
+- [x] 修掉"Super / Wavedash / Hyper 之后冲刺不恢复"：①"是否站在地上"全部改用 Celeste 的几何探针 `_on_ground()`（`vy>=0 且脚下 1px 有实体`），不再用 Godot 的 `is_on_floor()`（水平 Dash / Dash Slide 帧里为假 → dash、体力、土狼都补不回来）；②碰撞层分离（地形 1 / 玩家 2 / 可携带物 4），此前 Theo 与地形同层且正好坐在出生跑道上，角色被它顶住 → 同样不补 dash
+- [x] 回归扩到 80 条断言（新增 Super / Hyper 后仍持有 dash、水平 Dash 期间算站在地上、可携带物不阻挡角色），并经"故意把 Theo 改回层 1 → 断言变红"自检
+- [x] 测试房按技巧分区重建（参考 Strawberry Jam Collab 教学房）：`scripts/levels/test_room.gd`（`@tool`）用 ASCII 网格生成 11 个分区，每区带标题与操作要点标签、目标标记，区间 2 砖坑分界，掉坑在本区入口自动重生
+- [x] 调试字体不糊：`stretch/mode` 由 `viewport` 改 `canvas_items` + `scale_mode=integer`（启用动态字体 oversampling，按最终分辨率光栅化），`default_texture_filter=Nearest`；调试文字移到 `CanvasLayer` 固定屏幕左下、字号 6 + 黑描边
 
 ---
 
@@ -59,7 +63,9 @@
 - [ ] **手动试玩验证**：K 与方向键同时按下的八向方向是否还有延迟感；冻结 0.05s 的顿感是否合适（嫌顿改 `dash_freeze_time`）
 - [ ] **手动试玩验证**：对平台边缘上冲蹭墙跳是否稳定触发；墙跳后 `wall_jump_force_time` 0.16s 的输入接管是否别扭
 - [ ] **试玩验证**：Theo 与 Jellyfish 拾取、抛出、Jellyfish 先升后浮
-- [ ] **试玩验证**：测试房 x=392~400 的 1 砖天花板缝，确认角落修正塞得进去且不吸附
+- [ ] **试玩验证**：测试房区 9 的 1 砖天花板缝（向上 K 冲刺），确认角落修正塞得进去且不吸附
+- [ ] **试玩验证**：新测试房 11 个分区的坑宽是否合适（headless 实测：区3 Dash+跳飞越 82px / 区4 Super 44px / 区5 Hyper 28px / 区6 Ultra 76px；坑分别 6/6/4/4 砖），偏难就调 `ZONES` 里的地面字符串
+- [ ] **试玩验证**：区 2 低通道（下蹲不能走，只能带速度滑进或蹲着 K 冲）是否易懂
 - [ ] **试玩验证**：跳高 3.6 砖是否偏矮；若偏矮只调 `var_jump_time`，不要改 `jump_speed`（会连带影响 Hyper 低跳）
 - [ ] **试玩验证**：320×180 视口下相机取景与 debug 文字可读性；S 下蹲手感与低通道通行
 - [ ] **试玩验证**：无体力时靠 Wallboost 连续上墙的节奏是否顺手；贴墙下滑速度是否偏慢
