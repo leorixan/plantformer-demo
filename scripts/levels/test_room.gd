@@ -12,8 +12,14 @@ extends Node2D
 const TILE := 8.0
 const ZONE_GAP := 2
 const FLOOR_ROW := 14
-const KILL_Y := 220.0
+## 死亡带顶面所在行：地面下 3 砖，掉坑立刻死、立刻在本区存档点复活
+const DEATH_ROW := 17
+## 分隔墙从第 0 行铺到这一行，剩下的 DOOR 两行是门洞（16px，站立 11px 能过）
+const DIVIDER_BOTTOM_ROW := 11
 const SOLID_COLOR := Color(0.22, 0.25, 0.32)
+const DIVIDER_COLOR := Color(0.15, 0.17, 0.22)
+const DEATH_COLOR := Color(0.72, 0.18, 0.22)
+const CHECKPOINT_COLOR := Color(0.35, 0.85, 0.45)
 const TARGET_COLOR := Color(0.98, 0.85, 0.35, 0.55)
 
 const ZONES: Array[Dictionary] = [
@@ -33,8 +39,8 @@ const ZONES: Array[Dictionary] = [
 			"........................",
 			"................x.......",
 			"........................",
-			"................########",
-			"...P............########",
+			"................######..",
+			"...P............######..",
 			"########################",
 			"########################",
 		],
@@ -85,7 +91,7 @@ const ZONES: Array[Dictionary] = [
 	},
 	{
 		"title": "4  Super（超级跳）",
-		"hint": "地面横向 K，冲刺还没结束时按 J。水平速度 260，普通跳跨不过的坑一次过。",
+		"hint": "地面横向 K，冲刺还没结束时按 J。实测射程 85px；普通跳只有 40px、跳+空中冲 65px，都跨不过这个 10 砖坑。",
 		"rows": [
 			"................................",
 			"................................",
@@ -101,52 +107,52 @@ const ZONES: Array[Dictionary] = [
 			"................................",
 			"...........................x....",
 			"................................",
-			"##############......############",
-			"##############......############",
+			"##############..........########",
+			"##############..........########",
 		],
 	},
 	{
 		"title": "5  Hyper / Wavedash",
-		"hint": "地面斜下 K 立刻按 J = Hyper（325 低平跳）。跳起后马上斜下 K 撞地再 J = Wavedash。",
+		"hint": "地面斜下 K 立刻按 J = Hyper（射程 110px）。跳起后马上斜下 K 撞地再 J = Wavedash（114px）。10 砖坑挡掉普通跳 40px 与跳+空中冲 65px。",
 		"rows": [
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"..............................x.",
-			"................................",
-			"##################....##########",
-			"##################....##########",
+			"....................................",
+			"....................................",
+			"....................................",
+			"....................................",
+			"....................................",
+			"....................................",
+			"....................................",
+			"....................................",
+			"....................................",
+			"....................................",
+			"....................................",
+			"....................................",
+			"..............................x.....",
+			"....................................",
+			"################..........##########",
+			"################..........##########",
 		],
 	},
 	{
 		"title": "6  Ultra（超级冲刺）",
-		"hint": "从台子上跳下，空中斜下 K，撞地那一下按 J。撞地会转成水平滑行并提速 1.2 倍再乘 Hyper 倍率。",
+		"hint": "从台子上跑出边缘立刻斜下 K，撞地那一下按住 J。撞地转水平滑行提速 1.2 倍再乘 Hyper 倍率，起跳点在台子附近，所以坑放得近一些。",
 		"rows": [
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"##########......................",
-			"##########...................x..",
-			"####################....########",
-			"####################....########",
+			"....................................",
+			"....................................",
+			"....................................",
+			"....................................",
+			"....................................",
+			"....................................",
+			"....................................",
+			"....................................",
+			"....................................",
+			"....................................",
+			"....................................",
+			"....................................",
+			"...##########.......................",
+			"...##########.................x.....",
+			"################..........##########",
+			"################..........##########",
 		],
 	},
 	{
@@ -329,13 +335,18 @@ func _ready() -> void:
 					"x":
 						_add_marker(markers, x_tile + col, row_index)
 		_add_label(labels, zone, x_tile, width)
+		var entrance := _zone_entrance(rows, x_tile)
+		_add_checkpoint(markers, entrance)
 		_zone_bounds.append(Vector2(x_tile * TILE, (x_tile + width) * TILE))
-		_zone_spawns.append(_zone_entrance(rows, x_tile))
+		_zone_spawns.append(entrance)
+		# 区间用 2 砖厚的高墙隔开，只在贴地的两行留门洞（16px，站立 11px 能过）
+		_add_divider(terrain, visuals, x_tile + width)
 		x_tile += width + ZONE_GAP
+	_add_death_band(visuals, x_tile)
 
-## 掉出世界底部就回到所在分区的入口重生（参考 Strawberry Jam 的教学房：失败立刻重来）。
+## 掉进坑里立刻触发死亡判定，回到所在分区的存档点（参考 Strawberry Jam 的教学房：失败立刻重来）。
 func _physics_process(_delta: float) -> void:
-	if not is_instance_valid(_player) or _player.global_position.y < KILL_Y:
+	if not is_instance_valid(_player) or _player.global_position.y < DEATH_ROW * TILE:
 		return
 	_player.global_position = _spawn_for(_player.global_position.x)
 	_player.velocity = Vector2.ZERO
@@ -348,17 +359,49 @@ func _spawn_for(x: float) -> Vector2:
 			return _zone_spawns[index]
 	return _zone_spawns[_zone_spawns.size() - 1]
 
-## 分区入口：地面行第一块实体的正上方
+## 分区入口：地面行第一块实体的上方第一个空格（有些区入口上面还压着台子）
 func _zone_entrance(rows: Array, x_tile: int) -> Vector2:
 	var floor_row: String = rows[FLOOR_ROW]
-	for col in floor_row.length():
-		if floor_row[col] == "#":
-			return _cell_floor(x_tile + col + 1, FLOOR_ROW - 1)
-	return _cell_floor(x_tile + 1, FLOOR_ROW - 1)
+	var col := 1
+	for index in floor_row.length():
+		if floor_row[index] == "#":
+			col = index + 1
+			break
+	for row in range(FLOOR_ROW - 1, 0, -1):
+		var line: String = rows[row]
+		var below: String = rows[row + 1]
+		if col < line.length() and line[col] == "." and below[col] == "#":
+			return _cell_floor(x_tile + col, row)
+	return _cell_floor(x_tile + col, FLOOR_ROW - 1)
 
-func _add_solid(terrain: StaticBody2D, visuals: Node2D, col: int, row: int, cols: int) -> void:
-	var size := Vector2(cols * TILE, TILE)
-	var origin := Vector2(col * TILE, row * TILE)
+## 分区之间的高墙：顶到第 DIVIDER_BOTTOM_ROW 行，贴地两行留门洞，脚下补上通行地面
+func _add_divider(terrain: StaticBody2D, visuals: Node2D, col: int) -> void:
+	var top := Vector2(col * TILE, 0.0)
+	var top_size := Vector2(ZONE_GAP * TILE, (DIVIDER_BOTTOM_ROW + 1) * TILE)
+	_add_body(terrain, visuals, top, top_size, DIVIDER_COLOR)
+	var walk := Vector2(col * TILE, FLOOR_ROW * TILE)
+	var walk_size := Vector2(ZONE_GAP * TILE, 2.0 * TILE)
+	_add_body(terrain, visuals, walk, walk_size, SOLID_COLOR)
+
+## 存档点：分区入口的绿色立柱（掉坑后回到这里）
+func _add_checkpoint(markers: Node2D, entrance: Vector2) -> void:
+	var visual := ColorRect.new()
+	visual.size = Vector2(2.0, 2.0 * TILE)
+	visual.position = Vector2(entrance.x - 1.0, entrance.y - visual.size.y)
+	visual.color = CHECKPOINT_COLOR
+	visual.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	markers.add_child(visual)
+
+## 死亡带：坑底的红色区域，只做视觉提示，判定在 _physics_process 里按 DEATH_ROW 走
+func _add_death_band(visuals: Node2D, cols: int) -> void:
+	var visual := ColorRect.new()
+	visual.position = Vector2(0.0, DEATH_ROW * TILE)
+	visual.size = Vector2(cols * TILE, 2.0 * TILE)
+	visual.color = DEATH_COLOR
+	visual.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	visuals.add_child(visual)
+
+func _add_body(terrain: StaticBody2D, visuals: Node2D, origin: Vector2, size: Vector2, color: Color) -> void:
 	var rect := RectangleShape2D.new()
 	rect.size = size
 	var shape := CollisionShape2D.new()
@@ -368,9 +411,12 @@ func _add_solid(terrain: StaticBody2D, visuals: Node2D, col: int, row: int, cols
 	var visual := ColorRect.new()
 	visual.position = origin
 	visual.size = size
-	visual.color = SOLID_COLOR
+	visual.color = color
 	visual.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visuals.add_child(visual)
+
+func _add_solid(terrain: StaticBody2D, visuals: Node2D, col: int, row: int, cols: int) -> void:
+	_add_body(terrain, visuals, Vector2(col * TILE, row * TILE), Vector2(cols * TILE, TILE), SOLID_COLOR)
 
 func _add_marker(markers: Node2D, col: int, row: int) -> void:
 	var visual := ColorRect.new()

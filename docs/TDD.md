@@ -92,7 +92,8 @@ Player (CharacterBody2D, player.gd)          # 唯一写 velocity 的地方
   按住跳实测跳高 **28.6px ≈ 3.6 砖**，与 Celeste 手感一致。
 - **Godot 适配的两个 epsilon**（`player.gd` 顶部常量，非玩法参数）：
   `CONTACT_MARGIN = 0.001` 用于贴墙吸附（默认 0.08 安全边距会把"刚好贴上"判成命中，差 1px 会让 `SlipCheck` 误判成手已过墙沿而下滑）；
-  `SHAPE_INSET = 0.2` 把物理盒宽度内缩 0.2（Godot 不允许零间隙通行，8px 宽的身体钻 1 砖宽的缝会被两侧同时贴住卡死），整箱检测用同一个值。
+  `SHAPE_INSET = 1.0` 把物理盒宽度内缩 1px（Celeste 坐标是整数，8px 身体钻 8px 缝是严丝合缝地过；
+  Godot 坐标是浮点，缝隙与身体等宽时要求亚像素对齐，角落修正会大多数时候找不到可行位置），整箱检测用同一个值。
 
 CSV 列：`category, name, value, type, description`。当前包含：
 
@@ -229,11 +230,19 @@ CSV 列：`category, name, value, type, description`。当前包含：
 10. **玩家只与 Solid 碰撞**（参考 Celeste：Theo 是 Actor，不是 Solid）。碰撞层分配：地形 = 层 1；
    玩家 = 层 2 / 掩码 1；可携带物 = 层 3（值 4）/ 掩码 1；GrabDetector = 层 0 / 掩码 4。
    同层时角色会被 Theo 的圆形碰撞体顶在半空，同样导致 dash / 体力补不回来。
+11. **`dash_started_on_ground` 只看几何探针**（参考 `DashBegin` 3445 `dashStartedOnGround = onGround`），
+   **不能或上土狼时间**。多算土狼会把"跑出台沿再斜下冲撞地"误判成 Hyper（应为 Ultra），
+   还会关掉只对空中起手生效的 Dash 撞地角落修正。
+12. **dash 补充冷却写在起手处**（参考 `DashBegin` 3451 `dashRefillCooldownTimer = DashRefillCooldown` 0.1s），
+   补充条件是"冷却结束 且 `onGround` 且脚下 1px 有实体"（718-739）。
+   所以 **Wavedash 起飞那一刻 dash 必然还是 0**（冷却没走完就已离地），落地后才补满 —— 这与 Celeste 一致，不是 bug。
 
-**自动化验收**：`scripts/debug/player_regression.gd`（真实物理回归，**80 条断言**）
+**自动化验收**：`scripts/debug/player_regression.gd`（真实物理回归，**84 条断言**）+
+`scripts/debug/room_regression.gd`（测试房几何回归：坑宽把关 / 死亡复活 / 存档点与门洞）
 
 ```
 godot --headless --path . --script res://scripts/debug/player_regression.gd
+godot --headless --path . --script res://scripts/debug/room_regression.gd
 ```
 
 它会在 headless 场景里搭地板/墙/带 1 砖缺口的天花板/1 砖悬空平台/只有蹲下能进的低通道，实例化 `player.tscn`，
@@ -245,6 +254,7 @@ godot --headless --path . --script res://scripts/debug/player_regression.gd
 贴墙下滑被压到 WallSlideStartMax、按住下方向 Fastfall 到 240 不超、`dash_refill_cooldown` 期间不补 dash、
 撞墙速度保留窗口、下蹲（碰撞箱变矮 / 底边不动 / 摩擦 / 自动站起 / 低通道内站不起来）、
 **Super / Hyper 起飞后仍持有 dash（水平 Dash 与 Dash Slide 期间 `_on_ground()` 为真）**、
+**Wavedash 起飞时 dash 仍在 0.1s 补充冷却里、落地即补满**、
 **可携带物不阻挡角色**（碰撞层分离，防回归到"被 Theo 顶住导致 dash 不恢复"）。
 
 
@@ -274,9 +284,18 @@ godot --headless --path . --script res://scripts/debug/player_regression.gd
   房间由脚本按 ASCII 网格生成（图例：`#` 实体 / `.` 空 / `P` 出生 / `T` Theo / `J` 水母 / `x` 目标标记），
   每区 16 行、地面固定在第 14/15 行（顶面 y=112），横向 `'#'` 连段合并成一个矩形碰撞体 + 一个 ColorRect。
   参考 Strawberry Jam Collab 的教学房，按技巧分 11 区（跑跳土狼 / 下蹲低通道 / Dash / Super / Hyper·Wavedash /
-  Ultra / 墙跳·SuperWallJump / 攀爬·Wallboost / 角落修正 / Cornerboost / 抛接），区间留 2 砖坑分界，
-  每区左上角有标题 + 操作要点标签。掉出世界底部（y > 220）自动在**所在分区入口**重生。
+  Ultra / 墙跳·SuperWallJump / 攀爬·Wallboost / 角落修正 / Cornerboost / 抛接），每区左上角有标题 + 操作要点标签。
   `@tool` 的意义：编辑器打开场景就能看到生成结果（编辑器里只铺地形/标记/文字，不放角色与道具）。
+- **测试房的三条硬规则**（改 `ZONES` 后必须跑 `room_regression.gd` 复验）：
+  1. **坑宽按实测射程定**，保证"没学会技巧就过不去"。平地实测（起跳点→落点）：普通跳 **40px**、
+     跳+空中冲 **65px**、光冲刺蹭台沿 **10px**、Super **85px**、Hyper **110px**、Wavedash/Ultra **114px**。
+     故 Super 区坑 **10 砖**、Hyper·Wavedash 区 **10 砖**、Ultra 区 **10 砖**（Ultra 起跳点在台子边上，
+     实际可跨约 130px，所以坑要紧贴台子放），Dash 区与抛接区 **6 砖**。
+  2. **分区之间是 2 砖厚的高墙**（第 0~11 行实体，第 12/13 行留 16px 门洞，脚下补通行地面），
+     所以每区的右端两列不能压台子，否则门洞被堵死（区 1 的悬空台因此缩到第 21 列）。
+  3. **坑底有死亡带**（第 17/18 行，红色）：`_physics_process` 里 `y > DEATH_ROW * 8` 即判定死亡，
+     立刻在**所在分区入口的存档点**（绿色立柱）复活并补满 dash / 体力 —— 掉坑约 17 帧就重来，不是无底洞。
+
 - **关卡场景**：`Node2D` 根 + `TileMapLayer`（地形）+ 机关实例 + `Checkpoint` 节点 + `Camera2D`。
 - **检查点**：Area2D，进入时 `Game.set_checkpoint()`。
 - **死亡**：碰到 Hazard（尖刺等）或掉出边界 → `Game.record_death(global_position)` → **立即**在检查点重生（无 UI、无延迟、无惩罚）。
@@ -315,7 +334,7 @@ godot --headless --path . --script res://scripts/debug/player_regression.gd
 | 里程碑 | 内容 | 验收 |
 |---|---|---|
 | **M1 角色核心** | Player Mode 状态机 + 土狼/缓存/角落修正/可变跳高 + 灰盒测试场景 | ✅ 测试场景内跑跳手感可调；headless 回归覆盖跳高与角落修正 |
-| **M2 动作扩展** | Dash（8向）+ 墙抓/爬/墙跳 + 下蹲 + 物品抓取抛接（Theo/水母）+ §4.6 高级技巧 | ✅ Super/Hyper/Ultra/反向 Hyper/SuperWallJump/Wallboost/Cornerboost/Wall Slide/Fastfall/下蹲 已实现且回归 80/80 通过；抛接待手动试玩 |
+| **M2 动作扩展** | Dash（8向）+ 墙抓/爬/墙跳 + 下蹲 + 物品抓取抛接（Theo/水母）+ §4.6 高级技巧 | ✅ Super/Hyper/Ultra/反向 Hyper/SuperWallJump/Wallboost/Cornerboost/Wall Slide/Fastfall/下蹲 已实现且回归 84/84 通过；测试房几何回归全绿（坑宽 12 项 + 存档点/门洞 11 项）；抛接待手动试玩 |
 | **M3 首个关卡** | 起承转合四段式关卡 + 尖刺/检查点/即时复活 + 相机 | 完整通关流程 |
 | **M4 作品集功能** | 参数仪表盘、死亡记录、辅助模式 | 可出截图与数据 |
 | **M5+** | 各关环境机制、更多关卡、美术 | — |

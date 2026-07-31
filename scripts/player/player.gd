@@ -11,7 +11,10 @@ enum Mode { NORMAL, DASH, CLIMB }
 ## 需要接触级精度的检测统一用这个极小边距，其余检测保持默认（贴住即算命中反而更稳）。
 const CONTACT_MARGIN := 0.001
 ## 整箱检测与物理盒统一的内缩量，用来抵掉 Godot 的零间隙不可通行限制。
-const SHAPE_INSET := 0.2
+## Celeste 的坐标是整数，8px 宽的身体钻 8px 宽的缝是"严丝合缝"地过；Godot 里坐标是浮点，
+## 缝隙与身体等宽时要求亚像素级对齐，角落修正因此大多数时候找不到可行位置。
+## 内缩 1px（物理盒 7 宽）给 1 砖缝留出 1px 余量，角落修正才能像参考那样稳定命中。
+const SHAPE_INSET := 1.0
 
 @export_category("Body")
 @export var body_width := 8.0 # normalHitbox 宽
@@ -581,7 +584,9 @@ func _try_start_dash() -> bool:
 	if _dash_buffer <= 0.0 or dash_count <= 0 or dash_cooldown_timer > 0.0: return false
 	_dash_buffer = 0.0
 	dash_count -= 1
-	dash_started_on_ground = _on_ground() or _coyote > 0.0
+	# 参考 DashBegin 3445：`dashStartedOnGround = onGround`，只看几何探针，不吃土狼时间
+	# （多算土狼会把"跑出台沿再斜下冲"误判成 Hyper，也会关掉 Dash 撞地角落修正）
+	dash_started_on_ground = _on_ground()
 	before_dash_speed = velocity
 	dash_dir = Vector2.ZERO
 	velocity = Vector2.ZERO
