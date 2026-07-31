@@ -322,7 +322,7 @@ func post_move() -> void:
 	_wall_collision_direction = get_wall_direction()
 	_landed_this_move = is_on_floor() and not _was_on_floor
 	# Cornerkick requires recent horizontal/down-diagonal dash into wall while rising.
-	if _wall_collision_direction != 0 and velocity.y < 0.0 and dash_attack_timer > 0.0 and dash_direction.x != 0.0 and dash_direction.y >= 0.0 and signf(dash_direction.x) == _wall_collision_direction:
+	if _wall_collision_direction != 0 and velocity.y < 0.0 and dash_attack_timer > 0.0 and _dash_attack_direction.x != 0.0 and _dash_attack_direction.y >= 0.0 and signf(_dash_attack_direction.x) == _wall_collision_direction:
 		_corner_kick_timer = corner_kick_window
 		_corner_kick_wall_direction = _wall_collision_direction
 	if _landed_this_move:
