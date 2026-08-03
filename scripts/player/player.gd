@@ -140,6 +140,7 @@ var _event_timer := 0.0
 @onready var visuals: Node2D = $Visuals
 @onready var body_rect: ColorRect = $Visuals/Body
 @onready var collider: CollisionShape2D = $CollisionShape2D
+@onready var dash_pips: Array[ColorRect] = [$UI/DashPip1, $UI/DashPip2, $UI/DashPip3]
 @onready var stamina_fill: ColorRect = $UI/StaminaBar/Fill
 @onready var debug_label: Label = get_node_or_null("DebugLayer/ControllerDebug")
 
@@ -748,6 +749,9 @@ func _update_indicators() -> void:
 		else:
 			body_rect.color = Color.CRIMSON
 	if not is_instance_valid(stamina_fill): return
+	for index in dash_pips.size():
+		dash_pips[index].visible = index < max_dashes
+		dash_pips[index].color = Color("f7d65a") if index < dash_count else Color("4d5261")
 	var bar: ColorRect = stamina_fill.get_parent()
 	stamina_fill.size.x = bar.size.x * clampf(stamina / maxf(max_stamina, 0.001), 0.0, 1.0)
 
