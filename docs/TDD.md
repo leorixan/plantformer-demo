@@ -127,6 +127,8 @@ CSV 列：`category, name, value, type, description`。当前包含：
   蹲下时地面用 `duck_friction` 500 压住水平速度；松开下方向后先 `CanUnDuck` 判定头顶空间，站不起来就保持蹲伏，
   完全静止时按 `duck_correct_check` 4px 内左右探测，找到能站起来的一侧就以 `duck_correct_slide` 50px/s 横向让位。
   空中下落且头顶有空间时自动站起。这条同时是 **Crouch Jump / 低通道** 玩法与 Dash Slide（Hyper/Ultra）的公共基础。
+- **探针尺寸**：`_box_is_solid(center, size, inset_y=false)`。`inset_y` 默认 false：`_on_ground()` 不内缩 Y（地面探针底部 y=+1.0，1px 充分重叠地板，防浮点随机失败）。
+  `_can_unduck_at` / `_body_fits_at` 传 `inset_y=true`（内缩 1px 避免与地板切线边界判重）。
 - **Fastfall**：参考 `Vertical` 段的 `maxFall`。按住下方向且已达 `MaxFall` 时，下落上限以 `fast_max_accel` 300 渐进到 `fast_max_fall_speed` 240。
   重力改用 `Calc.Approach` 语义（`move_toward(velocity.y, limit, g*mult*dt)`），这样上限**下降**时也能减速 —— 贴墙下滑必须依赖这一点。
 - **无落地硬直**：落地不打断输入，保证响应度。
