@@ -316,7 +316,6 @@ func _can_unduck_at(at: Vector2) -> bool:
 # 贴地滑行这类帧里根本没有向下位移，is_on_floor() 会变 false，于是 dash 次数、体力、土狼全都补不回来
 # —— Super / Hyper / Wavedash 之后 dash 不恢复就是这个原因。所有"是否站在地上"的判定统一走这里。
 func _on_ground() -> bool:
-	if velocity.y < 0.0: return false
 	return _box_is_solid(global_position + Vector2(0.0, 1.0 - _body_height() * 0.5), Vector2(body_width, _body_height()))
 
 # 参考 CollideCheck<Solid>：把当前碰撞盒整箱挪到 at 处，看是否无阻挡。
