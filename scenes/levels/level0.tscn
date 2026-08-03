@@ -1,0 +1,59 @@
+[gd_scene format=3 uid="uid://3shadicnlsel"]
+
+[ext_resource type="PackedScene" path="res://scenes/components/wall.tscn" id="1_cperm"]
+[ext_resource type="PackedScene" path="res://scenes/components/breakable_block.tscn" id="2_hghvf"]
+[ext_resource type="PackedScene" uid="uid://frjixxads4gc" path="res://scenes/player/player.tscn" id="3_hghvf"]
+[ext_resource type="PackedScene" path="res://scenes/components/checkpoint.tscn" id="4_ry65h"]
+[ext_resource type="PackedScene" path="res://scenes/components/moving_platform.tscn" id="5_d0grl"]
+[ext_resource type="PackedScene" path="res://scenes/components/spike.tscn" id="6_d0grl"]
+
+[node name="Level0" type="Node2D" unique_id=1227107228]
+
+[node name="Node2D" type="Node2D" parent="." unique_id=1139762799]
+
+[node name="BreakableBlock" parent="Node2D" unique_id=440465623 instance=ExtResource("2_hghvf")]
+position = Vector2(52, -12)
+
+[node name="Wall" parent="Node2D" unique_id=1925652343 instance=ExtResource("1_cperm")]
+position = Vector2(4, 4)
+color = Color(0.33120385, 0.22843066, 0.092853926, 1)
+
+[node name="Wall2" parent="Node2D/Wall" unique_id=1724434661 instance=ExtResource("1_cperm")]
+position = Vector2(16, 0)
+color = Color(0.33120385, 0.22843066, 0.092853926, 1)
+
+[node name="Wall3" parent="Node2D/Wall" unique_id=599269316 instance=ExtResource("1_cperm")]
+position = Vector2(8, 0)
+color = Color(0.33120385, 0.22843066, 0.092853926, 1)
+
+[node name="Wall4" parent="Node2D/Wall" unique_id=149095727 instance=ExtResource("1_cperm")]
+position = Vector2(24, 0)
+color = Color(0.33120385, 0.22843066, 0.092853926, 1)
+
+[node name="Wall" parent="Node2D/Wall" unique_id=1727296162 instance=ExtResource("1_cperm")]
+position = Vector2(32, 0)
+color = Color(0.33120385, 0.22843066, 0.092853926, 1)
+
+[node name="Wall2" parent="Node2D/Wall/Wall" unique_id=1163743461 instance=ExtResource("1_cperm")]
+position = Vector2(16, 0)
+color = Color(0.33120385, 0.22843066, 0.092853926, 1)
+
+[node name="Wall3" parent="Node2D/Wall/Wall" unique_id=276309380 instance=ExtResource("1_cperm")]
+position = Vector2(8, 0)
+color = Color(0.33120385, 0.22843066, 0.092853926, 1)
+
+[node name="Wall4" parent="Node2D/Wall/Wall" unique_id=1174769991 instance=ExtResource("1_cperm")]
+position = Vector2(24, 0)
+color = Color(0.33120385, 0.22843066, 0.092853926, 1)
+
+[node name="Player" parent="Node2D" unique_id=1956478963 instance=ExtResource("3_hghvf")]
+
+[node name="Checkpoint" parent="." unique_id=819959105 instance=ExtResource("4_ry65h")]
+position = Vector2(8, -8)
+
+[node name="MovingPlatform" parent="." unique_id=1710228560 instance=ExtResource("5_d0grl")]
+position = Vector2(80, 0)
+
+[node name="Spike" parent="." unique_id=1083994896 instance=ExtResource("6_d0grl")]
+position = Vector2(60, 2)
+size = Vector2(1, 8)
