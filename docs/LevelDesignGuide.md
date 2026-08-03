@@ -26,21 +26,16 @@
 
 ## 2. 碰撞层 —— 放错就死人
 
-**一套语法、一套后果**：放错了不会有报错，但玩家会被道具卡在半空，dash 和体力再也不恢复，然后你会觉得"手感崩了"。
+**一套语法、一套后果**：放错了不会有报错，但玩家可能被卡在半空，dash 和体力再也不恢复，然后你会觉得"手感崩了"。
 
 | 层 | 值 | 给谁 | 碰撞掩码（mask）|
 |----|-----|------|-----------------|
 | 1 | `0b1` | **所有地形**（地板、墙、天花板） | — |
-`Player`） | **只勾 1** |
-| 3 | `0b100` | **可携带物**（Theo、Jellyfish） | **只勾 1** |
-| — | `0` | **探测区**（GrabDetector） | **只勾 4**（只看可携带物） |
+| 2 | `0b10` | **玩家**（`Player`） | **只勾 1** |
 
 **什么意思？**
 - 地形只放在层 1，不用设 mask。
 - 玩家 `Player.tscn` 已经配好了（层 2 / 掩码 1），**新关卡里不要改它**。
-- 你往关卡里拖 Theo 或 Jellyfish 时，确保它们的 `collision_layer = 4`、`collision_mask = 1`。
-
-> ❌ **绝对不要**把可携带物放在层 1 或层 2 —— 它们会挡住玩家，导致"明明站在地上但 dash 就是回不来"。
 
 ---
 
@@ -64,8 +59,6 @@ Level01 (Node2D)                         ← 场景根
 │   └── CollisionShape2D
 ├── Spawn (Marker2D)                      ← 出生点（关卡加载时玩家出现在这里）
 ├── Player (PackedScene)                  ← 拖入 player.tscn 实例
-├── Theo (PackedScene)                    ← 拖入 theo.tscn 实例（如果需要）
-├── Jellyfish (PackedScene)               ← 拖入 jellyfish.tscn 实例（如果需要）
 └── Camera2D                              ← 关卡专属相机（可选，player.tscn 自带的也能用）
 ```
 
@@ -135,15 +128,6 @@ Level01 (Node2D)                         ← 场景根
 
 ---
 
-### 3.5 道具：Theo 与 Jellyfish
-
-从 `res://scenes/components/` 拖入场景即可：
-
-- `theo.tscn` —— 重物型，圆形碰撞体，扔出去平飞
-- `jellyfish.tscn` —— 浮物型，扔出去先升后浮，再次抓住有上升冲量
-
-确保它们的 `collision_layer = 4`、`collision_mask = 1`（场景自带，但拖进来后检查一下以防误改）。
-
 ---
 
 ## 4. 技巧坑的坑宽速查
@@ -211,7 +195,6 @@ F:\personal\Godot\Godot_v4.7.1-stable_win64_console.exe --headless --path "f:\pe
 | 蹲着走 | 按住 S | 速度被摩擦压到很慢（不能正常走路） |
 | 爬墙 | Shift 贴墙 | 角色吸附在墙上、不下滑 |
 | 坑 | 摔进坑 | 死亡瞬发、回到检查点、dash 体力全满 |
-| 道具 | Shift 抓起 Theo / Jellyfish | 拾取、抛出，不卡角色 |
 | 相机 | 正常跑跳 | 不抖、不穿帮、不跟丢 |
 
 ---
@@ -220,8 +203,6 @@ F:\personal\Godot\Godot_v4.7.1-stable_win64_console.exe --headless --path "f:\pe
 
 | 症状 | 最可能的原因 | 怎么修 |
 |------|-------------|--------|
-| 角色被"看不见的东西"卡住 | 道具或装饰物碰撞层不是 4（染上了层 1） | 选中那个节点，`collision_layer` 改 4，`collision_mask` 改 1 |
-| Dash 后落地不恢复 | a) 地形 `collision_layer` 不是 1；b) 脚下道具顶住了 | a) 地形设为层 1；b) 道具设层 4 |
 | 1 砖缝怎么也钻不进去 | 缝隙 < 8px（比如 7px 宽） | 检查两个碰撞体之间的距离，必须是 8px 的整数倍 |
 | 角色站地上却在慢慢滑 | 某个碰撞体角度不是 0（有微小旋转） | 所有地形碰撞体 `rotation` 必须为 0 |
 | 检查点不触发 | `monitoring` 或 `monitorable` 关了 | `Area2D` 两个都勾上 |
@@ -235,7 +216,6 @@ F:\personal\Godot\Godot_v4.7.1-stable_win64_console.exe --headless --path "f:\pe
 
 1. **角色碰撞箱只有 8×11**，所以 1 砖（8px）高的通道站着是过不去的，必须蹲着（6px）+ Dash。同理 1 砖宽的缝理论上是够的，但实际上需要 `SHAPE_INSET` 帮忙（已配好），你的地形只要保证缝 **正好 8px** 就行。
 2. **地面往下的第一行不算 KillPlane**——如果坑的底部跟地面在同一行（比如坑深刚好 1 砖），掉进去前玩家可能还在 `floor_snap_length` 范围内蹭到地面。
-3. **可携带物的碰撞体绝对不能比视觉大**——玩家会凭空被弹开。
 4. **`player.tscn` 的 `safe_margin = 0.001`** 是故意设这么小的，否则贴墙爬墙会出现 1px 空隙。新建的关卡地形不需要特别设这个值。
 5. 如果玩家出生后立刻掉进虚空，检查 `Spawn` 的 y 坐标——角色的 `(0,0)` 是脚底，所以 Marker2D 必须放在**实体上方 1px 以上**，否则玩家会在出生帧就被地板吞掉。
 
@@ -253,6 +233,6 @@ F:\personal\Godot\Godot_v4.7.1-stable_win64_console.exe --headless --path "f:\pe
 6. 从 FileSystem 拖 `player.tscn` 到场景根，position 设 `(32, 112)`（脚底踩地面顶面）。
 7. 右键 `level_01.tscn` → `Set as Main Scene`。
 8. 按 **F6** 跑。角色站在地面上，左右走、跳、Dash——一切正常。
-9. 回头开始加墙、坑、天花板、Theo……不断 F6 测试。
+9. 回头开始加墙、坑、天花板……不断 F6 测试。
 
 > 关卡设计没有"对""错"，只有"拳头够不够硬"——你摆的每一块砖，最后都要自己跑得过。

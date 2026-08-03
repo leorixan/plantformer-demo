@@ -72,7 +72,6 @@ class Harness extends Node:
 		await _case_dash_refill_after_super()
 		await _case_dash_refill_after_hyper()
 		await _case_dash_refill_after_wavedash()
-		await _case_carryable_not_solid()
 		await _case_wall_speed_retention()
 		await _case_duck()
 		print("---- PLAYER REGRESSION %d passed, %d failed ----" % [passes, failures.size()])
@@ -579,21 +578,6 @@ class Harness extends Node:
 		var refilled: bool = await _wait_until(func() -> bool: return player.dash_count == player.max_dashes, 60)
 		_check("Wavedash 落地后 dash 恢复", refilled and player._on_ground(), "count=%d on_ground=%s" % [player.dash_count, player._on_ground()])
 		_release_all()
-
-	# 可携带物不能挡住角色（参考 Celeste：玩家只与 Solid 碰撞，Theo 是 Actor）。
-	# 同层时角色会被 Theo 的圆形碰撞体卡在半空，is_on_floor() 为假 → dash 与体力都补不回来。
-	func _case_carryable_not_solid() -> void:
-		var theo: Node2D = load("res://scenes/components/theo.tscn").instantiate()
-		theo.global_position = Vector2(60.0, -6.0)
-		get_parent().add_child(theo)
-		await _reset(Vector2(0.0, 0.0))
-		Input.action_press("move_right")
-		await _step(80)
-		_check("可携带物不阻挡角色", player.global_position.x > 100.0, "x=%.1f（被 Theo 卡住会停在 50 附近）" % player.global_position.x)
-		_check("经过可携带物时仍算站在地上", player._on_ground(), "on_ground=%s y=%.1f" % [player._on_ground(), player.global_position.y])
-		_release_all()
-		theo.queue_free()
-		await _step(2)
 
 	# Wall Speed Retention：撞墙瞬间存下水平速度（Cornerboost 的来源）
 	func _case_wall_speed_retention() -> void:
