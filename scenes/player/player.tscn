@@ -30,6 +30,26 @@ color = Color(1, 0.9, 0.2, 1)
 [node name="UI" type="Node2D" parent="."]
 position = Vector2(-8, -18)
 
+[node name="DashPip1" type="ColorRect" parent="UI"]
+offset_right = 4.0
+offset_bottom = 2.0
+color = Color(0.968627, 0.839216, 0.352941, 1)
+mouse_filter = 2
+
+[node name="DashPip2" type="ColorRect" parent="UI"]
+offset_left = 6.0
+offset_right = 10.0
+offset_bottom = 2.0
+color = Color(0.301961, 0.321569, 0.380392, 1)
+mouse_filter = 2
+
+[node name="DashPip3" type="ColorRect" parent="UI"]
+offset_left = 12.0
+offset_right = 16.0
+offset_bottom = 2.0
+color = Color(0.301961, 0.321569, 0.380392, 1)
+mouse_filter = 2
+
 [node name="StaminaBar" type="ColorRect" parent="UI"]
 offset_top = 3.0
 offset_right = 16.0

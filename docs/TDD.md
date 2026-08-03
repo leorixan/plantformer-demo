@@ -62,7 +62,7 @@ res://
 ```
 Player (CharacterBody2D, player.gd)          # 唯一写 velocity 的地方
 ├── Visuals (Node2D) / CollisionShape2D
-├── UI (StaminaBar/Fill)                 # 体力条；冲刺/attack 状态由身体颜色直读（紫=attacking，红=正常，蓝=无dash）
+├── UI (DashPip1..3 + StaminaBar/Fill)       # 冲刺 pips + 体力条；身体颜色同步指示（紫=attacking，红=正常，蓝=无dash）
 ├── Camera2D
 └── ControllerDebug (Label)                  # show_controller_debug 打开
 ```
