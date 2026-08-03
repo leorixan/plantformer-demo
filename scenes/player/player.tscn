@@ -5,9 +5,6 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_p47bc"]
 size = Vector2(8, 11)
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_75vfm"]
-radius = 10.0
-
 [node name="Player" type="CharacterBody2D" unique_id=1956478963]
 collision_layer = 2
 collision_mask = 1
@@ -69,17 +66,6 @@ mouse_filter = 2
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1875973933]
 position = Vector2(0, -5.5)
 shape = SubResource("RectangleShape2D_p47bc")
-
-[node name="CarryAnchor" type="Marker2D" parent="." unique_id=1423458969]
-position = Vector2(0, -14)
-
-[node name="GrabDetector" type="Area2D" parent="." unique_id=721890188]
-collision_layer = 0
-collision_mask = 4
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="GrabDetector" unique_id=684444366]
-position = Vector2(0, -5.5)
-shape = SubResource("CircleShape2D_75vfm")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=2064523003]
 position = Vector2(0, -24)

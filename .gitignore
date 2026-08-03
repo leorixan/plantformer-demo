@@ -3,3 +3,4 @@
 /android/
 .claude/settings.local.json
 .mcp.json
+.codemap/

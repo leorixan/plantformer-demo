@@ -63,8 +63,6 @@ res://
 Player (CharacterBody2D, player.gd)          # 唯一写 velocity 的地方
 ├── Visuals (Node2D) / CollisionShape2D
 ├── UI (DashPip1..3 + StaminaBar/Fill)       # 冲刺次数 + 体力条视觉指示器
-├── CarryAnchor (Marker2D)                   # 持物跟随点
-├── GrabDetector (Area2D)                    # 探测附近可抓取物品
 ├── Camera2D
 └── ControllerDebug (Label)                  # show_controller_debug 打开
 ```
@@ -110,7 +108,6 @@ CSV 列：`category, name, value, type, description`。当前包含：
 | Climb | `max_stamina` / `climb_*_speed` / `climb_acceleration` / `climb_*_stamina_cost` / `climb_check_distance` / `slip_check_depth` / `wall_check_distance` / `wall_jump_speed` / `climb_hop_x` / `climb_hop_y` | 墙抓攀爬与墙跳 |
 | Climb | `climb_jump_boost_time` / `wall_slide_start_max` / `wall_slide_time` | Wallboost 窗口 / 贴墙下滑上限与衰减时长 |
 | Feel | `corner_correction_px` / `dash_corner_correction_px` / `wall_jump_force_time` / `super_wall_jump_force_time` / `wall_speed_retention_time` | 上升撞顶修正 / 空中 Dash 撞地角修正 / 墙跳后水平输入接管 / 撞墙速度保留（Cornerboost） |
-| Carry | `throw_speed` / `throw_lift` | 抛物 |
 
 手感机制实现要点：
 - **土狼时间**：离开平台边缘后计时器内仍允许起跳。
@@ -145,7 +142,6 @@ CSV 列：`category, name, value, type, description`。当前包含：
 ### 4.4 抓（Grab）：墙抓攀爬
 
 按 Celeste 式**墙抓/攀爬/墙跳**设计（已确认）：按住 grab 贴墙 → Climb 模式 → 跳跃键弹出。
-**持有物品期间禁用墙抓**（手被占用）——抛出物品后才能抓墙，这是"抛接"技巧循环的核心。
 
 对齐参考 `ClimbBegin` / `ClimbUpdate`（3056 / 3102）的三条硬约束：
 
@@ -174,21 +170,7 @@ CSV 列：`category, name, value, type, description`。当前包含：
 8. **Wall Speed Retention（Cornerboost 来源）**：参考 `OnCollideH` 与 `Update` 的对应段。
    撞墙瞬间存下撞墙前的水平速度，`wall_speed_retention_time` 0.06s 内一旦侧向无墙就还原回去。
 
-### 4.5 抓取物品与抛接（Carryable）
-
-参考 Celeste 的 Theo 水晶与水母。物品抓取**不是** FSM 状态，而是叠加在 Idle/Run/Air 上的"持有"修饰（持有期间正常跑跳）：
-
-- **Carryable 基类**（`scripts/components/carryable.gd`，`class_name Carryable`，继承 CharacterBody2D），三态：
-  - `FREE`：自由物理（重力 + 落地静止 / 碰撞反弹）
-  - `CARRIED`：跟随玩家的 `CarryAnchor`，关闭物理
-  - `THROWN`：受抛掷冲量飞行，`regrab_cooldown`（约 0.15s）后可被再次抓取
-  - 接口：`pick_up(player)` / `throw_item(direction)`
-- **grab 键优先级**：持物 → 抛出；附近有 Carryable → 拾取；贴墙 → 墙抓
-- **Theo 型（重物）**：抛出后平直飞行、落地静止（可扩展为压开关 / 砸障碍的关卡机制）
-- **水母型（浮物）**：持有时玩家 `max_fall_speed` 降低（缓降）；抛出后先上升短程再缓落；上升途中可再次抓取，玩家随其获得升力 → 抛接进阶技巧的基础
-- 参数同样 `@export` 化：`throw_force` / `jelly_rise_speed` / `jelly_rise_time` / `jelly_float_fall_speed` / `regrab_cooldown`
-
-### 4.6 高级技巧复现（Super / Hyper / Ultra / SuperWallJump / 兔子跳）
+### 4.5 高级技巧复现（Super / Hyper / Ultra / SuperWallJump / 兔子跳）
 
 > 参考：`.claude/documents/CelestePlayerReference.txt` 的 `DashCoroutine`(3548) / `DashUpdate`(3474) / `SuperJump`(1695) / `OnCollideV`(2504)。
 > **已实现**。这些技巧不是独立动作，而是从 `Dash Slide + SuperJump + Ducking` 三条规则里**涌现**出来的。
@@ -228,8 +210,7 @@ CSV 列：`category, name, value, type, description`。当前包含：
 8. **Dash 方向必须在冻结结束后才采样**（参考 `DashCoroutine` 的 `yield return null`），否则同帧按下的方向键会被漏掉，表现为"方向判定有延迟"。
 9. **重力必须用 `Calc.Approach` 语义**（`move_toward`），不能写成 `min(vy + g*dt, maxfall)`，否则贴墙下滑与 Fastfall 的上限变化无法生效。
 10. **玩家只与 Solid 碰撞**（参考 Celeste：Theo 是 Actor，不是 Solid）。碰撞层分配：地形 = 层 1；
-   玩家 = 层 2 / 掩码 1；可携带物 = 层 3（值 4）/ 掩码 1；GrabDetector = 层 0 / 掩码 4。
-   同层时角色会被 Theo 的圆形碰撞体顶在半空，同样导致 dash / 体力补不回来。
+   玩家 = 层 2 / 掩码 1。
 11. **`dash_started_on_ground` 只看几何探针**（参考 `DashBegin` 3445 `dashStartedOnGround = onGround`），
    **不能或上土狼时间**。多算土狼会把"跑出台沿再斜下冲撞地"误判成 Hyper（应为 Ultra），
    还会关掉只对空中起手生效的 Dash 撞地角落修正。
@@ -254,8 +235,7 @@ godot --headless --path . --script res://scripts/debug/room_regression.gd
 贴墙下滑被压到 WallSlideStartMax、按住下方向 Fastfall 到 240 不超、`dash_refill_cooldown` 期间不补 dash、
 撞墙速度保留窗口、下蹲（碰撞箱变矮 / 底边不动 / 摩擦 / 自动站起 / 低通道内站不起来）、
 **Super / Hyper 起飞后仍持有 dash（水平 Dash 与 Dash Slide 期间 `_on_ground()` 为真）**、
-**Wavedash 起飞时 dash 仍在 0.1s 补充冷却里、落地即补满**、
-**可携带物不阻挡角色**（碰撞层分离，防回归到"被 Theo 顶住导致 dash 不恢复"）。
+**Wavedash 起飞时 dash 仍在 0.1s 补充冷却里、落地即补满**。
 
 
 ---
@@ -268,7 +248,7 @@ godot --headless --path . --script res://scripts/debug/room_regression.gd
 | `move_up` / `move_down` | W/S、方向键 ↑/↓（8向冲刺、爬墙用） |
 | `jump` | J（建议预留第二跳跃键：咖啡跳需极短间隔连跳） |
 | `dash` | K |
-| `grab` | Shift（墙抓/拾取/抛出复用同一键） |
+| `grab` | Shift（墙抓） |
 
 ---
 
@@ -281,16 +261,16 @@ godot --headless --path . --script res://scripts/debug/room_regression.gd
   `canvas_items` 下 Godot 的动态字体 oversampling 会按最终设备分辨率重新光栅化，字才清晰。
   另外 `textures/canvas_textures/default_texture_filter = Nearest`，保证像素图不被插值。
 - **测试房（灰盒）**：`scenes/levels/test_room.tscn` = `Node2D` 根 + `scripts/levels/test_room.gd`（`@tool`）。
-  房间由脚本按 ASCII 网格生成（图例：`#` 实体 / `.` 空 / `P` 出生 / `T` Theo / `J` 水母 / `x` 目标标记），
-  每区 16 行、地面固定在第 14/15 行（顶面 y=112），横向 `'#'` 连段合并成一个矩形碰撞体 + 一个 ColorRect。
-  参考 Strawberry Jam Collab 的教学房，按技巧分 11 区（跑跳土狼 / 下蹲低通道 / Dash / Super / Hyper·Wavedash /
-  Ultra / 墙跳·SuperWallJump / 攀爬·Wallboost / 角落修正 / Cornerboost / 抛接），每区左上角有标题 + 操作要点标签。
-  `@tool` 的意义：编辑器打开场景就能看到生成结果（编辑器里只铺地形/标记/文字，不放角色与道具）。
+	 房间由脚本按 ASCII 网格生成（图例：`#` 实体 / `.` 空 / `P` 出生 / `x` 目标标记），
+	 每区 16 行、地面固定在第 14/15 行（顶面 y=112），横向 `'#'` 连段合并成一个矩形碰撞体 + 一个 ColorRect。
+	 参考 Strawberry Jam Collab 的教学房，按技巧分 10 区（跑跳土狼 / 下蹲低通道 / Dash / Super / Hyper·Wavedash /
+	 Ultra / 墙跳·SuperWallJump / 攀爬·Wallboost / 角落修正 / Cornerboost），每区左上角有标题 + 操作要点标签。
+	 `@tool` 的意义：编辑器打开场景就能看到生成结果（编辑器里只铺地形/标记/文字，不放角色与道具）。
 - **测试房的三条硬规则**（改 `ZONES` 后必须跑 `room_regression.gd` 复验）：
   1. **坑宽按实测射程定**，保证"没学会技巧就过不去"。平地实测（起跳点→落点）：普通跳 **40px**、
      跳+空中冲 **65px**、光冲刺蹭台沿 **10px**、Super **85px**、Hyper **110px**、Wavedash/Ultra **114px**。
-     故 Super 区坑 **10 砖**、Hyper·Wavedash 区 **10 砖**、Ultra 区 **10 砖**（Ultra 起跳点在台子边上，
-     实际可跨约 130px，所以坑要紧贴台子放），Dash 区与抛接区 **6 砖**。
+    故 Super 区坑 **10 砖**、Hyper·Wavedash 区 **10 砖**、Ultra 区 **10 砖**（Ultra 起跳点在台子边上，
+    实际可跨约 130px，所以坑要紧贴台子放），Dash 区 **6 砖**。
   2. **分区之间是 2 砖厚的高墙**（第 0~11 行实体，第 12/13 行留 16px 门洞，脚下补通行地面），
      所以每区的右端两列不能压台子，否则门洞被堵死（区 1 的悬空台因此缩到第 21 列）。
   3. **坑底有死亡带**（第 17/18 行，红色）：`_physics_process` 里 `y > DEATH_ROW * 8` 即判定死亡，
@@ -314,7 +294,7 @@ godot --headless --path . --script res://scripts/debug/room_regression.gd
 ## 8. 代码规范
 
 - 全部使用**静态类型标注**（`var x: float` / `func f() -> void`）。
-- 可复用类声明 `class_name`（`Player`、`CarryItem`、`ConfigLoader`）；单场景脚本不加。
+- 可复用类声明 `class_name`（`Player`、`ConfigLoader`）；单场景脚本不加。
 - 命名：类 PascalCase，变量/函数 snake_case，常量 CONSTANT_CASE，信号 snake_case 过去式（`player_died`）。
 - 通信方向：父调子用直接引用，子报父用信号；跨场景用 `Game` 的信号。
 - 手感参数注释用中文注明调参方向（例：`# 调大 → 跳得更高`）。
@@ -323,7 +303,7 @@ godot --headless --path . --script res://scripts/debug/room_regression.gd
 
 ## 9. 待确认事项
 
-1. ~~**"抓"的形态**~~ ✅ 已确认：Celeste 式墙抓攀爬；另需物品抓取抛接（Theo 型重物 + 水母型浮物），见 §4.5
+1. ~~**"抓"的形态**~~ ✅ 已确认：Celeste 式墙抓攀爬。
 2. ~~**网格基准 / 分辨率**~~ ✅ 已确认：与 Celeste 同规格 `8×8` 砖、视口 `320×180`；灰盒期继续用占位色块，正式美术风格待定。
 3. ~~**冲刺键位**~~ ✅ 已确认：跳 J、冲刺 K、抓 Shift。
 
@@ -334,7 +314,7 @@ godot --headless --path . --script res://scripts/debug/room_regression.gd
 | 里程碑 | 内容 | 验收 |
 |---|---|---|
 | **M1 角色核心** | Player Mode 状态机 + 土狼/缓存/角落修正/可变跳高 + 灰盒测试场景 | ✅ 测试场景内跑跳手感可调；headless 回归覆盖跳高与角落修正 |
-| **M2 动作扩展** | Dash（8向）+ 墙抓/爬/墙跳 + 下蹲 + 物品抓取抛接（Theo/水母）+ §4.6 高级技巧 | ✅ Super/Hyper/Ultra/反向 Hyper/SuperWallJump/Wallboost/Cornerboost/Wall Slide/Fastfall/下蹲 已实现且回归 84/84 通过；测试房几何回归全绿（坑宽 12 项 + 存档点/门洞 11 项）；抛接待手动试玩 |
+| **M2 动作扩展** | Dash（8向）+ 墙抓/爬/墙跳 + 下蹲 + §4.5 高级技巧 | ✅ Super/Hyper/Ultra/反向 Hyper/SuperWallJump/Wallboost/Cornerboost/Wall Slide/Fastfall/下蹲 已实现且回归 84/84 通过；测试房几何回归全绿（坑宽 12 项 + 存档点/门洞 11 项） |
 | **M3 首个关卡** | 起承转合四段式关卡 + 尖刺/检查点/即时复活 + 相机 | 完整通关流程 |
 | **M4 作品集功能** | 参数仪表盘、死亡记录、辅助模式 | 可出截图与数据 |
 | **M5+** | 各关环境机制、更多关卡、美术 | — |

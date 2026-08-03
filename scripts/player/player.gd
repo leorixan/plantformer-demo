@@ -1,4 +1,4 @@
-class_name Player
+﻿class_name Player
 extends CharacterBody2D
 ## Celeste Player.cs 帧逻辑移植。单一模拟所有者，帧序固定：
 ## 采样输入 -> 计时器 -> 状态更新（移动/重力/跳跃） -> 一次 move_and_slide -> 碰撞结算。
@@ -92,10 +92,6 @@ const SHAPE_INSET := 1.0
 @export var super_wall_jump_force_time := 0.20 # SuperWallJumpForceTime
 @export var wall_speed_retention_time := 0.06 # WallSpeedRetentionTime；Cornerboost 的来源
 
-@export_category("Carry")
-@export var throw_speed := 160.0
-@export var throw_lift := 120.0
-
 @export_category("Debug")
 @export var show_controller_debug := false
 
@@ -118,7 +114,6 @@ var climb_hops := 0
 
 var _jump_buffer := 0.0
 var _dash_buffer := 0.0
-var _grab_pressed := false
 var _raw_move_x := 0.0
 var _force_move_x := 0.0
 var _force_move_x_timer := 0.0
@@ -144,12 +139,9 @@ var _event_timer := 0.0
 @onready var visuals: Node2D = $Visuals
 @onready var body_rect: ColorRect = $Visuals/Body
 @onready var collider: CollisionShape2D = $CollisionShape2D
-@onready var carry_anchor: Marker2D = $CarryAnchor
-@onready var grab_detector: Area2D = $GrabDetector
 @onready var dash_pips: Array[ColorRect] = [$UI/DashPip1, $UI/DashPip2, $UI/DashPip3]
 @onready var stamina_fill: ColorRect = $UI/StaminaBar/Fill
 @onready var debug_label: Label = get_node_or_null("DebugLayer/ControllerDebug")
-var carried_item: CarryItem
 
 func _ready() -> void:
 	var config := get_node_or_null("/root/Config")
@@ -169,7 +161,6 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("jump"): _jump_buffer = jump_buffer_time
 	elif event.is_action_pressed("dash"): _dash_buffer = dash_buffer_time
-	elif event.is_action_pressed("grab"): _grab_pressed = true
 	elif event.is_action_pressed("reload_config"):
 		var config := get_node_or_null("/root/Config")
 		if config:
@@ -195,7 +186,6 @@ func _physics_process(delta: float) -> void:
 func _poll_input(delta: float) -> void:
 	if Input.is_action_just_pressed("jump"): _jump_buffer = jump_buffer_time
 	if Input.is_action_just_pressed("dash"): _dash_buffer = dash_buffer_time
-	if Input.is_action_just_pressed("grab"): _grab_pressed = true
 	_raw_move_x = signf(Input.get_axis("move_left", "move_right"))
 	move_y = signf(Input.get_axis("move_up", "move_down"))
 	# 参考 Update 的 forceMoveX 段：墙跳 / 翻墙 hop 后短时间内接管水平输入。
@@ -204,10 +194,6 @@ func _poll_input(delta: float) -> void:
 		move_x = _force_move_x
 	else:
 		move_x = _raw_move_x
-	if _grab_pressed:
-		_grab_pressed = false
-		if carried_item: throw_carried_item()
-		elif has_nearby_item(): pick_up_nearest_item()
 
 func _tick_timers(delta: float) -> void:
 	_jump_buffer = maxf(0.0, _jump_buffer - delta)
@@ -465,7 +451,7 @@ func _apply_gravity(delta: float) -> void:
 		var limit := _max_fall
 		# 参考 Wall Slide：推向墙面（或无方向按住抓取）且没按下时，沿墙下落被压到 WallSlideStartMax。
 		if (move_x == facing or (move_x == 0.0 and Input.is_action_pressed("grab"))) and move_y <= 0.0:
-			if velocity.y >= 0.0 and _wall_slide_timer > 0.0 and carried_item == null \
+			if velocity.y >= 0.0 and _wall_slide_timer > 0.0 \
 					and _can_unduck() and test_move(global_transform, Vector2(facing, 0.0)):
 				_set_duck(false)
 				_wall_slide_dir = int(facing)
@@ -492,7 +478,7 @@ func _try_jump() -> void:
 # 参考 NormalUpdate 的墙跳分支：面朝墙且按住抓取还有体力 = 垂直爬墙跳（不会被弹离墙面），
 # 纯上 Dash 攻击中撞墙 = SuperWallJump，其余才是普通墙跳。
 func _jump_off_wall(wall: int) -> void:
-	if facing == float(wall) and Input.is_action_pressed("grab") and stamina > 0.0 and carried_item == null:
+	if facing == float(wall) and Input.is_action_pressed("grab") and stamina > 0.0:
 		_climb_jump()
 	elif dash_attack_timer > 0.0 and dash_dir.x == 0.0 and dash_dir.y < 0.0:
 		_wall_jump(-wall, true)
@@ -631,7 +617,7 @@ func _finish_dash() -> void:
 
 func _try_start_climb() -> bool:
 	# 参考 NormalUpdate 的 Climbing 段：持物、体力耗尽或蹲着起不来时不能抓墙。
-	if not Input.is_action_pressed("grab") or carried_item != null or stamina <= 0.0 or not _can_unduck():
+	if not Input.is_action_pressed("grab") or stamina <= 0.0 or not _can_unduck():
 		return false
 	# 上升中或正在离墙时不许抓墙。缺这条，翻墙 hop 刚起跳就会被重新抓住 → 反复 hop 把体力抽干。
 	if velocity.y < 0.0 or signf(velocity.x) == -facing: return false
@@ -749,33 +735,7 @@ func _update_debug() -> void:
 	if not show_controller_debug: return
 	debug_label.text = "MODE %s DUCK %s | V (%.0f, %.0f)\nDASH (%.2f, %.2f) x%d | STA %.0f\nEVENT %s" % [
 		Mode.keys()[mode], "Y" if is_ducking else "N", velocity.x, velocity.y,
-		dash_dir.x, dash_dir.y, dash_count, stamina, _event_text if _event_timer > 0.0 else "-"]
-
-func has_nearby_item() -> bool: return _get_nearest_item() != null
-
-func pick_up_nearest_item() -> bool:
-	var item := _get_nearest_item()
-	if item == null: return false
-	item.pick_up(carry_anchor)
-	carried_item = item
-	return true
-
-func throw_carried_item() -> void:
-	if carried_item == null: return
-	var item := carried_item
-	carried_item = null
-	item.throw_into(get_tree().current_scene, Vector2(facing, 0.0), throw_speed, throw_lift)
-
-func _get_nearest_item() -> CarryItem:
-	var nearest: CarryItem
-	var distance := INF
-	for body in grab_detector.get_overlapping_bodies():
-		if body is CarryItem and not body.is_carried():
-			var d := global_position.distance_squared_to(body.global_position)
-			if d < distance:
-				nearest = body
-				distance = d
-	return nearest
+			dash_dir.x, dash_dir.y, dash_count, stamina, _event_text if _event_timer > 0.0 else "-"]
 
 func _update_indicators() -> void:
 	if not is_instance_valid(stamina_fill): return

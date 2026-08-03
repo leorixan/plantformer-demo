@@ -5,7 +5,7 @@ extends Node2D
 ## 分区思路参考 Strawberry Jam Collab 的教学房 —— 一个技巧一间小房，房内只放该技巧需要的地形，
 ## 门口写清操作与判定要点，练成了再往右走。掉坑自动在本区入口重生。
 ##
-## 图例：'#' 实体地形 / '.' 空 / 'P' 出生点 / 'T' Theo / 'J' 水母 / 'x' 目标标记（无碰撞）
+## 图例：'#' 实体地形 / '.' 空 / 'P' 出生点 / 'x' 目标标记（无碰撞）
 ## 每区 16 行、宽度 = 行字符串长度；地面固定在第 14/15 行（顶面 y=112）。
 ## 区与区之间留 ZONE_GAP 格的坑作为分界，坑宽 2 格可直接跳过去。
 
@@ -241,31 +241,9 @@ const ZONES: Array[Dictionary] = [
 			"..................##....",
 			"########################",
 			"########################",
-		],
-	},
-	{
-		"title": "11  抛接 Theo / 水母",
-		"hint": "Shift 拾取，再按 Shift 朝面向抛出。持物时不能抓墙。水母抛出后先升后缓降。",
-		"rows": [
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"..........J.....................",
-			"................................",
-			"................................",
-			"................................",
-			"................................",
-			"..........................x.....",
-			"........T.......................",
-			"##################......########",
-			"##################......########",
-		],
-	},
-]
+			],
+		},
+	]
 
 var _player: Node2D
 var _zone_bounds: Array[Vector2] = []
@@ -294,8 +272,6 @@ func _ready() -> void:
 	generated.add_child(labels)
 
 	var player_scene: PackedScene = load("res://scenes/player/player.tscn")
-	var theo_scene: PackedScene = load("res://scenes/components/theo.tscn")
-	var jelly_scene: PackedScene = load("res://scenes/components/jellyfish.tscn")
 
 	var x_tile := 0
 	for zone in ZONES:
@@ -322,16 +298,6 @@ func _ready() -> void:
 						_player.global_position = _cell_floor(x_tile + col, row_index)
 						_player.set("show_controller_debug", true)
 						add_child(_player)
-					"T":
-						if editor: continue
-						var theo: Node2D = theo_scene.instantiate()
-						theo.global_position = _cell_center(x_tile + col, row_index)
-						add_child(theo)
-					"J":
-						if editor: continue
-						var jelly: Node2D = jelly_scene.instantiate()
-						jelly.global_position = _cell_center(x_tile + col, row_index)
-						add_child(jelly)
 					"x":
 						_add_marker(markers, x_tile + col, row_index)
 		_add_label(labels, zone, x_tile, width)
@@ -443,5 +409,3 @@ func _add_label(labels: Node2D, zone: Dictionary, x_tile: int, width: int) -> vo
 func _cell_floor(col: int, row: int) -> Vector2:
 	return Vector2(col * TILE + TILE * 0.5, (row + 1) * TILE)
 
-func _cell_center(col: int, row: int) -> Vector2:
-	return Vector2(col * TILE + TILE * 0.5, row * TILE + TILE * 0.5)
