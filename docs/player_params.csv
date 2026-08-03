@@ -60,4 +60,5 @@ Feel,corner_correction_px,4,int,px；Celeste UpwardCornerCorrection
 Feel,dash_corner_correction_px,4,int,px；Celeste DashCornerCorrection
 Feel,wall_jump_force_time,0.16,float,秒；Celeste WallJumpForceTime，墙跳后水平输入被强制推离墙
 Feel,super_wall_jump_force_time,0.2,float,秒；Celeste SuperWallJumpForceTime
-Feel,wall_speed_retention_time,0.06,float,秒；Celeste WallSpeedRetentionTime；撞墙水平速度保留窗口（Cornerboost）
+	Feel,wall_speed_retention_time,0.06,float,秒；Celeste WallSpeedRetentionTime；撞墙水平速度保留窗口（Cornerboost）
+	Attack,attack_speed_threshold,240.0,float,px/s；速度超此值 is_attacking() 为真，不限 dash 期

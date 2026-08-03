@@ -55,6 +55,7 @@ const SHAPE_INSET := 1.0
 @export var dash_cooldown := 0.20 # DashCooldown
 @export var dash_refill_cooldown := 0.10 # DashRefillCooldown；落地补 dash 的冷却，Extended Dash 的来源
 @export var dash_attack_time := 0.30 # DashAttackTime
+@export var attack_speed_threshold := 240.0 # 速度超此阈值即视为 attacking，不限 dash
 @export var dash_buffer_time := 0.12
 @export var super_jump_speed := 260.0 # SuperJumpH
 @export var dodge_slide_speed_mult := 1.2 # DodgeSlideSpeedMult
@@ -587,6 +588,9 @@ func _try_start_dash() -> bool:
 	_event("Dash")
 	return true
 
+
+## dash_attack_timer 应与速度阈值叠加：任一满足即为 attacking。
+## 可用于破墙、杀敌等碰撞判定。
 # 参考 DashCoroutine：冻结结束后才读方向、写速度，同向更快的旧速度保留，绝不降速。
 func _launch_dash() -> void:
 	dash_dir = get_dash_direction()
@@ -743,3 +747,6 @@ func _update_indicators() -> void:
 		dash_pips[index].color = Color("f7d65a") if index < dash_count else Color("4d5261")
 	var bar: ColorRect = stamina_fill.get_parent()
 	stamina_fill.size.x = bar.size.x * clampf(stamina / maxf(max_stamina, 0.001), 0.0, 1.0)
+
+func is_attacking() -> bool:
+	return dash_attack_timer > 0.0 or velocity.length() >= attack_speed_threshold
