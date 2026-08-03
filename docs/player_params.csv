@@ -62,3 +62,4 @@ Feel,wall_jump_force_time,0.16,float,秒；Celeste WallJumpForceTime，墙跳后
 Feel,super_wall_jump_force_time,0.2,float,秒；Celeste SuperWallJumpForceTime
 	Feel,wall_speed_retention_time,0.06,float,秒；Celeste WallSpeedRetentionTime；撞墙水平速度保留窗口（Cornerboost）
 	Attack,attack_speed_threshold,240.0,float,px/s；速度超此值 is_attacking() 为真，不限 dash 期
+	Damage,kill_plane_y,1000.0,float,px；玩家 y 超过此值即死亡重生（自定义场景按高度调）

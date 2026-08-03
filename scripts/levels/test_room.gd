@@ -246,6 +246,7 @@ const ZONES: Array[Dictionary] = [
 	]
 
 var _player: Node2D
+var _current_zone := -1
 var _zone_bounds: Array[Vector2] = []
 var _zone_spawns: Array[Vector2] = []
 
@@ -297,6 +298,7 @@ func _ready() -> void:
 						_player = player_scene.instantiate()
 						_player.global_position = _cell_floor(x_tile + col, row_index)
 						_player.set("show_controller_debug", true)
+						_player.set("kill_plane_y", float(DEATH_ROW * TILE))
 						add_child(_player)
 					"x":
 						_add_marker(markers, x_tile + col, row_index)
@@ -310,20 +312,19 @@ func _ready() -> void:
 		x_tile += width + ZONE_GAP
 	_add_death_band(visuals, x_tile)
 
-## 掉进坑里立刻触发死亡判定，回到所在分区的存档点（参考 Strawberry Jam 的教学房：失败立刻重来）。
+## 玩家跨区时更新存盘点；掉坑死亡由 player.gd 的 kill_plane_y 统一处理（_add_checkpoint 已设好）。
 func _physics_process(_delta: float) -> void:
-	if not is_instance_valid(_player) or _player.global_position.y < DEATH_ROW * TILE:
-		return
-	_player.global_position = _spawn_for(_player.global_position.x)
-	_player.velocity = Vector2.ZERO
-	_player.dash_count = _player.max_dashes
-	_player.stamina = _player.max_stamina
+	if not is_instance_valid(_player): return
+	var zone := _zone_for(_player.global_position.x)
+	if zone != _current_zone:
+		_current_zone = zone
+		_player.set_checkpoint(_zone_spawns[zone])
 
-func _spawn_for(x: float) -> Vector2:
+func _zone_for(x: float) -> int:
 	for index in _zone_bounds.size():
 		if x < _zone_bounds[index].y:
-			return _zone_spawns[index]
-	return _zone_spawns[_zone_spawns.size() - 1]
+			return index
+	return _zone_bounds.size() - 1
 
 ## 分区入口：地面行第一块实体的上方第一个空格（有些区入口上面还压着台子）
 func _zone_entrance(rows: Array, x_tile: int) -> Vector2:

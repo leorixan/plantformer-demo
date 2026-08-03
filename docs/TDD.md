@@ -279,13 +279,14 @@ godot --headless --path . --script res://scripts/debug/room_regression.gd
     实际可跨约 130px，所以坑要紧贴台子放），Dash 区 **6 砖**。
   2. **分区之间是 2 砖厚的高墙**（第 0~11 行实体，第 12/13 行留 16px 门洞，脚下补通行地面），
      所以每区的右端两列不能压台子，否则门洞被堵死（区 1 的悬空台因此缩到第 21 列）。
-  3. **坑底有死亡带**（第 17/18 行，红色）：`_physics_process` 里 `y > DEATH_ROW * 8` 即判定死亡，
-     立刻在**所在分区入口的存档点**（绿色立柱）复活并补满 dash / 体力 —— 掉坑约 17 帧就重来，不是无底洞。
+  3. **坑底有死亡带**（第 17/18 行，红色）：`player.kill_plane_y` 由 test_room 设为 `DEATH_ROW * 8`，
+     掉下去即触发玩家自带的 `_respawn()`，回到 `last_checkpoint`（跨区时 test_room 调 `set_checkpoint()` 更新到分区入口）
+     并补满 dash / 体力 —— 掉坑约 17 帧就重来，不是无底洞。
 
-- **关卡场景**：`Node2D` 根 + `TileMapLayer`（地形）+ 机关实例 + `Checkpoint` 节点 + `Camera2D`。
-- **检查点**：Area2D，进入时 `Game.set_checkpoint()`。
-- **死亡**：碰到 Hazard（尖刺等）或掉出边界 → `Game.record_death(global_position)` → **立即**在检查点重生（无 UI、无延迟、无惩罚）。
-- **死亡记录**：`debug/death_recorder.gd` 把每次死亡坐标追加写入 `user://deaths.json`，供热力图分析（作品集加分项）。
+- **关卡场景**：`Node2D` 根 + 素材库组件（`scenes/components/*.tscn`）+ `player.tscn` + `Camera2D`。详见 `AssetLibrary.md`。
+- **检查点**：`checkpoint.tscn`（Area2D），进入时调 `player.set_checkpoint()`。
+- **死亡**：统一由 `player.gd` 处理 —— 尖刺等伤害源调 `player.take_damage()`，掉出 `kill_plane_y` 自动重生；
+  重生到 `last_checkpoint`，零延迟无惩罚。
 
 ---
 

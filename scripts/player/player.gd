@@ -96,10 +96,14 @@ const SHAPE_INSET := 1.0
 @export_category("Debug")
 @export var show_controller_debug := false
 
+@export_category("Damage")
+@export var kill_plane_y := 1000.0 # 掉到该 y 以下立即死亡重生（自定义场景可调）
+
 var mode := Mode.NORMAL
 var dash_count := 1
 var stamina := 110.0
 var facing := 1.0
+var last_checkpoint := Vector2.ZERO
 var is_ducking := false
 var move_x := 0.0 # 参考 moveX：受 forceMoveX 覆盖后的有效水平输入
 var move_y := 0.0 # 参考 Input.MoveY.Value：原始纵向输入
@@ -154,6 +158,7 @@ func _ready() -> void:
 	_max_fall = max_fall_speed
 	_wall_slide_timer = wall_slide_time
 	_floor_last_frame = _on_ground()
+	last_checkpoint = global_position
 	if debug_label: debug_label.visible = show_controller_debug
 	_update_indicators()
 
@@ -179,6 +184,7 @@ func _physics_process(delta: float) -> void:
 	var pre_move_velocity := velocity
 	move_and_slide()
 	_resolve_collisions(pre_move_velocity)
+	if global_position.y > kill_plane_y: _respawn()
 	_update_indicators()
 	_update_debug()
 
@@ -757,3 +763,19 @@ func _update_indicators() -> void:
 
 func is_attacking() -> bool:
 	return dash_attack_timer > 0.0 or velocity.length() >= attack_speed_threshold
+
+## 素材库接口：尖刺/敌人等伤害源调用。统一回到 last_checkpoint 重生。
+func take_damage() -> void:
+	_respawn()
+
+## 素材库接口：存盘点 Area2D 调用，记录重生点。
+func set_checkpoint(at: Vector2) -> void:
+	last_checkpoint = at
+
+func _respawn() -> void:
+	global_position = last_checkpoint
+	velocity = Vector2.ZERO
+	dash_count = max_dashes
+	stamina = max_stamina
+	_set_duck(false)
+	_update_indicators()
