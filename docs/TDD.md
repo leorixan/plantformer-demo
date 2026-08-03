@@ -102,7 +102,7 @@ CSV 列：`category, name, value, type, description`。当前包含：
 | Movement | `duck_friction` / `duck_correct_check` / `duck_correct_slide` | 下蹲地面摩擦 / 站不起来时的让位探测与横移速度 |
 | Jump | `jump_speed` / `jump_speed_boost` / `var_jump_time` / `coyote_time` / `jump_buffer_time` / `ceiling_var_jump_grace` | 起跳、水平加成、可变跳高、土狼、缓存 |
 | Gravity | `gravity` / `max_fall_speed` / `fast_max_fall_speed` / `fast_max_accel` / `half_gravity_threshold` | 顶点半重力（按住跳时）+ 按住下方向的 Fastfall |
-| Dash | `dash_speed` / `dash_end_speed` / `end_dash_up_mult` / `dash_duration` / `dash_freeze_time` / `dash_cooldown` / `dash_refill_cooldown` / `dash_attack_time` / `dash_buffer_time` | 冲刺本体；`dash_refill_cooldown` 是 Extended Dash 的窗口 |
+| Dash | `dash_speed` / `dash_end_speed` / `end_dash_up_mult` / `dash_duration` / `dash_freeze_time` / `dash_cooldown` / `dash_refill_cooldown` / `dash_attack_time` / `dash_buffer_time` / `attack_speed_threshold` | 冲刺本体 + `is_attacking()`（`dash_attack_timer > 0 \|\| speed >= attack_speed_threshold`）；`dash_refill_cooldown` 是 Extended Dash 的窗口 |
 | Dash | `super_jump_speed` / `dodge_slide_speed_mult` / `duck_super_jump_x_mult` / `duck_super_jump_y_mult` | Super / Hyper / Ultra |
 | Dash | `super_wall_jump_speed` / `super_wall_jump_horizontal` | 上冲刺撞墙的 SuperWallJump |
 | Climb | `max_stamina` / `climb_*_speed` / `climb_acceleration` / `climb_*_stamina_cost` / `climb_check_distance` / `slip_check_depth` / `wall_check_distance` / `wall_jump_speed` / `climb_hop_x` / `climb_hop_y` | 墙抓攀爬与墙跳 |
@@ -158,6 +158,7 @@ CSV 列：`category, name, value, type, description`。当前包含：
    **`NormalUpdate` 的跳跃段有同一套分支**（参考 2969-3004）：非攀爬状态下贴墙按跳时，先要求 `CanUnDuck`，
    再按「面朝墙 + 按住抓取 + 有体力 → `ClimbJump`」/「纯上 Dash 攻击中 → `SuperWallJump`」/「其余 → `WallJump`」分派。
    缺这段就会出现"按住抓取贴墙起跳被水平弹得很远"。
+- **`is_attacking()`**：`dash_attack_timer > 0 || velocity.length() >= attack_speed_threshold(240)`。用于破墙、杀敌等碰撞判定，不限 dash 期。Super(260)/Hyper(325)/Ultra(325) 均满足。
 4. **翻墙 hop 是免费动作**：参考 `ClimbHop` 不扣体力、不算跳跃。水平速度先由 `hopWaitX` 压住，
    越过墙沿（侧向 1px 无墙）后才推上平台；同时 `forceMoveX = 0` 维持 `climb_hop_force_time`。
 5. **上升中不许抓墙**：参考 `NormalUpdate` 的 `if (Speed.Y >= 0 && Math.Sign(Speed.X) != -Facing)`。
