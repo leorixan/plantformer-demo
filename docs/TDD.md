@@ -204,6 +204,9 @@ CSV 列：`category, name, value, type, description`。当前包含：
    禁止用 Godot 的 `is_on_floor()` 做逻辑判定：水平 Dash（vy=0、关重力）、Dash Slide 这类帧里没有向下位移，
    `is_on_floor()` 为假 → dash 次数 / 体力 / 土狼时间全都补不回来，表现为"Super / Hyper / Wavedash 之后冲刺不恢复"。
    `is_on_floor()` 只允许用于 `is_on_ceiling()` / `is_on_wall()` 这类本帧碰撞事实。
+   **`_on_ground()` 当前是纯几何探针（不含 `velocity.y < 0` 短路）**：Celeste 的 `Speed.Y >= 0` 由自身速度计算出 `onGround`，
+   但 Godot 的 `move_and_slide()` 落地帧可能把 `velocity.y` 修正成 −0.001，速度短路不可靠。
+   纯探针与 Celeste `//Dashes` 段（735 `else if (onGround) ... RefillDash()`）的 refill 逻辑等效。
 5. **Hyper / Ultra 的输入窗口就是 `dash_duration`（0.15s）本身**，不额外开 `ultra_window`；`jump_buffer_time` 负责容错。
 6. **参数直接照搬 Celeste 原值**（1 砖 = 8px，见 §4.2），不要自己拍数、也不要再乘缩放倍数。
 7. **Facing 在 Dash 期间必须继续跟随 `moveX`**（只有 Climb 例外），否则反向 Super / 反向 Hyper 永远做不出来。
@@ -218,7 +221,7 @@ CSV 列：`category, name, value, type, description`。当前包含：
    补充条件是"冷却结束 且 `onGround` 且脚下 1px 有实体"（718-739）。
    所以 **Wavedash 起飞那一刻 dash 必然还是 0**（冷却没走完就已离地），落地后才补满 —— 这与 Celeste 一致，不是 bug。
 
-**自动化验收**：`scripts/debug/player_regression.gd`（真实物理回归，**84 条断言**）+
+**自动化验收**：`scripts/debug/player_regression.gd`（真实物理回归，**82 条断言**）+
 `scripts/debug/room_regression.gd`（测试房几何回归：坑宽把关 / 死亡复活 / 存档点与门洞）
 
 ```
@@ -314,7 +317,7 @@ godot --headless --path . --script res://scripts/debug/room_regression.gd
 | 里程碑 | 内容 | 验收 |
 |---|---|---|
 | **M1 角色核心** | Player Mode 状态机 + 土狼/缓存/角落修正/可变跳高 + 灰盒测试场景 | ✅ 测试场景内跑跳手感可调；headless 回归覆盖跳高与角落修正 |
-| **M2 动作扩展** | Dash（8向）+ 墙抓/爬/墙跳 + 下蹲 + §4.5 高级技巧 | ✅ Super/Hyper/Ultra/反向 Hyper/SuperWallJump/Wallboost/Cornerboost/Wall Slide/Fastfall/下蹲 已实现且回归 84/84 通过；测试房几何回归全绿（坑宽 12 项 + 存档点/门洞 11 项） |
+| **M2 动作扩展** | Dash（8向）+ 墙抓/爬/墙跳 + 下蹲 + §4.5 高级技巧 | ✅ Super/Hyper/Ultra/反向 Hyper/SuperWallJump/Wallboost/Cornerboost/Wall Slide/Fastfall/下蹲 已实现且回归 82/82 通过；测试房几何回归全绿（坑宽 12 项 + 存档点/门洞 10 项） |
 | **M3 首个关卡** | 起承转合四段式关卡 + 尖刺/检查点/即时复活 + 相机 | 完整通关流程 |
 | **M4 作品集功能** | 参数仪表盘、死亡记录、辅助模式 | 可出截图与数据 |
 | **M5+** | 各关环境机制、更多关卡、美术 | — |
