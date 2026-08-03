@@ -309,7 +309,7 @@ func _can_unduck() -> bool:
 
 func _can_unduck_at(at: Vector2) -> bool:
 	if not is_ducking: return true
-	return not _box_is_solid(at + Vector2(0.0, -stand_height * 0.5), Vector2(body_width, stand_height))
+	return not _box_is_solid(at + Vector2(0.0, -stand_height * 0.5), Vector2(body_width, stand_height), true)
 
 # 参考 Update 顶部的 onGround：`Speed.Y >= 0 && CollideCheck<Solid>(Position + UnitY)` —— 是**几何探针**，
 # 不是"本帧有没有撞到地面"。Godot 的 is_on_floor() 属于后者：水平 Dash（vy=0 且关重力）、
@@ -321,11 +321,11 @@ func _on_ground() -> bool:
 # 参考 CollideCheck<Solid>：把当前碰撞盒整箱挪到 at 处，看是否无阻挡。
 func _body_fits_at(at: Vector2) -> bool:
 	var height := _body_height()
-	return not _box_is_solid(at + Vector2(0.0, -height * 0.5), Vector2(body_width, height))
+	return not _box_is_solid(at + Vector2(0.0, -height * 0.5), Vector2(body_width, height), true)
 
-func _box_is_solid(center: Vector2, size: Vector2) -> bool:
+func _box_is_solid(center: Vector2, size: Vector2, inset_y: bool = false) -> bool:
 	var rect := RectangleShape2D.new()
-	rect.size = size - Vector2(SHAPE_INSET, SHAPE_INSET)
+	rect.size = Vector2(size.x - SHAPE_INSET, size.y - (SHAPE_INSET if inset_y else 0.0))
 	var params := PhysicsShapeQueryParameters2D.new()
 	params.shape = rect
 	params.transform = Transform2D(0.0, center)
