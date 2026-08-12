@@ -14,3 +14,6 @@ docs/Player.cs
 .funplay/
 CLAUDE.md
 AGENTS.md
+addons/funplay_mcp/
+
+# 本地 project.godot 会因启用编辑器插件而增删 [autoload] / [editor_plugins] 条目，提交时注意不要带上
