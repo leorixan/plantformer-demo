@@ -25,6 +25,16 @@ against the original while working.
 I don't include that source file in this repo. It's public for study but not under an open-source
 license, so I keep it locally only (see `.gitignore`). Everything committed here is written by me.
 
+### Tools I used
+
+I use AI assistants the same way I use a debugger or Stack Overflow — as a **tool, not an author**:
+looking up Godot API behaviour and reference material, reviewing code I had already written, and
+helping narrow down bugs (the `safe_margin` one took a lot of back and forth). Design decisions, the
+frame ordering, the parameter tuning and the test suite are mine, and I can explain why every line is
+there.
+
+Anything I couldn't explain in an interview doesn't belong in this repo, so that's the line I hold.
+
 ### What I actually worked on
 
 Copying numbers is easy. These are the parts that took real time:
@@ -62,7 +72,7 @@ The frame order is now: sample input edges → tick timers → decide → **one*
 this frame's collisions → arm post-landing techniques. State is a `Mode` enum
 (`NORMAL / DASH / CLIMB`) inside `player.gd`, roughly like the single `State` integer in the
 reference. I originally had separate state node scripts and deleted them; my notes on why are in
-`.claude/documents/TDD.md`.
+`docs/TDD.md`.
 
 ### What's in it
 
@@ -71,7 +81,7 @@ after the freeze frames, speed retained), Dash Slide, Super / Hyper / Ultra, wal
 SuperWallJump, wall slide, wall speed retention (Cornerboost), climb / climb jump / climb hop /
 Wallboost with stamina, upward and dash corner correction, checkpoints with instant respawn.
 
-Feel parameters are all `@export`ed and mirrored in `.claude/documents/player_params.csv`, which I
+Feel parameters are all `@export`ed and mirrored in `docs/player_params.csv`, which I
 can reload at runtime with `F5` so I don't have to restart while tuning.
 
 ### Running it
@@ -109,7 +119,7 @@ scripts/
                    scene_builder.gd — @tool, builds a scene from an ASCII map
   autoload/        config_loader.gd — CSV parameter reload
   debug/           the three headless test scripts
-.claude/documents/ design notes, tech notes, level design notes, parameter CSV
+docs/ design notes, tech notes, level design notes, parameter CSV
 ```
 
 Levels can also be written as ASCII (`#` wall, `P` spawn, `S` spike, `B` breakable, `^` spring,
@@ -168,6 +178,14 @@ Godot 4.7 + GDScript 写的 2D 平台跳跃角色控制器，一套完整的 Cel
 那份源码本身没进仓库 —— 它虽然公开，但不是开源许可，所以只留在本地（见 `.gitignore`）。
 仓库里的代码都是我自己敲的。
 
+### 关于 AI 工具
+
+我把 AI 当**工具**用，跟用调试器、翻 Stack Overflow 是一个性质：查 Godot API 的实际行为、
+找参考资料、review 我已经写完的代码、以及帮我缩小 bug 范围（`safe_margin` 那个坑来回问了很久）。
+设计决策、帧序怎么定、参数怎么调、测试怎么写，这些是我自己的，每一行为什么在那儿我都讲得出来。
+
+自己讲不清的东西不该留在仓库里，这是我给自己划的线。
+
 ### 快速开始
 
 需要 Godot 4.7。视口 320×180、整数缩放、一砖 8px。
@@ -205,9 +223,9 @@ godot --headless --path . --script res://scripts/debug/component_regression.gd  
 ```
 
 状态退化成一个 `Mode` 枚举（`NORMAL / DASH / CLIMB`）。代价是 `player.gd` 涨到 781 行，
-但那类时序 bug 一次性绝迹了。为什么这么选记在 `.claude/documents/TDD.md`。
+但那类时序 bug 一次性绝迹了。为什么这么选记在 `docs/TDD.md`。
 
-**参数全部外置。** 所有手感参数都 `@export`，同时在 `.claude/documents/player_params.csv`
+**参数全部外置。** 所有手感参数都 `@export`，同时在 `docs/player_params.csv`
 存一份，游戏里按 `F5` 热重载。调重力和跳跃初速这种东西，来回重启太耗耐心。
 
 ### 踩坑记录
@@ -246,7 +264,7 @@ scripts/
                    scene_builder.gd —— @tool，拿 ASCII 地图直接生成场景
   autoload/        config_loader.gd —— CSV 参数热重载
   debug/           三个 headless 测试脚本
-.claude/documents/ 策划案、技术方案、关卡设计笔记、参数 CSV
+docs/ 策划案、技术方案、关卡设计笔记、参数 CSV
 ```
 
 摆关卡除了在编辑器里拖，也能直接写 ASCII 图，交给 `SceneBuilder` 展开：
