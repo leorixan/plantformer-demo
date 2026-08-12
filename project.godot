@@ -17,7 +17,6 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-FunplayMcpRuntimeBridge="*res://addons/funplay_mcp/runtime/funplay_mcp_runtime_bridge.gd"
 Config="*res://scripts/autoload/config_loader.gd"
 
 [display]
@@ -28,10 +27,6 @@ window/size/window_width_override=1280
 window/size/window_height_override=720
 window/stretch/mode="canvas_items"
 window/stretch/scale_mode="integer"
-
-[editor_plugins]
-
-enabled=PackedStringArray("res://addons/funplay_mcp/plugin.cfg")
 
 [input]
 
