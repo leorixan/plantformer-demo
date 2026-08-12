@@ -1,4 +1,4 @@
-# Plantformer Demo — 技术方案文档 (TDD)
+﻿# Plantformer Demo — 技术方案文档 (TDD)
 
 > 对应策划案：`.claude/documents/GDD.txt` v1.0
 > 文档版本：v1.0 | 2026-07-30
@@ -67,7 +67,7 @@ Player (CharacterBody2D, player.gd)          # 唯一写 velocity 的地方
 └── ControllerDebug (Label)                  # show_controller_debug 打开
 ```
 
-对齐 Celeste `Player.cs`：Celeste 的 `StateMachine` 只是 Player 内部的 `int State` + 回调表，
+对齐 CelestePlayerReference.txt `Player.cs`：参考实现的 `StateMachine` 只是 Player 内部的 `int State` + 回调表，
 **不是独立节点树**。原先的 `states/*.gd` 子节点方案会让多个节点在同一帧各写一次 `velocity`，
 并读到上一帧的 `is_on_floor()`，Super/Hyper/Ultra 因此永远无法稳定触发。故已删除
 `scripts/player/states/`，改为 Player 内 `enum Mode { NORMAL, DASH, CLIMB }`：
@@ -84,20 +84,20 @@ Player (CharacterBody2D, player.gd)          # 唯一写 velocity 的地方
 - 可用 **Excel / 任何表格软件** 打开编辑（标准 CSV 逗号分隔，UTF-8）。
 - 运行时由 `ConfigLoader` autoload 读取并覆盖到 Player。
 - 游戏中按 **F5** 即可重新加载 CSV 并应用，无需重启 Godot。
-- **数值基准**：与 Celeste 完全同规格 —— **1 砖 = 8px**，视口 **320×180**，
+- **数值基准**：与参考实现完全同规格 —— **1 砖 = 8px**，视口 **320×180**，
   站立碰撞箱 **8×11**、下蹲 **8×6**（原点在脚底，参考 `normalHitbox = Hitbox(8, 11, -4, -11)` / `duckHitbox = Hitbox(8, 6, -4, -6)`）。
-  **所有参数直接照搬 Celeste 原值，不做任何缩放**，因此表里没有小数尾巴。
-  按住跳实测跳高 **28.6px ≈ 3.6 砖**，与 Celeste 手感一致。
+  **所有参数直接来自 CelestePlayerReference.txt 常量区，不做任何缩放**，因此表里没有小数尾巴。
+  按住跳实测跳高 **28.6px ≈ 3.6 砖**，与参考一致。
 - **Godot 适配的两个 epsilon**（`player.gd` 顶部常量，非玩法参数）：
   `CONTACT_MARGIN = 0.001` 用于贴墙吸附（默认 0.08 安全边距会把"刚好贴上"判成命中，差 1px 会让 `SlipCheck` 误判成手已过墙沿而下滑）；
-  `SHAPE_INSET = 1.0` 把物理盒宽度内缩 1px（Celeste 坐标是整数，8px 身体钻 8px 缝是严丝合缝地过；
+  `SHAPE_INSET = 1.0` 把物理盒宽度内缩 1px（参考实现坐标是整数，8px 身体钻 8px 缝是严丝合缝地过；
   Godot 坐标是浮点，缝隙与身体等宽时要求亚像素对齐，角落修正会大多数时候找不到可行位置），整箱检测用同一个值。
 
 CSV 列：`category, name, value, type, description`。当前包含：
 
 | 分类 | 参数 | 说明 |
 |---|---|---|
-| Body | `body_width` 8 / `stand_height` 11 / `duck_height` 6 | 碰撞箱尺寸（Celeste 原值） |
+| Body | `body_width` 8 / `stand_height` 11 / `duck_height` 6 | 碰撞箱尺寸（CelestePlayerReference.txt 常量区） |
 | Movement | `max_speed` / `acceleration` / `over_speed_decel` / `air_accel_mult` | 对应 MaxRun / RunAccel / RunReduce / AirMult |
 | Movement | `duck_friction` / `duck_correct_check` / `duck_correct_slide` | 下蹲地面摩擦 / 站不起来时的让位探测与横移速度 |
 | Jump | `jump_speed` / `jump_speed_boost` / `var_jump_time` / `coyote_time` / `jump_buffer_time` / `ceiling_var_jump_grace` | 起跳、水平加成、可变跳高、土狼、缓存 |
@@ -117,10 +117,10 @@ CSV 列：`category, name, value, type, description`。当前包含：
   facing / 水平加速 / 跳跃水平加成 / 爬墙跳判定全部读同一份，避免各处 `Input.get_axis` 读到不一致的值。
   `forceMoveX` 在墙跳（`wall_jump_force_time` 0.16）、SuperWallJump（0.2）、翻墙 hop（`climb_hop_force_time` 0.2 强制归零）后短时间接管水平输入。
   Dash 方向另用**原始**输入（参考 `Input.GetAimVector` 读 `Input.MoveX.Value`，不吃 `forceMoveX`）。
-- **Dash 起手冻结**：参考 `DashBegin` 的 `Celeste.Freeze(.05)` + `DashCoroutine` 开头的 `yield return null` ——
+- **Dash 起手冻结**：参考 `DashBegin` 的 `Freeze(.05)`（见 CelestePlayerReference.txt:3442-3467） + `DashCoroutine` 开头的 `yield return null` ——
   按下 K 立刻清零速度与 `dash_dir` 并冻结 `dash_freeze_time`（0.05s ≈ 3 帧），**方向留到冻结结束才采样**。
   这是"八向方向判定没有延迟"的关键：K 与方向键同帧甚至晚一两帧按下都能吃到正确方向。
-- **可变跳高**：照搬参考的 `varJumpTimer` —— 按住跳时 `velocity.y = min(velocity.y, varJumpSpeed)` 维持 `var_jump_time`，松手立即清零。这是跳高的主要来源，不是 `jump_cut_mult`。
+- **可变跳高**：来自 CelestePlayerReference.txt 的 `varJumpTimer` —— 按住跳时 `velocity.y = min(velocity.y, varJumpSpeed)` 维持 `var_jump_time`，松手立即清零。这是跳高的主要来源，不是 `jump_cut_mult`。
 - **角落修正**：参考 `Player.cs` 的 `OnCollideV`。上升撞顶时用**移动前**的 `vy` 判定，逐像素探测 **(±i, -1)** 处整箱是否放得下并整体平移；修正失败才按 `ceiling_var_jump_grace` 掐掉可变跳。另有 `DashCornerCorrection`：空中起手的 Dash 撞地角时横移让位（`dash_started_on_ground` 为 false 才生效）。
   探测照参考用 **整箱重叠检测**（`CollideCheck<Solid>`）而不是扫掠 `test_move` —— 8px 宽的身体钻 8px 宽的缝，扫掠会被两侧墙擦到而永远失败。
 - **下蹲（Ducking）**：参考 `NormalUpdate` 的 Ducking 段。地面按下方向即蹲（碰撞箱 8×11 → 8×6，**底边固定在脚下**，所以切换不会挪动角色）；
@@ -143,7 +143,7 @@ CSV 列：`category, name, value, type, description`。当前包含：
 
 ### 4.4 抓（Grab）：墙抓攀爬
 
-按 Celeste 式**墙抓/攀爬/墙跳**设计（已确认）：按住 grab 贴墙 → Climb 模式 → 跳跃键弹出。
+按**墙抓/攀爬/墙跳**设计（见 CelestePlayerReference.txt 攀爬段）（已确认）：按住 grab 贴墙 → Climb 模式 → 跳跃键弹出。
 
 对齐参考 `ClimbBegin` / `ClimbUpdate`（3056 / 3102）的三条硬约束：
 
@@ -185,7 +185,7 @@ CSV 列：`category, name, value, type, description`。当前包含：
 2. **SuperJump**（`DashUpdate` 里 `dash_dir.y == 0 && 土狼 > 0` 时按跳）：
    `velocity = (super_jump_speed * facing, -jump_speed)`；若 `is_ducking` 则再乘 `(1.25, 0.5)`。
 
-| 技巧 | 操作 | 底层机制 | 实测速度（8px 砖，Celeste 原值） |
+| 技巧 | 操作 | 底层机制 | 实测速度（8px 砖，CelestePlayerReference.txt 常量区） |
 |---|---|---|---|
 | **Super（超级跳）** | 地面水平 Dash 未结束时按 J | 非 Ducking 的 SuperJump | `(260, -105)` |
 | **Hyper（冲刺跳）** | 地面斜下 Dash（起手即 Dash Slide）立刻按 J | Ducking 的 SuperJump | `(325, -52.5)` 低跳远距 |
@@ -203,26 +203,26 @@ CSV 列：`category, name, value, type, description`。当前包含：
 1. **Dash 期间速度只在起手写一次**（参考 `DashCoroutine`），`_dash_update()` 绝不每帧重写 `velocity`，否则 Dash Slide 的 ×1.2 会被立刻覆盖。
 2. **`_finish_dash()` 只在 `dash_dir.y <= 0` 时改写速度**（参考同处判断）。斜下 Dash 触地后 `dash_dir.y` 已被 Dash Slide 置 0，所以水平速度**不会**被清零。
 3. **跳跃判定排在水平移动与重力之后**（参考 `NormalUpdate` 帧序），不需要额外的"落地摩擦宽限"补丁。
-4. **"是否站在地上"必须用 Celeste 的几何探针 `_on_ground()`**（参考 `Update` 顶部 `onGround = Speed.Y >= 0 && CollideCheck<Solid>(Position + UnitY)`），
+4. **"是否站在地上"必须用几何探针（见 CelestePlayerReference.txt:670-710） `_on_ground()`**（参考 `Update` 顶部 `onGround = Speed.Y >= 0 && CollideCheck<Solid>(Position + UnitY)`），
    禁止用 Godot 的 `is_on_floor()` 做逻辑判定：水平 Dash（vy=0、关重力）、Dash Slide 这类帧里没有向下位移，
    `is_on_floor()` 为假 → dash 次数 / 体力 / 土狼时间全都补不回来，表现为"Super / Hyper / Wavedash 之后冲刺不恢复"。
    `is_on_floor()` 只允许用于 `is_on_ceiling()` / `is_on_wall()` 这类本帧碰撞事实。
-   **`_on_ground()` 当前是纯几何探针（不含 `velocity.y < 0` 短路）**：Celeste 的 `Speed.Y >= 0` 由自身速度计算出 `onGround`，
+   **`_on_ground()` 当前是纯几何探针（不含 `velocity.y < 0` 短路）**：参考实现的 `Speed.Y >= 0` 由自身速度计算出 `onGround`，
    但 Godot 的 `move_and_slide()` 落地帧可能把 `velocity.y` 修正成 −0.001，速度短路不可靠。
-   纯探针与 Celeste `//Dashes` 段（735 `else if (onGround) ... RefillDash()`）的 refill 逻辑等效。
+   纯探针与 CelestePlayerReference.txt Dashes 段（735 `else if (onGround) ... RefillDash()`）的 refill 逻辑等效。
 5. **Hyper / Ultra 的输入窗口就是 `dash_duration`（0.15s）本身**，不额外开 `ultra_window`；`jump_buffer_time` 负责容错。
-6. **参数直接照搬 Celeste 原值**（1 砖 = 8px，见 §4.2），不要自己拍数、也不要再乘缩放倍数。
+6. **参数直接来自 CelestePlayerReference.txt 常量区**（1 砖 = 8px，见 §4.2），不要自己拍数、也不要再乘缩放倍数。
 7. **Facing 在 Dash 期间必须继续跟随 `moveX`**（只有 Climb 例外），否则反向 Super / 反向 Hyper 永远做不出来。
 8. **Dash 方向必须在冻结结束后才采样**（参考 `DashCoroutine` 的 `yield return null`），否则同帧按下的方向键会被漏掉，表现为"方向判定有延迟"。
 9. **重力必须用 `Calc.Approach` 语义**（`move_toward`），不能写成 `min(vy + g*dt, maxfall)`，否则贴墙下滑与 Fastfall 的上限变化无法生效。
-10. **玩家只与 Solid 碰撞**（参考 Celeste：Theo 是 Actor，不是 Solid）。碰撞层分配：地形 = 层 1；
+10. **玩家只与 Solid 碰撞**（参考实现：Theo 是 Actor，不是 Solid）。碰撞层分配：地形 = 层 1；
    玩家 = 层 2 / 掩码 1。
 11. **`dash_started_on_ground` 只看几何探针**（参考 `DashBegin` 3445 `dashStartedOnGround = onGround`），
    **不能或上土狼时间**。多算土狼会把"跑出台沿再斜下冲撞地"误判成 Hyper（应为 Ultra），
    还会关掉只对空中起手生效的 Dash 撞地角落修正。
 12. **dash 补充冷却写在起手处**（参考 `DashBegin` 3451 `dashRefillCooldownTimer = DashRefillCooldown` 0.1s），
    补充条件是"冷却结束 且 `onGround` 且脚下 1px 有实体"（718-739）。
-   所以 **Wavedash 起飞那一刻 dash 必然还是 0**（冷却没走完就已离地），落地后才补满 —— 这与 Celeste 一致，不是 bug。
+   所以 **Wavedash 起飞那一刻 dash 必然还是 0**（冷却没走完就已离地），落地后才补满 —— 这与参考一致，不是 bug。
 
 **自动化验收**：`scripts/debug/player_regression.gd`（真实物理回归，**82 条断言**）+
 `scripts/debug/room_regression.gd`（测试房几何回归：坑宽把关 / 死亡复活 / 存档点与门洞）
@@ -260,7 +260,7 @@ godot --headless --path . --script res://scripts/debug/room_regression.gd
 
 ## 6. 关卡与复活
 
-- **网格基准**：`8×8 px = 1 砖`，视口 `320×180`（与 Celeste 同规格）。关卡几何全部按 8 的倍数摆放；
+- **网格基准**：`8×8 px = 1 砖`，视口 `320×180`（1砖8px规格）。关卡几何全部按 8 的倍数摆放；
   角色碰撞箱站立 8×11（1×1.375 砖）、下蹲 8×6。窗口默认 1280×720（4 倍整数放大，
   `stretch/mode = canvas_items` + `scale_mode = integer`）。用 `canvas_items` 而不是 `viewport`：
   `viewport` 会把文字先渲进 320×180 缓冲再整体放大，5~6px 的调试字必然糊成一团；
@@ -310,8 +310,8 @@ godot --headless --path . --script res://scripts/debug/room_regression.gd
 
 ## 9. 待确认事项
 
-1. ~~**"抓"的形态**~~ ✅ 已确认：Celeste 式墙抓攀爬。
-2. ~~**网格基准 / 分辨率**~~ ✅ 已确认：与 Celeste 同规格 `8×8` 砖、视口 `320×180`；灰盒期继续用占位色块，正式美术风格待定。
+1. ~~**"抓"的形态**~~ ✅ 已确认：墙抓攀爬（见 CelestePlayerReference.txt 攀爬段）。
+2. ~~**网格基准 / 分辨率**~~ ✅ 已确认：`8×8` 砖、视口 `320×180`；灰盒期继续用占位色块，正式美术风格待定。
 3. ~~**冲刺键位**~~ ✅ 已确认：跳 J、冲刺 K、抓 Shift。
 
 ---
