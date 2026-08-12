@@ -3,7 +3,7 @@ class_name ConfigLoader
 ## 全局配置加载器：从 CSV（可用 Excel 打开编辑）读取参数，供运行时热重载。
 ## 挂载为 autoload "Config"；Player 等脚本在 _ready 时调用 Config.apply_to(self)。
 
-const CONFIG_PATH := "res://.claude/documents/player_params.csv"
+const CONFIG_PATH := "res://docs/player_params.csv"
 
 var _values: Dictionary = {}
 
