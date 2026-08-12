@@ -4,3 +4,7 @@
 .claude/settings.local.json
 .mcp.json
 .codemap/
+
+# 第三方参考源码：非开源许可，仅本地保留，不纳入版本控制
+.claude/documents/CelestePlayerReference.txt
+.claude/documents/Player.cs
