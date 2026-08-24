@@ -1,13 +1,13 @@
 # Plantformer Demo
 
-A 2D platformer character controller in **Godot 4.7 (GDScript)**. I rebuilt *Celeste*'s movement
-system to learn how precision platformers actually work, and then wrote a headless test suite for it
-because tuning by feel alone kept breaking things I had already fixed.
+A 2D platformer character controller in **Godot 4.7 (GDScript)**: a Celeste-style movement system —
+8-direction dash, wall climbing, Super / Hyper / Ultra, corner correction, coyote time, input
+buffering — with a headless regression suite that drives the real player scene one physics frame at a
+time.
 
-Still grey-box: coloured rectangles, no art, no audio, no real level yet.
-
-I'm a third-year software engineering undergrad and this is my first serious game project, so parts
-of it are rough — see [Known issues](#known-issues) / [已知问题](#已知问题).
+Grey-box stage: coloured rectangles, one practice room, no art or audio. Third-year software
+engineering undergrad; first serious game project. Rough edges are listed under
+[Known issues](#known-issues) / [已知问题](#已知问题).
 
 [English](#english) · [中文](#中文)
 
@@ -17,62 +17,58 @@ of it are rough — see [Known issues](#known-issues) / [已知问题](#已知�
 
 ### Where the design comes from
 
-This is a **learning reimplementation**, and I want to be upfront about that. The movement constants
-and the frame ordering follow the `Player.cs` source that the *Celeste* authors published
-(`NoelFB/Celeste`). Comments in `player.gd` cite it by line number so I could check my behaviour
-against the original while working.
+This is a **learning reimplementation**. The movement constants and the frame ordering follow
+`Player.cs`, the source the *Celeste* authors published (`NoelFB/Celeste`); comments in `player.gd`
+cite it by line number, which is how I checked my behaviour against the original while working.
 
-I don't include that source file in this repo. It's public for study but not under an open-source
-license, so I keep it locally only (see `.gitignore`). Everything committed here is written by me.
+That file is not in this repo. It is public for study but not under an open-source license, so it
+stays local (see `.gitignore`). Everything committed here is written by me.
 
-### Tools I used
+### Tools
 
-I use AI assistants the same way I use a debugger or Stack Overflow — as a **tool, not an author**:
-looking up Godot API behaviour and reference material, reviewing code I had already written, and
-helping narrow down bugs (the `safe_margin` one took a lot of back and forth). Design decisions, the
-frame ordering, the parameter tuning and the test suite are mine, and I can explain why every line is
-there.
+AI assistants served the same role here as a debugger or Stack Overflow — a **tool, not an author**:
+looking up Godot API behaviour, reviewing code I had already written, and narrowing down bugs (the
+`safe_margin` one took a long time). The design decisions, the frame ordering, the parameter tuning
+and the test suite are mine, and I can account for every line.
 
-Anything I couldn't explain in an interview doesn't belong in this repo, so that's the line I hold.
+Anything I cannot explain does not belong in this repo.
 
-### What I actually worked on
+### What took the time
 
-Copying numbers is easy. These are the parts that took real time:
+Copying constants is easy. Three things were not:
 
 **1. Integer coordinates → floats.** The reference runs on integer pixel positions. Godot's 2D
-physics uses floats and a default `safe_margin` of `0.08`, which counts "just touching" as a
-collision. That quietly broke wall grabbing and corner correction in ways that looked like logic
-bugs. It took me a while to realise the logic was fine and the margin was the problem. The two
-constants at `scripts/player/player.gd:12-17` (`CONTACT_MARGIN`, `SHAPE_INSET`) are what came out of
-it, and I left the reasoning in the comments so I wouldn't "clean them up" later and break it again.
+physics uses floats with a default `safe_margin` of `0.08`, which treats "just touching" as a
+collision — quietly breaking wall grabbing and corner correction in ways that read as logic bugs. The
+logic was fine; the margin was the problem. `CONTACT_MARGIN` and `SHAPE_INSET` at
+`scripts/player/player.gd:12-17` came out of that, with the reasoning left in the comments so a later
+cleanup does not undo it.
 
-**2. Headless physics tests.** 82 assertions that instantiate the real player scene and drive it with
+**2. Headless physics tests.** 82 assertions instantiate the real player scene and drive it with
 `Input.action_press`, one physics frame at a time, plus smaller suites for level geometry and
-components. My first version of these was fake — it called functions directly and asserted on
-numbers I had just written, so it passed no matter what. I rewrote it after noticing it stayed green
-while the game was visibly broken. Now, whenever I add a feature, I break a parameter on purpose
-first and check that the matching assertion turns red before trusting it.
+components. The first version was worthless: it called functions directly and asserted on numbers I
+had just written, so it passed unconditionally. It stayed green while the game was visibly broken,
+which is how I found out. Every feature now starts by breaking a parameter on purpose and confirming
+that the matching assertion turns red.
 
-**3. Pit widths from measured distances.** In the test room the gaps are sized from distances I
-measured in-engine: normal jump ≈ 40 px, jump + air dash ≈ 65 px, Super ≈ 85 px, Hyper ≈ 110 px. So a
-10-tile (80 px) gap should only be crossable with the technique that zone teaches.
-`room_regression.gd` re-checks this, because I had already broken it once by editing zone layout
-without re-measuring.
+**3. Pit widths from measured distances.** Gaps in the test room are sized from distances measured
+in-engine: normal jump ≈ 40 px, jump + air dash ≈ 65 px, Super ≈ 85 px, Hyper ≈ 110 px. A 10-tile
+(80 px) gap is therefore crossable only with the technique its zone teaches. `room_regression.gd`
+re-checks this, after an unmeasured zone edit broke it once.
 
-### Problems worth writing down
+### Bugs worth recording
 
-| Symptom | What was actually wrong | Fix |
+| Symptom | Actual cause | Fix |
 |---|---|---|
-| Dash, stamina and coyote time never refilled during a ground dash | `is_on_floor()` reflects the previous frame and needs downward movement, which a horizontal dash doesn't have | Wrote an explicit `_on_ground()` geometry probe instead |
-| Wall grab slipped one pixel below the ledge | the default `0.08` safe margin made the slip probe land exactly on the wall boundary | snap to contact with `move_and_collide` and `CONTACT_MARGIN = 0.001` |
-| An 8 px wide body couldn't fit through an 8 px gap | exact fit on integers, sub-pixel alignment on floats, so corner correction never found a free spot | shrink the physics box by 1 px (`SHAPE_INSET`) |
-| Super / Hyper / Ultra worked maybe half the time | several nodes were writing `velocity` in the same frame, each reading stale collision data | one owner for the simulation, fixed frame order |
+| Dash, stamina and coyote time never refilled during a ground dash | `is_on_floor()` reflects the previous frame and requires downward movement, which a horizontal dash has none of | An explicit `_on_ground()` geometry probe |
+| Wall grab slipped one pixel below the ledge | The default `0.08` safe margin put the slip probe exactly on the wall boundary | Snap to contact via `move_and_collide` with `CONTACT_MARGIN = 0.001` |
+| An 8 px wide body could not fit through an 8 px gap | Exact fit on integers becomes sub-pixel alignment on floats, so corner correction never found a free spot | Shrink the physics box by 1 px (`SHAPE_INSET`) |
+| Super / Hyper / Ultra worked about half the time | Several nodes wrote `velocity` in the same frame, each reading stale collision data | One owner for the simulation, fixed frame order |
 
 The frame order is now: sample input edges → tick timers → decide → **one** `move_and_slide` → read
 this frame's collisions → arm post-landing techniques. State is a `Mode` enum
-(`NORMAL / DASH / CLIMB`) inside `player.gd`, roughly like the single `State` integer in the
-reference. I originally had separate state node scripts and deleted them; my notes on why are in
-`docs/TDD.md`.
+(`NORMAL / DASH / CLIMB`) inside `player.gd`, close to the single `State` integer in the reference.
+The separate state-node scripts I started with are deleted; the reasoning is in `docs/TDD.md`.
 
 ### What's in it
 
@@ -81,8 +77,8 @@ after the freeze frames, speed retained), Dash Slide, Super / Hyper / Ultra, wal
 SuperWallJump, wall slide, wall speed retention (Cornerboost), climb / climb jump / climb hop /
 Wallboost with stamina, upward and dash corner correction, checkpoints with instant respawn.
 
-Feel parameters are all `@export`ed and mirrored in `docs/player_params.csv`, which I
-can reload at runtime with `F5` so I don't have to restart while tuning.
+Feel parameters are `@export`ed and mirrored in `docs/player_params.csv`, reloadable at runtime with
+`F5` so tuning does not require a restart.
 
 ### Running it
 
@@ -96,7 +92,7 @@ godot --headless --path . --script res://scripts/debug/room_regression.gd       
 godot --headless --path . --script res://scripts/debug/component_regression.gd  # 6 component checks
 ```
 
-Needs Godot **4.7**. 320×180 viewport with integer scaling, 8 px tiles.
+Requires Godot **4.7**. 320×180 viewport with integer scaling, 8 px tiles.
 
 | Action | Key |
 |---|---|
@@ -127,26 +123,24 @@ Levels can also be written as ASCII (`#` wall, `P` spawn, `S` spike, `B` breakab
 
 ### Known issues
 
-Things I know are wrong or missing, rather than pretending they aren't:
-
-- `player.gd` is one 781-line file. I have a reason for it (a single owner fixed the ordering bugs
-  above) but it's still a lot in one place, and adding a new mode means touching several sections.
-- The camera is a plain follow with no smoothing, no look-ahead and no room bounds, so it jitters
-  during dashes.
-- The tests check numbers, not feel. Nobody except me has played this, so I don't really know if the
-  advanced techniques are comfortable for someone who hasn't practised them.
-- The death heatmap and assist mode in my design notes aren't implemented yet.
-- No menu, no pause, no settings, no gamepad support.
-- Components are minimal — the moving platform only goes back and forth on one axis, for example.
-- I spent a while rescaling everything to a 15 px grid before realising it was easier to keep the
-  reference's 8 px tiles, so some of the git history is me undoing that.
+- `player.gd` is a single 781-line file. The single owner fixed the ordering bugs above, but adding a
+  mode still means touching several sections.
+- The camera is a plain follow: no smoothing, no look-ahead, no room bounds, so it jitters during
+  dashes.
+- The tests cover numbers, not feel. Nobody but me has played this, so how the advanced techniques
+  land for an unpractised player is unknown.
+- The death heatmap and assist mode in the design notes are not implemented.
+- No menu, pause, settings or gamepad support.
+- Components are minimal — the moving platform travels back and forth on one axis.
+- An early attempt to rescale everything onto a 15 px grid was reverted in favour of the reference's
+  8 px tiles; part of the git history is that reversal.
 
 ### Next
 
-- M3: an actual level, built around one mechanic in the introduce → develop → twist → test shape
-- one or two mechanics of my own instead of only reference ones
+- M3: an actual level built around one mechanic in the introduce → develop → twist → test shape
+- one or two mechanics of my own rather than only reference ones
 - rewrite the controller core as a **C++ GDExtension**, keeping the simulation free of Godot types
-  behind a `CollisionQuery` interface, so it can run both in the engine and in plain unit tests
+  behind a `CollisionQuery` interface so it runs both in the engine and in plain unit tests
 
 ---
 
@@ -155,7 +149,7 @@ Things I know are wrong or missing, rather than pretending they aren't:
 Godot 4.7 + GDScript 写的 2D 平台跳跃角色控制器，一套完整的 Celeste 式移动系统：
 八向 Dash、抓墙攀爬、Super / Hyper / Ultra、角落修正、土狼时间、输入缓存。
 
-目前为灰盒阶段，只有一个练习关。没有美术和音乐部分
+目前为灰盒阶段，只有一个练习关，没有美术和音效。
 
 本人大三在读，这是做的第一个游戏项目。
 
@@ -278,7 +272,6 @@ docs/ 策划案、技术方案、关卡设计笔记、参数 CSV
 
 ### 已知问题
 
-
 - `player.gd` 781 行一个文件。有理由，但确实太挤，想加个新模式得来回改好几段。
 - 相机是硬跟随，没平滑、没前瞻、没有房间边界。
 - 测试只覆盖数值，覆盖不了手感。除我之外没人玩过，那些高级技巧对新手来讲顺不顺手有待确认。
@@ -286,7 +279,7 @@ docs/ 策划案、技术方案、关卡设计笔记、参数 CSV
 - 没有菜单、暂停、设置，手柄也没支持。
 - 组件都很简陋，比如移动平台只能在一个轴上来回走。
 - 早期把整套参数缩放到 15px 网格上折腾了好几轮，后来发现沿用参考的 8px 砖省事得多，
-  （git 历史里有一段就是我在往回改。
+  git 历史里有一段就是我在往回改。
 
 ### 接下来
 
