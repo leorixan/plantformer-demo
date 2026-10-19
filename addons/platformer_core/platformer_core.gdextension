@@ -1,0 +1,21 @@
+; The C++ player controller, built from f:\personal\platformer-gdext.
+;
+; The library is written straight into bin/ by the SConstruct in that project, so
+; rebuilding the C++ is all that is needed -- there is no copy step.
+;
+; The entry symbol is the one exported by src/godot/register_types.cpp.
+
+[configuration]
+
+entry_symbol = "platformer_core_library_init"
+compatibility_minimum = "4.4"
+reloadable = true
+
+[libraries]
+
+windows.debug.x86_64 = "res://addons/platformer_core/bin/platformer_core.windows.debug.x86_64.dll"
+windows.release.x86_64 = "res://addons/platformer_core/bin/platformer_core.windows.release.x86_64.dll"
+linux.debug.x86_64 = "res://addons/platformer_core/bin/libplatformer_core.linux.debug.x86_64.so"
+linux.release.x86_64 = "res://addons/platformer_core/bin/libplatformer_core.linux.release.x86_64.so"
+macos.debug = "res://addons/platformer_core/bin/libplatformer_core.macos.debug.framework"
+macos.release = "res://addons/platformer_core/bin/libplatformer_core.macos.release.framework"

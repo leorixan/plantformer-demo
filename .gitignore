@@ -3,3 +3,17 @@
 /android/
 .claude/settings.local.json
 .mcp.json
+.codemap/
+
+# 第三方参考源码：非开源许可，仅本地保留，不纳入版本控制
+docs/CelestePlayerReference.txt
+docs/Player.cs
+
+# 本地 AI 工具配置与工作记录，不纳入版本控制
+.claude/
+.funplay/
+CLAUDE.md
+AGENTS.md
+addons/funplay_mcp/
+
+# 本地 project.godot 会因启用编辑器插件而增删 [autoload] / [editor_plugins] 条目，提交时注意不要带上
