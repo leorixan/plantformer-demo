@@ -1,4 +1,4 @@
-[gd_scene format=4 uid="uid://03giayar4xct"]
+﻿[gd_scene format=4 uid="uid://03giayar4xct"]
 
 [ext_resource type="Script" uid="uid://bqsqglqv8ifip" path="res://scripts/levels/graybox_level.gd" id="1_e7vnk"]
 [ext_resource type="Texture2D" uid="uid://cbtfdo1j8bf80" path="res://assets/graybox/tiles.png" id="2_i2aat"]
@@ -49,7 +49,7 @@ offset_right = 150.0
 offset_bottom = -40.0
 theme_override_colors/font_color = Color(0.24, 0.26, 0.31, 1)
 theme_override_font_sizes/font_size = 6
-text = "灰 地形方块"
+text = "鐏?鍦板舰鏂瑰潡"
 
 [node name="L1" type="Label" parent="Legend" unique_id=735895847]
 offset_left = 150.0
@@ -58,7 +58,7 @@ offset_right = 150.0
 offset_bottom = -31.0
 theme_override_colors/font_color = Color(0.78, 0.24, 0.28, 1)
 theme_override_font_sizes/font_size = 6
-text = "红 伤害判定块"
+text = "绾?浼ゅ鍒ゅ畾鍧?
 
 [node name="L2" type="Label" parent="Legend" unique_id=1789020164]
 offset_left = 150.0
@@ -67,7 +67,7 @@ offset_right = 150.0
 offset_bottom = -22.0
 theme_override_colors/font_color = Color(0.28, 0.78, 0.82, 1)
 theme_override_font_sizes/font_size = 6
-text = "青 充能水晶"
+text = "闈?鍏呰兘姘存櫠"
 
 [node name="L3" type="Label" parent="Legend" unique_id=1563547234]
 offset_left = 150.0
@@ -76,7 +76,7 @@ offset_right = 150.0
 offset_bottom = -13.0
 theme_override_colors/font_color = Color(0.35, 0.75, 0.35, 1)
 theme_override_font_sizes/font_size = 6
-text = "绿 弹簧"
+text = "缁?寮圭哀"
 
 [node name="L4" type="Label" parent="Legend" unique_id=576499773]
 offset_left = 150.0
@@ -85,7 +85,7 @@ offset_right = 150.0
 offset_bottom = -4.0
 theme_override_colors/font_color = Color(0.67, 0.51, 0.35, 1)
 theme_override_font_sizes/font_size = 6
-text = "褐 可破坏方块"
+text = "瑜?鍙牬鍧忔柟鍧?
 
 [node name="L5" type="Label" parent="Legend" unique_id=1771972601]
 offset_left = 150.0
@@ -94,7 +94,7 @@ offset_right = 150.0
 offset_bottom = 5.0
 theme_override_colors/font_color = Color(0.59, 0.39, 0.86, 1)
 theme_override_font_sizes/font_size = 6
-text = "紫 果冻块"
+text = "绱?鏋滃喕鍧?
 
 [node name="L6" type="Label" parent="Legend" unique_id=1450485918]
 offset_left = 150.0
@@ -103,4 +103,4 @@ offset_right = 150.0
 offset_bottom = 14.0
 theme_override_colors/font_color = Color(0.95, 0.8, 0.25, 1)
 theme_override_font_sizes/font_size = 6
-text = "金 存档点"
+text = "閲?瀛樻。鐐?
