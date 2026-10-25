@@ -40,6 +40,10 @@ func _enter_tree() -> void:
 	nb.text = "新建关卡"
 	nb.pressed.connect(_on_new_level)
 	_dock.add_child(nb)
+	var init_btn := Button.new()
+	init_btn.text = "初始化当前场景"
+	init_btn.pressed.connect(_on_init_scene)
+	_dock.add_child(init_btn)
 	var hint := Label.new()
 	hint.text = "地形=8px 格；机关=4px 步进"
 	_dock.add_child(hint)
@@ -69,7 +73,7 @@ func _on_new_level() -> void:
 	print("[graybox] 新建关卡: ", dst)
 
 
-func _forward_canvas_gui_input(event: InputEvent, _canvas: Node) -> bool:
+func _forward_canvas_gui_input(event: InputEvent) -> bool:
 	if not _painting:
 		return false
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
@@ -102,3 +106,35 @@ func _paint(screen_pos: Vector2) -> void:
 	node.position = Vector2(snapped(world.x, 4.0), snapped(world.y, 4.0))
 	root.add_child(node)
 	node.owner = root
+
+
+func _on_init_scene() -> void:
+	var root := EditorInterface.get_edited_scene_root()
+	if root == null:
+		push_warning("先打开/新建一个场景")
+		return
+	if not (root is Node2D):
+		push_warning("根节点必须是 Node2D")
+		return
+	if root.get_script() == null:
+		root.set_script(load("res://scripts/levels/graybox_level.gd"))
+	if root.get_node_or_null("Terrain") == null:
+		var layer := TileMapLayer.new()
+		layer.name = "Terrain"
+		layer.tile_set = load("res://assets/graybox/graybox_tileset.tres")
+		root.add_child(layer)
+		layer.owner = root
+	if root.get_node_or_null("Spawn") == null:
+		var spawn := Marker2D.new()
+		spawn.name = "Spawn"
+		spawn.position = Vector2(16, 0)
+		root.add_child(spawn)
+		spawn.owner = root
+	if root.get_node_or_null("Goal") == null:
+		var goal := Marker2D.new()
+		goal.name = "Goal"
+		goal.position = Vector2(120, 0)
+		root.add_child(goal)
+		goal.owner = root
+	EditorInterface.mark_scene_as_unsaved()
+	print("[graybox] 场景已初始化")

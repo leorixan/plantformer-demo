@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bqsqglqv8ifip" path="res://scripts/levels/graybox_level.gd" id="1_e7vnk"]
 
-[sub_resource type="Image" id="Image_yw4h8"]
+[sub_resource type="Image" id="Image_e7vnk"]
 data = {
 "data": PackedByteArray("Jysz/ycrM/8nKzP/Jysz/ycrM/8nKzP/Jysz/ycrM/+BJy7/gScu/4EnLv+BJy7/gScu/4EnLv+BJy7/gScu/y6Bh/8ugYf/LoGH/y6Bh/8ugYf/LoGH/y6Bh/8ugYf/Onw6/zp8Ov86fDr/Onw6/zp8Ov86fDr/Onw6/zp8Ov9vVDr/b1Q6/29UOv9vVDr/b1Q6/29UOv9vVDr/b1Q6/2FAjv9hQI7/YUCO/2FAjv9hQI7/YUCO/2FAjv9hQI7/nYQp/52EKf+dhCn/nYQp/52EKf+dhCn/nYQp/52EKf8nKzP/PUJP/z1CT/89Qk//PUJP/z1CT/89Qk//Jysz/4EnLv/GPUf/xj1H/8Y9R//GPUf/xj1H/8Y9R/+BJy7/LoGH/0fG0f9HxtH/R8bR/0fG0f9HxtH/R8bR/y6Bh/86fDr/Wb9Z/1m/Wf9Zv1n/Wb9Z/1m/Wf9Zv1n/Onw6/29UOv+qgln/qoJZ/6qCWf+qgln/qoJZ/6qCWf9vVDr/YUCO/5Zj2/+WY9v/lmPb/5Zj2/+WY9v/lmPb/2FAjv+dhCn/8sw///LMP//yzD//8sw///LMP//yzD//nYQp/ycrM/89Qk//PUJP/z1CT/89Qk//PUJP/z1CT/8nKzP/gScu/8Y9R//GPUf/xj1H/8Y9R//GPUf/xj1H/4EnLv8ugYf/R8bR/0fG0f9HxtH/R8bR/0fG0f9HxtH/LoGH/zp8Ov9Zv1n/Wb9Z/1m/Wf9Zv1n/Wb9Z/1m/Wf86fDr/b1Q6/6qCWf+qgln/qoJZ/6qCWf+qgln/qoJZ/29UOv9hQI7/lmPb/5Zj2/+WY9v/lmPb/5Zj2/+WY9v/YUCO/52EKf/yzD//8sw///LMP//yzD//8sw///LMP/+dhCn/Jysz/z1CT/89Qk//PUJP/z1CT/89Qk//PUJP/ycrM/+BJy7/xj1H/8Y9R//GPUf/xj1H/8Y9R//GPUf/gScu/y6Bh/9HxtH/R8bR/0fG0f9HxtH/R8bR/0fG0f8ugYf/Onw6/1m/Wf9Zv1n/Wb9Z/1m/Wf9Zv1n/Wb9Z/zp8Ov9vVDr/qoJZ/6qCWf+qgln/qoJZ/6qCWf+qgln/b1Q6/2FAjv+WY9v/lmPb/5Zj2/+WY9v/lmPb/5Zj2/9hQI7/nYQp//LMP//yzD//8sw///LMP//yzD//8sw//52EKf8nKzP/PUJP/z1CT/89Qk//PUJP/z1CT/89Qk//Jysz/4EnLv/GPUf/xj1H/8Y9R//GPUf/xj1H/8Y9R/+BJy7/LoGH/0fG0f9HxtH/R8bR/0fG0f9HxtH/R8bR/y6Bh/86fDr/Wb9Z/1m/Wf9Zv1n/Wb9Z/1m/Wf9Zv1n/Onw6/29UOv+qgln/qoJZ/6qCWf+qgln/qoJZ/6qCWf9vVDr/YUCO/5Zj2/+WY9v/lmPb/5Zj2/+WY9v/lmPb/2FAjv+dhCn/8sw///LMP//yzD//8sw///LMP//yzD//nYQp/ycrM/89Qk//PUJP/z1CT/89Qk//PUJP/z1CT/8nKzP/gScu/8Y9R//GPUf/xj1H/8Y9R//GPUf/xj1H/4EnLv8ugYf/R8bR/0fG0f9HxtH/R8bR/0fG0f9HxtH/LoGH/zp8Ov9Zv1n/Wb9Z/1m/Wf9Zv1n/Wb9Z/1m/Wf86fDr/b1Q6/6qCWf+qgln/qoJZ/6qCWf+qgln/qoJZ/29UOv9hQI7/lmPb/5Zj2/+WY9v/lmPb/5Zj2/+WY9v/YUCO/52EKf/yzD//8sw///LMP//yzD//8sw///LMP/+dhCn/Jysz/z1CT/89Qk//PUJP/z1CT/89Qk//PUJP/ycrM/+BJy7/xj1H/8Y9R//GPUf/xj1H/8Y9R//GPUf/gScu/y6Bh/9HxtH/R8bR/0fG0f9HxtH/R8bR/0fG0f8ugYf/Onw6/1m/Wf9Zv1n/Wb9Z/1m/Wf9Zv1n/Wb9Z/zp8Ov9vVDr/qoJZ/6qCWf+qgln/qoJZ/6qCWf+qgln/b1Q6/2FAjv+WY9v/lmPb/5Zj2/+WY9v/lmPb/5Zj2/9hQI7/nYQp//LMP//yzD//8sw///LMP//yzD//8sw//52EKf8nKzP/Jysz/ycrM/8nKzP/Jysz/ycrM/8nKzP/Jysz/4EnLv+BJy7/gScu/4EnLv+BJy7/gScu/4EnLv+BJy7/LoGH/y6Bh/8ugYf/LoGH/y6Bh/8ugYf/LoGH/y6Bh/86fDr/Onw6/zp8Ov86fDr/Onw6/zp8Ov86fDr/Onw6/29UOv9vVDr/b1Q6/29UOv9vVDr/b1Q6/29UOv9vVDr/YUCO/2FAjv9hQI7/YUCO/2FAjv9hQI7/YUCO/2FAjv+dhCn/nYQp/52EKf+dhCn/nYQp/52EKf+dhCn/nYQp/w=="),
 "format": "RGBA8",
@@ -12,7 +12,7 @@ data = {
 }
 
 [sub_resource type="ImageTexture" id="ImageTexture_vfjn8"]
-image = SubResource("Image_yw4h8")
+image = SubResource("Image_e7vnk")
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_5wvb2"]
 texture = SubResource("ImageTexture_vfjn8")

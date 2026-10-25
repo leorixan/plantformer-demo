@@ -1,6 +1,8 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://b2lvp48p4ww22"]
 
-[ext_resource type="Script" path="res://scripts/levels/test_room.gd" id="1_room"]
+[ext_resource type="Script" uid="uid://ux5vsa0kt133" path="res://scripts/levels/test_room.gd" id="1_room"]
 
-[node name="TestRoom" type="Node2D"]
+[node name="TestRoom" type="Node2D" unique_id=344116108]
 script = ExtResource("1_room")
+
+[node name="TileMapLayer" type="TileMapLayer" parent="." unique_id=225484348]
