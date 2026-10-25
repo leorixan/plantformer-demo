@@ -6,13 +6,12 @@
 size = Vector2(8, 11)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_75vfm"]
-radius = 10.0
+radius = 7.017834
 
 [node name="Player" type="CharacterBody2D" unique_id=1956478963]
 collision_layer = 2
-collision_mask = 1
-safe_margin = 0.001
 floor_snap_length = 2.0
+safe_margin = 0.001
 script = ExtResource("1_p47bc")
 
 [node name="Visuals" type="Node2D" parent="." unique_id=202044081]
@@ -30,41 +29,42 @@ offset_right = 4.0
 offset_bottom = -6.0
 color = Color(1, 0.9, 0.2, 1)
 
-[node name="UI" type="Node2D" parent="."]
+[node name="UI" type="Node2D" parent="." unique_id=285777650]
 position = Vector2(-8, -18)
 
-[node name="DashPip1" type="ColorRect" parent="UI"]
+[node name="DashPip1" type="ColorRect" parent="UI" unique_id=430307063]
 offset_right = 4.0
 offset_bottom = 2.0
-color = Color(0.968627, 0.839216, 0.352941, 1)
 mouse_filter = 2
+color = Color(0.968627, 0.839216, 0.352941, 1)
 
-[node name="DashPip2" type="ColorRect" parent="UI"]
+[node name="DashPip2" type="ColorRect" parent="UI" unique_id=1364723574]
 offset_left = 6.0
 offset_right = 10.0
 offset_bottom = 2.0
-color = Color(0.301961, 0.321569, 0.380392, 1)
 mouse_filter = 2
+color = Color(0.301961, 0.321569, 0.380392, 1)
 
-[node name="DashPip3" type="ColorRect" parent="UI"]
+[node name="DashPip3" type="ColorRect" parent="UI" unique_id=1099206513]
 offset_left = 12.0
 offset_right = 16.0
 offset_bottom = 2.0
-color = Color(0.301961, 0.321569, 0.380392, 1)
 mouse_filter = 2
+color = Color(0.301961, 0.321569, 0.380392, 1)
 
-[node name="StaminaBar" type="ColorRect" parent="UI"]
+[node name="StaminaBar" type="ColorRect" parent="UI" unique_id=444883039]
 offset_top = 3.0
 offset_right = 16.0
 offset_bottom = 5.0
-color = Color(0.137255, 0.156863, 0.196078, 1)
 mouse_filter = 2
+color = Color(0.137255, 0.156863, 0.196078, 1)
 
-[node name="Fill" type="ColorRect" parent="UI/StaminaBar"]
+[node name="Fill" type="ColorRect" parent="UI/StaminaBar" unique_id=1527338382]
+layout_mode = 0
 offset_right = 16.0
 offset_bottom = 2.0
-color = Color(0.47451, 0.862745, 0.552941, 1)
 mouse_filter = 2
+color = Color(0.47451, 0.862745, 0.552941, 1)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1875973933]
 position = Vector2(0, -5.5)
@@ -84,9 +84,10 @@ shape = SubResource("CircleShape2D_75vfm")
 [node name="Camera2D" type="Camera2D" parent="." unique_id=2064523003]
 position = Vector2(0, -24)
 
-[node name="DebugLayer" type="CanvasLayer" parent="."]
+[node name="DebugLayer" type="CanvasLayer" parent="." unique_id=1318535028]
 
-[node name="ControllerDebug" type="Label" parent="DebugLayer"]
+[node name="ControllerDebug" type="Label" parent="DebugLayer" unique_id=1304284093]
+visible = false
 offset_left = 3.0
 offset_top = 146.0
 offset_right = 317.0
@@ -97,4 +98,3 @@ theme_override_constants/line_spacing = 1
 theme_override_constants/outline_size = 2
 theme_override_font_sizes/font_size = 6
 text = "Controller debug"
-visible = false

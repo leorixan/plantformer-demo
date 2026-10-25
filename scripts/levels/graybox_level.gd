@@ -1,22 +1,28 @@
 extends Node2D
+## 灰盒关卡：
+## - Terrain  (TileMapLayer, 8px)：地形 + 机关 tile（兼容旧方式）
+## - Entities (TileMapLayer, 4px)：任意尺寸机关（画笔=Godot 自带 TileMap 画笔/矩形/油漆桶）
+## 运行时按 tile 生成碰撞/机关节点（纯代码，无 tscn 组件）
 
 const TILE := 8.0
+const HALF := 4.0
 const PLAYER_SCENE := "res://scenes/player/player.tscn"
 const KIND_ORDER := ["terrain", "hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
+const ENTITY_KINDS := ["hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
 
 var player: CharacterBody2D
 var spawn_pos := Vector2.ZERO
 var checkpoint_pos := Vector2.ZERO
-var _kinds: Dictionary = {}
 
 
 func _ready() -> void:
 	var legend := get_node_or_null("Legend")
 	if legend:
 		legend.visible = false
-	_scan_cells()
-	_build_collision()
-	_build_parts()
+	_build_terrain()
+	_build_tile_parts()
+	_build_entity_rects()
+	_build_node_entities()
 	var marker := get_node_or_null("Spawn") as Node2D
 	spawn_pos = marker.global_position if marker else Vector2(16, 0)
 	checkpoint_pos = spawn_pos
@@ -39,29 +45,36 @@ func _on_goal(body: Node2D) -> void:
 		print("LEVEL_COMPLETE")
 
 
-func _scan_cells() -> void:
-	var terrain := get_node_or_null("Terrain") as TileMapLayer
-	if terrain == null:
-		push_error("缺少 Terrain TileMapLayer")
+func _terrain_layer() -> TileMapLayer:
+	return get_node_or_null("Terrain") as TileMapLayer
+
+
+func _entity_layer() -> TileMapLayer:
+	return get_node_or_null("Entities") as TileMapLayer
+
+
+func _kind_of(layer: TileMapLayer, cell: Vector2i) -> String:
+	var data := layer.get_cell_tile_data(cell)
+	if data and data.has_custom_data("kind"):
+		var k := String(data.get_custom_data("kind"))
+		if not k.is_empty():
+			return k
+	var coord := layer.get_cell_atlas_coords(cell)
+	if coord.y == 0 and coord.x < KIND_ORDER.size():
+		return KIND_ORDER[coord.x]
+	return ""
+
+
+func _build_terrain() -> void:
+	var layer := _terrain_layer()
+	if layer == null:
 		return
-	for cell in terrain.get_used_cells():
-		var kind := ""
-		var data := terrain.get_cell_tile_data(cell)
-		if data and data.has_custom_data("kind"):
-			kind = String(data.get_custom_data("kind"))
-		if kind.is_empty():
-			var coord := terrain.get_cell_atlas_coords(cell)
-			kind = KIND_ORDER[coord.x] if coord.y == 0 and coord.x < KIND_ORDER.size() else "terrain"
-		_kinds[cell] = kind
-
-
-func _build_collision() -> void:
 	var body := StaticBody2D.new()
 	body.name = "TerrainBody"
 	add_child(body)
 	var rows: Dictionary = {}
-	for cell in _kinds:
-		if _kinds[cell] == "terrain":
+	for cell in layer.get_used_cells():
+		if _kind_of(layer, cell) == "terrain":
 			if not rows.has(cell.y):
 				rows[cell.y] = []
 			rows[cell.y].append(cell.x)
@@ -89,14 +102,110 @@ func _add_solid(body: Node, row: int, start: int, end_col: int) -> void:
 	body.add_child(cs)
 
 
-func _build_parts() -> void:
-	for cell in _kinds:
-		var pos := Vector2(float(cell.x) * TILE + TILE * 0.5, float(cell.y) * TILE + TILE * 0.5)
-		_make_part(_kinds[cell], Vector2(TILE, TILE), pos)
-	_scan_entities()
+func _build_tile_parts() -> void:
+	var layer := _terrain_layer()
+	if layer == null:
+		return
+	for cell in layer.get_used_cells():
+		var kind := _kind_of(layer, cell)
+		if kind == "terrain" or kind.is_empty():
+			continue
+		_make_part(kind, Vector2(TILE, TILE), Vector2(float(cell.x) * TILE + 4.0, float(cell.y) * TILE + 4.0))
 
 
-func _scan_entities() -> void:
+func _build_entity_rects() -> void:
+	var layer := _entity_layer()
+	if layer == null:
+		return
+	var by_kind: Dictionary = {}
+	for cell in layer.get_used_cells():
+		var kind := _kind_of(layer, cell)
+		if kind.is_empty() or kind == "terrain":
+			continue
+		if not by_kind.has(kind):
+			by_kind[kind] = {}
+		by_kind[kind][cell] = true
+	for kind in by_kind:
+		var cells: Dictionary = by_kind[kind]
+		var rows: Dictionary = {}
+		for cell in cells:
+			if not rows.has(cell.y):
+				rows[cell.y] = []
+			rows[cell.y].append(cell.x)
+		var row_keys: Array = rows.keys()
+		row_keys.sort()
+		var active: Dictionary = {}
+		for row in row_keys:
+			var cols: Array = rows[row]
+			cols.sort()
+			var runs: Array = []
+			var start: int = cols[0]
+			var prev: int = cols[0]
+			for i in range(1, cols.size()):
+				var cur: int = cols[i]
+				if cur != prev + 1:
+					runs.append([start, prev])
+					start = cur
+				prev = cur
+			runs.append([start, prev])
+			var next_active: Dictionary = {}
+			for run in runs:
+				var key := "%d:%d" % [run[0], run[1]]
+				if active.has(key):
+					var r: Array = active[key]
+					r[3] = row
+					next_active[key] = r
+				else:
+					next_active[key] = [run[0], run[1], row, row]
+			active = next_active
+		# 从所有曾出现过的矩形收集（需要把结束的也收）
+		var done: Dictionary = {}
+		for row in row_keys:
+			pass
+		# 重新扫描：逐行找 run，向上追溯连续行得到矩形
+		var seen: Dictionary = {}
+		for row in row_keys:
+			var cols: Array = rows[row]
+			cols.sort()
+			var runs: Array = []
+			var start: int = cols[0]
+			var prev: int = cols[0]
+			for i in range(1, cols.size()):
+				var cur: int = cols[i]
+				if cur != prev + 1:
+					runs.append([start, prev])
+					start = cur
+				prev = cur
+			runs.append([start, prev])
+			for run in runs:
+				var key := "%d:%d:%d" % [run[0], run[1], row]
+				if seen.has(key):
+					continue
+				var x0: int = run[0]
+				var x1: int = run[1]
+				var y0: int = row
+				var y1: int = row
+				while true:
+					var nxt := y1 + 1
+					var nc: Array = rows.get(nxt, [])
+					if not _has_run(nc, x0, x1):
+						break
+					y1 = nxt
+				for yy in range(y0, y1 + 1):
+					seen["%d:%d:%d" % [x0, x1, yy]] = true
+				var size := Vector2(float(x1 - x0 + 1) * HALF, float(y1 - y0 + 1) * HALF)
+				var pos := Vector2(float(x0) * HALF + size.x * 0.5, float(y0) * HALF + size.y * 0.5)
+				_make_part(kind, size, pos)
+
+
+func _has_run(cols: Array, x0: int, x1: int) -> bool:
+	for x in range(x0, x1 + 1):
+		if not cols.has(x):
+			return false
+	return true
+
+
+func _build_node_entities() -> void:
 	for child in get_children():
 		if not (child is Node2D) or child.get_script() == null:
 			continue
