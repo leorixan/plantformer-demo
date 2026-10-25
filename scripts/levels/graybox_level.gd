@@ -13,6 +13,7 @@ const ENTITY_KINDS := ["hazard", "crystal", "spring", "breakable", "jelly", "che
 var player: CharacterBody2D
 var spawn_pos := Vector2.ZERO
 var checkpoint_pos := Vector2.ZERO
+var _terrain_cells: Dictionary = {}
 
 
 func _ready() -> void:
@@ -75,6 +76,7 @@ func _build_terrain() -> void:
 	var rows: Dictionary = {}
 	for cell in layer.get_used_cells():
 		if _kind_of(layer, cell) == "terrain":
+			_terrain_cells[cell] = true
 			if not rows.has(cell.y):
 				rows[cell.y] = []
 			rows[cell.y].append(cell.x)
@@ -226,11 +228,15 @@ func _make_part(kind: String, size: Vector2, pos: Vector2) -> void:
 		"crystal":
 			node = parts.Crystal.new()
 		"spring":
-			node = parts.Spring.new()
+			var sp = parts.Spring.new()
+			sp.dir = _spring_dir(pos, size)
+			node = sp
 		"breakable":
 			node = parts.Breakable.new()
 		"jelly":
-			node = parts.Jelly.new()
+			var db = parts.DreamBlock.new()
+			db.level = self
+			node = db
 		"checkpoint":
 			var cp = parts.Checkpoint.new()
 			cp.level = self
@@ -257,3 +263,19 @@ func respawn_player() -> void:
 
 func set_checkpoint(pos: Vector2) -> void:
 	checkpoint_pos = pos
+
+func _solid_px(px: Vector2) -> bool:
+	return _terrain_cells.has(Vector2i(int(floor(px.x / 8.0)), int(floor(px.y / 8.0))))
+
+
+func _spring_dir(pos: Vector2, size: Vector2) -> Vector2:
+	# 按周围地形自动判断弹簧朝向：下贴地→上弹，上贴顶→下弹，左贴墙→右弹，右贴墙→左弹
+	if _solid_px(Vector2(pos.x, pos.y + size.y * 0.5 + 2.0)):
+		return Vector2.UP
+	if _solid_px(Vector2(pos.x, pos.y - size.y * 0.5 - 2.0)):
+		return Vector2.DOWN
+	if _solid_px(Vector2(pos.x - size.x * 0.5 - 2.0, pos.y)):
+		return Vector2.RIGHT
+	if _solid_px(Vector2(pos.x + size.x * 0.5 + 2.0, pos.y)):
+		return Vector2.LEFT
+	return Vector2.UP

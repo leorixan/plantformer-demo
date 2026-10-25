@@ -1,8 +1,6 @@
 class_name GrayboxParts
 extends RefCounted
-## 灰盒组件行为（纯代码，无 tscn）：
-## 红=伤害区(死亡) 青=冲刺水晶(满体力+冲刺) 绿=弹簧 褐=可破坏(高速/冲刺攻击)
-## 紫=果冻块(落地弹起) 金=存档点
+## 红=伤害 青=冲刺水晶 绿=弹簧(按地形自动判朝向) 褐=可破坏 紫=Dream Block(冲刺激活) 金=存档点
 
 
 class Hazard extends Area2D:
@@ -35,9 +33,7 @@ class Crystal extends Area2D:
 		body_entered.connect(_on_body)
 
 	func _on_body(body: Node2D) -> void:
-		if not (body is CharacterBody2D):
-			return
-		if _monitor.disabled:
+		if not (body is CharacterBody2D) or _monitor.disabled:
 			return
 		if body.has_method("refill_dash"):
 			body.call("refill_dash")
@@ -49,7 +45,8 @@ class Crystal extends Area2D:
 
 class Spring extends Area2D:
 	var size := Vector2(8, 8)
-	var bounce := 260.0
+	var dir := Vector2.UP
+	var launch := 300.0
 
 	func _ready() -> void:
 		var cs := CollisionShape2D.new()
@@ -60,27 +57,17 @@ class Spring extends Area2D:
 		body_entered.connect(_on_body)
 
 	func _on_body(body: Node2D) -> void:
-		if body is CharacterBody2D:
-			body.velocity = Vector2(body.velocity.x, -bounce)
-
-
-class Jelly extends Area2D:
-	var size := Vector2(8, 8)
-	var bounce := 300.0
-
-	func _ready() -> void:
-		var cs := CollisionShape2D.new()
-		var rect := RectangleShape2D.new()
-		rect.size = size
-		cs.shape = rect
-		add_child(cs)
-		body_entered.connect(_on_body)
-
-	func _on_body(body: Node2D) -> void:
-		if body is CharacterBody2D:
-			var v: Vector2 = body.velocity
-			if v.y >= 0.0:
-				body.velocity = Vector2(v.x, -bounce)
+		if not (body is CharacterBody2D):
+			return
+		var v: Vector2 = body.velocity
+		if dir.y < 0.0:
+			body.velocity = Vector2(v.x, -launch)
+		elif dir.y > 0.0:
+			body.velocity = Vector2(v.x, launch)
+		elif dir.x < 0.0:
+			body.velocity = Vector2(-launch, -launch * 0.5)
+		else:
+			body.velocity = Vector2(launch, -launch * 0.5)
 
 
 class Breakable extends StaticBody2D:
@@ -107,6 +94,46 @@ class Breakable extends StaticBody2D:
 					if b is CharacterBody2D and b.has_method("is_attacking") and b.call("is_attacking"):
 						queue_free()
 						return
+
+
+class DreamBlock extends StaticBody2D:
+	## 蔚蓝 Dream Block：常态实心；冲刺接触时短暂失效让玩家穿过，并回复冲刺+体力
+	var level: Node
+	var size := Vector2(8, 8)
+	var _cs: CollisionShape2D
+	var _detector: Area2D
+	var _cooldown := 0.0
+
+	func _ready() -> void:
+		_cs = CollisionShape2D.new()
+		var rect := RectangleShape2D.new()
+		rect.size = size
+		_cs.shape = rect
+		add_child(_cs)
+		_detector = Area2D.new()
+		var dcs := CollisionShape2D.new()
+		var drect := RectangleShape2D.new()
+		drect.size = size + Vector2(10, 10)
+		dcs.shape = drect
+		_detector.add_child(dcs)
+		add_child(_detector)
+
+	func _physics_process(delta: float) -> void:
+		if _cooldown > 0.0:
+			_cooldown -= delta
+			if _cooldown <= 0.0:
+				_cs.set_deferred("disabled", false)
+			return
+		for b in _detector.get_overlapping_bodies():
+			if not (b is CharacterBody2D):
+				continue
+			var attacking: bool = b.has_method("is_attacking") and bool(b.call("is_attacking"))
+			if attacking:
+				_cs.set_deferred("disabled", true)
+				_cooldown = 0.25
+				if b.has_method("refill_dash"):
+					b.call("refill_dash")
+				return
 
 
 class Checkpoint extends Area2D:
