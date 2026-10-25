@@ -9,7 +9,7 @@ const HALF := 4.0
 const PLAYER_SCENE := "res://scenes/player/player.tscn"
 const KIND_ORDER := ["terrain", "hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
 const ENTITY_KINDS := ["hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
-const ENTITY_ATLAS := ["hazard", "crystal", "spring", "breakable8", "dream", "checkpoint", "oneway_up", "breakable16", "oneway_down", "oneway_left", "oneway_right"]
+const ENTITY_ATLAS := ["hazard", "crystal", "spring", "breakable8", "breakable16", "dream", "oneway_up", "oneway_down", "oneway_left", "oneway_right", "checkpoint"]
 
 var player: CharacterBody2D
 var spawn_pos := Vector2.ZERO
