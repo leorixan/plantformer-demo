@@ -9,7 +9,7 @@ const HALF := 4.0
 const PLAYER_SCENE := "res://scenes/player/player.tscn"
 const KIND_ORDER := ["terrain", "hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
 const ENTITY_KINDS := ["hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
-const ENTITY_ATLAS := ["hazard", "crystal", "spring", "breakable", "jelly", "checkpoint", "oneway"]
+const ENTITY_ATLAS := ["hazard", "crystal", "spring", "breakable8", "dream", "checkpoint", "oneway_up", "breakable16", "oneway_down", "oneway_left", "oneway_right"]
 
 var player: CharacterBody2D
 var spawn_pos := Vector2.ZERO
@@ -204,19 +204,20 @@ func _build_entity_rects() -> void:
 					seen["%d:%d:%d" % [x0, x1, yy]] = true
 				var size := Vector2(float(x1 - x0 + 1) * HALF, float(y1 - y0 + 1) * HALF)
 				var pos := Vector2(float(x0) * HALF + size.x * 0.5, float(y0) * HALF + size.y * 0.5)
-				if kind == "breakable":
+				if kind == "breakable" or kind == "breakable8" or kind == "breakable16":
 					# 可破坏块按 8x8 单位拆分，每次只碎一块
 					var el := _entity_layer()
 					var px0 := float(x0) * HALF
 					var py0 := float(y0) * HALF
 					var pw := float(x1 - x0 + 1) * HALF
 					var ph := float(y1 - y0 + 1) * HALF
-					var nx := int(ceil(pw / 8.0))
-					var ny := int(ceil(ph / 8.0))
+					var unit_sz := 16.0 if kind == "breakable16" else 8.0
+					var nx := int(ceil(pw / unit_sz))
+					var ny := int(ceil(ph / unit_sz))
 					for iy in ny:
 						for ix in nx:
-							var usz := Vector2(minf(8.0, pw - float(ix) * 8.0), minf(8.0, ph - float(iy) * 8.0))
-							var upos := Vector2(px0 + float(ix) * 8.0 + usz.x * 0.5, py0 + float(iy) * 8.0 + usz.y * 0.5)
+							var usz := Vector2(minf(unit_sz, pw - float(ix) * unit_sz), minf(unit_sz, ph - float(iy) * unit_sz))
+							var upos := Vector2(px0 + float(ix) * unit_sz + usz.x * 0.5, py0 + float(iy) * unit_sz + usz.y * 0.5)
 							var unit := _make_part("breakable", usz, upos)
 							if unit:
 								var clear_cells: Array = []
@@ -264,16 +265,28 @@ func _make_part(kind: String, size: Vector2, pos: Vector2) -> Node2D:
 			var sp = parts.Spring.new()
 			sp.dir = _spring_dir(pos, size)
 			node = sp
-		"breakable":
+		"breakable", "breakable8", "breakable16":
 			node = parts.Breakable.new()
-		"jelly":
+		"jelly", "dream":
 			var db = parts.DreamBlock.new()
 			db.level = self
 			node = db
-		"oneway":
+		"oneway", "oneway_up":
 			var ow = parts.OneWay.new()
-			ow.pass_dir = _spring_dir(pos, size)
+			ow.pass_dir = Vector2.UP
 			node = ow
+		"oneway_down":
+			var ow2 = parts.OneWay.new()
+			ow2.pass_dir = Vector2.DOWN
+			node = ow2
+		"oneway_left":
+			var ow3 = parts.OneWay.new()
+			ow3.pass_dir = Vector2.LEFT
+			node = ow3
+		"oneway_right":
+			var ow4 = parts.OneWay.new()
+			ow4.pass_dir = Vector2.RIGHT
+			node = ow4
 		"checkpoint":
 			var cp = parts.Checkpoint.new()
 			cp.level = self
