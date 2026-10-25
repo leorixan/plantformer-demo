@@ -339,9 +339,17 @@ func _setup_room_camera() -> void:
 	if rooms == null or player == null:
 		return
 	var rects: Array = []
-	for ch in rooms.get_children():
-		if ch is Node2D and ch.get("rect_size") != null:
-			rects.append(Rect2(ch.global_position, ch.get("rect_size")))
+	# 方式 A：Rooms 节点自带 rooms 数组（RoomsDefinition，Inspector 编辑）
+	var arr = rooms.get("rooms")
+	if arr is Array and not (arr as Array).is_empty():
+		for r in arr:
+			if r is Rect2:
+				rects.append(Rect2(rooms.global_position + (r as Rect2).position, (r as Rect2).size))
+	# 方式 B：Rooms 下挂 RoomArea 子节点
+	if rects.is_empty():
+		for ch in rooms.get_children():
+			if ch is Node2D and ch.get("rect_size") != null:
+				rects.append(Rect2(ch.global_position, ch.get("rect_size")))
 	if rects.is_empty():
 		return
 	var cam := player.get_node_or_null("Camera2D") as Camera2D
