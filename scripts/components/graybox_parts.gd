@@ -8,6 +8,7 @@ class Hazard extends Area2D:
 	var size := Vector2(8, 8)
 
 	func _ready() -> void:
+		collision_mask = 2
 		var cs := CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
 		rect.size = size
@@ -49,6 +50,7 @@ class Spring extends Area2D:
 	var launch := 300.0
 
 	func _ready() -> void:
+		collision_mask = 2
 		var cs := CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
 		rect.size = size
@@ -74,12 +76,14 @@ class Breakable extends StaticBody2D:
 	var size := Vector2(8, 8)
 
 	func _ready() -> void:
+		collision_mask = 2
 		var cs := CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
 		rect.size = size
 		cs.shape = rect
 		add_child(cs)
 		var area := Area2D.new()
+		area.collision_mask = 2
 		var acs := CollisionShape2D.new()
 		var arect := RectangleShape2D.new()
 		arect.size = size + Vector2(4, 4)
@@ -105,12 +109,14 @@ class DreamBlock extends StaticBody2D:
 	var _cooldown := 0.0
 
 	func _ready() -> void:
+		collision_mask = 2
 		_cs = CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
 		rect.size = size
 		_cs.shape = rect
 		add_child(_cs)
 		_detector = Area2D.new()
+		_detector.collision_mask = 2
 		var dcs := CollisionShape2D.new()
 		var drect := RectangleShape2D.new()
 		drect.size = size + Vector2(10, 10)
@@ -141,6 +147,7 @@ class Checkpoint extends Area2D:
 	var size := Vector2(8, 8)
 
 	func _ready() -> void:
+		collision_mask = 2
 		var cs := CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
 		rect.size = size

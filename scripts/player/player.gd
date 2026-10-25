@@ -481,6 +481,7 @@ func _apply_gravity(delta: float) -> void:
 		else: _var_jump_timer = 0.0
 
 func _try_jump() -> void:
+	if is_ducking: return
 	if _jump_buffer <= 0.0: return
 	if _coyote > 0.0:
 		_jump()
