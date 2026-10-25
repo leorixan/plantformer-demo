@@ -1,5 +1,8 @@
 class_name GrayboxParts
 extends RefCounted
+## 灰盒组件行为（纯代码，无 tscn）：
+## 红=伤害区(死亡) 青=冲刺水晶(满体力+冲刺) 绿=弹簧 褐=可破坏(高速/冲刺攻击)
+## 紫=果冻块(落地弹起) 金=存档点
 
 
 class Hazard extends Area2D:
@@ -21,19 +24,27 @@ class Hazard extends Area2D:
 
 class Crystal extends Area2D:
 	var size := Vector2(8, 8)
+	var _monitor: CollisionShape2D
 
 	func _ready() -> void:
-		var cs := CollisionShape2D.new()
+		_monitor = CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
 		rect.size = size
-		cs.shape = rect
-		add_child(cs)
+		_monitor.shape = rect
+		add_child(_monitor)
 		body_entered.connect(_on_body)
 
 	func _on_body(body: Node2D) -> void:
-		if body is CharacterBody2D:
-			body.set("dash_count", int(body.get("max_dashes")))
-			queue_free()
+		if not (body is CharacterBody2D):
+			return
+		if _monitor.disabled:
+			return
+		if body.has_method("refill_dash"):
+			body.call("refill_dash")
+		_monitor.set_deferred("disabled", true)
+		await get_tree().create_timer(2.5).timeout
+		if is_instance_valid(_monitor):
+			_monitor.set_deferred("disabled", false)
 
 
 class Spring extends Area2D:
@@ -50,9 +61,7 @@ class Spring extends Area2D:
 
 	func _on_body(body: Node2D) -> void:
 		if body is CharacterBody2D:
-			var v: Vector2 = body.velocity
-			if v.y >= -0.01:
-				body.velocity = Vector2(v.x, -bounce)
+			body.velocity = Vector2(body.velocity.x, -bounce)
 
 
 class Jelly extends Area2D:
@@ -95,7 +104,7 @@ class Breakable extends StaticBody2D:
 		for child in get_children():
 			if child is Area2D:
 				for b in child.get_overlapping_bodies():
-					if b is CharacterBody2D and float(b.get("dash_attack_timer")) > 0.0:
+					if b is CharacterBody2D and b.has_method("is_attacking") and b.call("is_attacking"):
 						queue_free()
 						return
 
@@ -114,4 +123,4 @@ class Checkpoint extends Area2D:
 
 	func _on_body(body: Node2D) -> void:
 		if body is CharacterBody2D and level:
-			level.call("set_checkpoint", global_position)
+			level.call("set_checkpoint", body.global_position)

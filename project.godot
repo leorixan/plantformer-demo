@@ -13,6 +13,7 @@ config_version=5
 [application]
 
 config/name="Plantformer_demo"
+run/main_scene="uid://cc48jtjwfqvcl"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 

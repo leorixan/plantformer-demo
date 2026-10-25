@@ -784,3 +784,13 @@ func _update_indicators() -> void:
 		dash_pips[index].color = Color("f7d65a") if index < dash_count else Color("4d5261")
 	var bar: ColorRect = stamina_fill.get_parent()
 	stamina_fill.size.x = bar.size.x * clampf(stamina / maxf(max_stamina, 0.001), 0.0, 1.0)
+
+func is_attacking() -> bool:
+	# 可破坏方块判定：冲刺攻击窗口内 或 速度超过阈值
+	return dash_attack_timer > 0.0 or velocity.length() >= attack_speed_threshold
+
+
+func refill_dash() -> void:
+	# 冲刺水晶：完全恢复冲刺次数与体力
+	dash_count = max_dashes
+	stamina = max_stamina
