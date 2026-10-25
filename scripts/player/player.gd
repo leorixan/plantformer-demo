@@ -105,6 +105,8 @@ var dash_count := 1
 var stamina := 110.0
 var facing := 1.0
 var is_ducking := false
+var dream_dashing := false
+var dream_dir := Vector2.ZERO
 var move_x := 0.0 # 参考 moveX：受 forceMoveX 覆盖后的有效水平输入
 var move_y := 0.0 # 参考 Input.MoveY.Value：原始纵向输入
 var dash_dir := Vector2.ZERO
@@ -796,3 +798,22 @@ func refill_dash() -> void:
 	# 冲刺水晶：完全恢复冲刺次数与体力
 	dash_count = max_dashes
 	stamina = max_stamina
+
+func start_dream_dash(dir: Vector2) -> void:
+	# Dream Block：冲刺穿过时保持原方向持续冲刺，直到离开方块（由 DreamBlock 调用结束）
+	dream_dashing = true
+	dream_dir = dir.normalized() if dir.length() > 0.01 else Vector2(facing, 0.0)
+	mode = Mode.DASH
+	dash_dir = dream_dir
+	dash_timer = 999.0
+	velocity = dream_dir * dash_speed
+
+
+func end_dream_dash() -> void:
+	if not dream_dashing:
+		return
+	dream_dashing = false
+	dash_timer = 0.0
+	mode = Mode.NORMAL
+	velocity = dream_dir * dash_end_speed
+	refill_dash()

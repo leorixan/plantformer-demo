@@ -102,15 +102,15 @@ class Breakable extends StaticBody2D:
 
 
 class DreamBlock extends StaticBody2D:
-	## 蔚蓝 Dream Block：常态实心；冲刺接触时短暂失效让玩家穿过，并回复冲刺+体力
+	## 蔚蓝 Dream Block：常态实心；冲刺接触时进入 Dream Dash（保持方向持续冲刺），离开方块后结束并回满冲刺/体力
 	var level: Node
 	var size := Vector2(8, 8)
 	var _cs: CollisionShape2D
 	var _detector: Area2D
-	var _cooldown := 0.0
+	var _active := false
+	var _player: CharacterBody2D
 
 	func _ready() -> void:
-		collision_mask = 2
 		_cs = CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
 		rect.size = size
@@ -120,26 +120,37 @@ class DreamBlock extends StaticBody2D:
 		_detector.collision_mask = 2
 		var dcs := CollisionShape2D.new()
 		var drect := RectangleShape2D.new()
-		drect.size = size + Vector2(10, 10)
+		drect.size = size + Vector2(12, 12)
 		dcs.shape = drect
 		_detector.add_child(dcs)
 		add_child(_detector)
 
-	func _physics_process(delta: float) -> void:
-		if _cooldown > 0.0:
-			_cooldown -= delta
-			if _cooldown <= 0.0:
+	func _physics_process(_delta: float) -> void:
+		var overlapping := _detector.get_overlapping_bodies()
+		if _active:
+			var still := false
+			for b in overlapping:
+				if b == _player:
+					still = true
+					break
+			if not still:
+				_active = false
 				_cs.set_deferred("disabled", false)
+				if is_instance_valid(_player) and _player.has_method("end_dream_dash"):
+					_player.call("end_dream_dash")
+				_player = null
 			return
-		for b in _detector.get_overlapping_bodies():
-			if not (b is CharacterBody2D):
-				continue
-			var attacking: bool = b.has_method("is_attacking") and bool(b.call("is_attacking"))
-			if attacking:
+		for b in overlapping:
+			if b is CharacterBody2D and b.has_method("is_attacking") and bool(b.call("is_attacking")):
+				var dir: Vector2 = b.velocity
+				var dd = b.get("dash_dir")
+				if dd is Vector2 and (dd as Vector2).length() > 0.01:
+					dir = dd
+				_player = b
+				_active = true
 				_cs.set_deferred("disabled", true)
-				_cooldown = 0.25
-				if b.has_method("refill_dash"):
-					b.call("refill_dash")
+				if b.has_method("start_dream_dash"):
+					b.call("start_dream_dash", dir)
 				return
 
 

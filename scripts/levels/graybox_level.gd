@@ -112,7 +112,13 @@ func _build_tile_parts() -> void:
 		var kind := _kind_of(layer, cell)
 		if kind == "terrain" or kind.is_empty():
 			continue
-		_make_part(kind, Vector2(TILE, TILE), Vector2(float(cell.x) * TILE + 4.0, float(cell.y) * TILE + 4.0))
+		var node := _make_part(kind, Vector2(TILE, TILE), Vector2(float(cell.x) * TILE + 4.0, float(cell.y) * TILE + 4.0))
+		if node and kind == "breakable":
+			var layer2 := _terrain_layer()
+			var ccc: Vector2i = cell
+			node.tree_exiting.connect(func() -> void:
+				if is_instance_valid(layer2):
+					layer2.erase_cell(ccc))
 
 
 func _build_entity_rects() -> void:
@@ -197,7 +203,17 @@ func _build_entity_rects() -> void:
 					seen["%d:%d:%d" % [x0, x1, yy]] = true
 				var size := Vector2(float(x1 - x0 + 1) * HALF, float(y1 - y0 + 1) * HALF)
 				var pos := Vector2(float(x0) * HALF + size.x * 0.5, float(y0) * HALF + size.y * 0.5)
-				_make_part(kind, size, pos)
+				var bnode := _make_part(kind, size, pos)
+				if bnode and kind == "breakable":
+					var el := _entity_layer()
+					var clear_cells: Array = []
+					for yy in range(y0, y1 + 1):
+						for xx in range(x0, x1 + 1):
+							clear_cells.append(Vector2i(xx, yy))
+					bnode.tree_exiting.connect(func() -> void:
+						if is_instance_valid(el):
+							for cc in clear_cells:
+								el.erase_cell(cc))
 
 
 func _has_run(cols: Array, x0: int, x1: int) -> bool:
@@ -217,7 +233,7 @@ func _build_node_entities() -> void:
 		child.visible = false
 
 
-func _make_part(kind: String, size: Vector2, pos: Vector2) -> void:
+func _make_part(kind: String, size: Vector2, pos: Vector2) -> Node2D:
 	var parts := load("res://scripts/components/graybox_parts.gd")
 	var node: Node2D = null
 	match kind:
@@ -246,6 +262,7 @@ func _make_part(kind: String, size: Vector2, pos: Vector2) -> void:
 	node.set("size", size)
 	node.position = pos
 	add_child(node)
+	return node
 
 
 func _spawn_player() -> void:
