@@ -180,6 +180,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_apply_hitbox()
 
 func _physics_process(delta: float) -> void:
+	if dream_dashing and is_on_wall():
+		_dream_dash_die()
 	_poll_input(delta)
 	_tick_timers(delta)
 	_update_facing()
@@ -832,3 +834,12 @@ func end_dream_dash(block: Node = null) -> void:
 	if b is CollisionObject2D:
 		remove_collision_exception_with(b)
 	_dream_block = null
+
+
+func _dream_dash_die() -> void:
+	dream_dashing = false
+	dash_timer = 0.0
+	mode = Mode.NORMAL
+	var lvl := get_parent()
+	if lvl and lvl.has_method("respawn_player"):
+		lvl.call("respawn_player")
