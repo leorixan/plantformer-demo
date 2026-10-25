@@ -799,21 +799,36 @@ func refill_dash() -> void:
 	dash_count = max_dashes
 	stamina = max_stamina
 
-func start_dream_dash(dir: Vector2) -> void:
-	# Dream Block：冲刺穿过时保持原方向持续冲刺，直到离开方块（由 DreamBlock 调用结束）
+var _dream_block: Node = null
+
+
+func is_dashing() -> bool:
+	return mode == Mode.DASH and dash_timer > 0.0
+
+
+func start_dream_dash(dir: Vector2, block: Node = null) -> void:
+	# Dream Block：冲刺穿过时保持方向持续冲刺；只对这个方块加碰撞例外（其他碰撞照常）
 	dream_dashing = true
+	_dream_block = block
 	dream_dir = dir.normalized() if dir.length() > 0.01 else Vector2(facing, 0.0)
 	mode = Mode.DASH
 	dash_dir = dream_dir
 	dash_timer = 999.0
 	velocity = dream_dir * dash_speed
+	if block is CollisionObject2D:
+		add_collision_exception_with(block)
 
 
-func end_dream_dash() -> void:
+func end_dream_dash(block: Node = null) -> void:
 	if not dream_dashing:
 		return
 	dream_dashing = false
 	dash_timer = 0.0
 	mode = Mode.NORMAL
-	velocity = dream_dir * dash_end_speed
-	refill_dash()
+	velocity = dream_dir * dash_speed   # 离开方块保持原速
+	dash_count = max_dashes
+	stamina = max_stamina
+	var b: Node = block if block != null else _dream_block
+	if b is CollisionObject2D:
+		remove_collision_exception_with(b)
+	_dream_block = null
