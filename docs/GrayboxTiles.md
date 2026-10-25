@@ -20,7 +20,7 @@
 
 ## 示例场景
 
-`scenes/levels/graybox_showcase.tscn`：按图集顺序摆放全部组件，带英文标签说明，直接 F6 运行即可逐个试。
+`scenes/levels/graybox_showcase.tscn`：**编辑器用备忘场景**（无地形/无玩家/无脚本），纵向排列全部 11 个组件，每行右侧一行中文说明，文字颜色=方块颜色；打开场景在 2D 视图查看即可。
 
 ## 房间
 
