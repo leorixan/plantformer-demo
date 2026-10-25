@@ -29,6 +29,7 @@ func _ready() -> void:
 	spawn_pos = marker.global_position if marker else Vector2(16, 0)
 	checkpoint_pos = spawn_pos
 	_spawn_player()
+	_setup_room_camera()
 	var goal := get_node_or_null("Goal") as Node2D
 	if goal:
 		var area := Area2D.new()
@@ -330,3 +331,23 @@ func _spring_dir(pos: Vector2, size: Vector2) -> Vector2:
 	if _solid_px(Vector2(pos.x + size.x * 0.5 + 2.0, pos.y)):
 		return Vector2.LEFT
 	return Vector2.UP
+
+
+func _setup_room_camera() -> void:
+	# 若存在 Rooms 容器且子节点是 RoomArea，就启用蔚蓝式房间相机
+	var rooms := get_node_or_null("Rooms")
+	if rooms == null or player == null:
+		return
+	var rects: Array = []
+	for ch in rooms.get_children():
+		if ch is Node2D and ch.get("rect_size") != null:
+			rects.append(Rect2(ch.global_position, ch.get("rect_size")))
+	if rects.is_empty():
+		return
+	var cam := player.get_node_or_null("Camera2D") as Camera2D
+	if cam == null:
+		return
+	cam.set("top_level", true)
+	var rc: Node = load("res://scripts/components/room_camera.gd").new()
+	add_child(rc)
+	rc.call("attach", cam, player, rects)
