@@ -165,3 +165,52 @@ class Checkpoint extends Area2D:
 	func _on_body(body: Node2D) -> void:
 		if body is CharacterBody2D and level:
 			level.call("set_checkpoint", body.global_position)
+
+
+class OneWay extends StaticBody2D:
+	## 单向墙：只有沿 pass_dir 方向移动时穿过，其余情况实心。
+	## pass_dir 由关卡按贴附地形自动判定（下贴地→向上穿，上贴顶→向下穿，左贴墙→向右穿，右贴墙→向左穿）
+	var size := Vector2(8, 8)
+	var pass_dir := Vector2.UP
+	var _detector: Area2D
+	var _player: CharacterBody2D = null
+	var _exception := false
+
+	func _ready() -> void:
+		var cs := CollisionShape2D.new()
+		var rect := RectangleShape2D.new()
+		rect.size = size
+		cs.shape = rect
+		add_child(cs)
+		_detector = Area2D.new()
+		_detector.collision_mask = 2
+		var dcs := CollisionShape2D.new()
+		var drect := RectangleShape2D.new()
+		drect.size = size + Vector2(16, 16)
+		dcs.shape = drect
+		_detector.add_child(dcs)
+		add_child(_detector)
+
+	func _physics_process(_delta: float) -> void:
+		var p: CharacterBody2D = null
+		for b in _detector.get_overlapping_bodies():
+			if b is CharacterBody2D:
+				p = b
+				break
+		if p == null:
+			if _exception and is_instance_valid(_player):
+				_player.remove_collision_exception_with(self)
+			_exception = false
+			_player = null
+			return
+		if _exception:
+			var passed := (p.global_position - global_position).dot(pass_dir) > size.length() * 0.5
+			if passed:
+				p.remove_collision_exception_with(self)
+				_exception = false
+				_player = null
+			return
+		if p.velocity.dot(pass_dir) > 1.0:
+			p.add_collision_exception_with(self)
+			_exception = true
+			_player = p

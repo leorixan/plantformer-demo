@@ -9,6 +9,7 @@ const HALF := 4.0
 const PLAYER_SCENE := "res://scenes/player/player.tscn"
 const KIND_ORDER := ["terrain", "hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
 const ENTITY_KINDS := ["hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
+const ENTITY_ATLAS := ["hazard", "crystal", "spring", "breakable", "jelly", "checkpoint", "oneway"]
 
 var player: CharacterBody2D
 var spawn_pos := Vector2.ZERO
@@ -253,6 +254,10 @@ func _make_part(kind: String, size: Vector2, pos: Vector2) -> Node2D:
 			var db = parts.DreamBlock.new()
 			db.level = self
 			node = db
+		"oneway":
+			var ow = parts.OneWay.new()
+			ow.pass_dir = _spring_dir(pos, size)
+			node = ow
 		"checkpoint":
 			var cp = parts.Checkpoint.new()
 			cp.level = self
