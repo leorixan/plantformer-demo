@@ -87,3 +87,19 @@ class Breakable extends StaticBody2D:
 					if b is CharacterBody2D and float(b.get("dash_attack_timer")) > 0.0:
 						queue_free()
 						return
+
+
+class Checkpoint extends Area2D:
+	var level: Node
+
+	func _ready() -> void:
+		var cs := CollisionShape2D.new()
+		var rect := RectangleShape2D.new()
+		rect.size = Vector2(8, 8)
+		cs.shape = rect
+		add_child(cs)
+		body_entered.connect(_on_body)
+
+	func _on_body(body: Node2D) -> void:
+		if body is CharacterBody2D:
+			level.call("set_checkpoint", global_position)

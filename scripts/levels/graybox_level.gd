@@ -5,14 +5,18 @@ extends Node2D
 
 const TILE := 8.0
 const PLAYER_SCENE := "res://scenes/player/player.tscn"
-const KIND_ORDER := ["terrain", "hazard", "crystal", "spring", "breakable", "jelly"]
+const KIND_ORDER := ["terrain", "hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
 
 var player: CharacterBody2D
 var spawn_pos := Vector2.ZERO
 var _kinds: Dictionary = {}
+var checkpoint_pos := Vector2.ZERO
 
 
 func _ready() -> void:
+	var legend := get_node_or_null("Legend")
+	if legend:
+		legend.visible = false
 	_scan_cells()
 	_build_collision()
 	_build_parts()
@@ -106,6 +110,10 @@ func _build_parts() -> void:
 				node = parts.Breakable.new()
 			"jelly":
 				node = parts.Jelly.new()
+			"checkpoint":
+				var cp = parts.Checkpoint.new()
+				cp.level = self
+				node = cp
 		if node:
 			node.position = pos
 			add_child(node)
@@ -122,3 +130,8 @@ func respawn_player() -> void:
 		return
 	player.global_position = spawn_pos
 	player.velocity = Vector2.ZERO
+
+
+func set_checkpoint(pos: Vector2) -> void:
+	checkpoint_pos = pos
+	spawn_pos = pos
