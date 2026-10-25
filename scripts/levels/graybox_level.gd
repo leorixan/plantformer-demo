@@ -24,6 +24,7 @@ func _ready() -> void:
 	_build_terrain()
 	_build_tile_parts()
 	_build_entity_rects()
+	_setup_dream_visuals()
 	_build_node_entities()
 	var marker := get_node_or_null("Spawn") as Node2D
 	spawn_pos = marker.global_position if marker else Vector2(16, 0)
@@ -359,3 +360,27 @@ func _setup_room_camera() -> void:
 	var rc: Node = load("res://scripts/components/room_camera.gd").new()
 	add_child(rc)
 	rc.call("attach", cam, player, rects)
+
+
+func _setup_dream_visuals() -> void:
+	# 紫色 Dream Block 的显示层要高于玩家，且半透明
+	var ents := _entity_layer()
+	if ents == null:
+		return
+	var visual := TileMapLayer.new()
+	visual.name = "DreamVisual"
+	visual.tile_set = ents.tile_set
+	visual.z_index = 10
+	visual.modulate = Color(1, 1, 1, 0.65)
+	add_child(visual)
+	var moved := 0
+	for cell in ents.get_used_cells():
+		var kind := _kind_of(ents, cell)
+		if kind == "dream" or kind == "jelly":
+			visual.set_cell(cell, ents.get_cell_source_id(cell), ents.get_cell_atlas_coords(cell))
+			ents.erase_cell(cell)
+			moved += 1
+	if moved == 0:
+		visual.queue_free()
+	else:
+		print("[graybox] DreamBlock 高层半透明视觉: ", moved, " cells")
