@@ -26,6 +26,7 @@ class Crystal extends Area2D:
 	var _monitor: CollisionShape2D
 
 	func _ready() -> void:
+		collision_mask = 2
 		_monitor = CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
 		rect.size = size
