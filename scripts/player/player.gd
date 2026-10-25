@@ -180,7 +180,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_apply_hitbox()
 
 func _physics_process(delta: float) -> void:
-	if dream_dashing and is_on_wall():
+	if dream_dashing and is_on_wall() and velocity.length() < dash_speed * 0.6:
 		_dream_dash_die()
 	_poll_input(delta)
 	_tick_timers(delta)

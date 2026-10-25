@@ -204,17 +204,33 @@ func _build_entity_rects() -> void:
 					seen["%d:%d:%d" % [x0, x1, yy]] = true
 				var size := Vector2(float(x1 - x0 + 1) * HALF, float(y1 - y0 + 1) * HALF)
 				var pos := Vector2(float(x0) * HALF + size.x * 0.5, float(y0) * HALF + size.y * 0.5)
-				var bnode := _make_part(kind, size, pos)
-				if bnode and kind == "breakable":
+				if kind == "breakable":
+					# 可破坏块按 8x8 单位拆分，每次只碎一块
 					var el := _entity_layer()
-					var clear_cells: Array = []
-					for yy in range(y0, y1 + 1):
-						for xx in range(x0, x1 + 1):
-							clear_cells.append(Vector2i(xx, yy))
-					bnode.tree_exiting.connect(func() -> void:
-						if is_instance_valid(el):
-							for cc in clear_cells:
-								el.erase_cell(cc))
+					var px0 := float(x0) * HALF
+					var py0 := float(y0) * HALF
+					var pw := float(x1 - x0 + 1) * HALF
+					var ph := float(y1 - y0 + 1) * HALF
+					var nx := int(ceil(pw / 8.0))
+					var ny := int(ceil(ph / 8.0))
+					for iy in ny:
+						for ix in nx:
+							var usz := Vector2(minf(8.0, pw - float(ix) * 8.0), minf(8.0, ph - float(iy) * 8.0))
+							var upos := Vector2(px0 + float(ix) * 8.0 + usz.x * 0.5, py0 + float(iy) * 8.0 + usz.y * 0.5)
+							var unit := _make_part("breakable", usz, upos)
+							if unit:
+								var clear_cells: Array = []
+								var cx0 := int((upos.x - usz.x * 0.5) / HALF)
+								var cy0 := int((upos.y - usz.y * 0.5) / HALF)
+								for yy in range(cy0, int((upos.y + usz.y * 0.5) / HALF)):
+									for xx in range(cx0, int((upos.x + usz.x * 0.5) / HALF)):
+										clear_cells.append(Vector2i(xx, yy))
+								unit.tree_exiting.connect(func() -> void:
+									if is_instance_valid(el):
+										for cc in clear_cells:
+											el.erase_cell(cc))
+				else:
+					_make_part(kind, size, pos)
 
 
 func _has_run(cols: Array, x0: int, x1: int) -> bool:
