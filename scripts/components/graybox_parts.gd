@@ -137,7 +137,12 @@ class DreamBlock extends StaticBody2D:
 			_player = null
 			return
 		for b in overlapping:
-			if b is CharacterBody2D and b.has_method("is_dashing") and bool(b.call("is_dashing")):
+			if not (b is CharacterBody2D):
+				continue
+			# 紧贴方块时冲刺可能先被碰撞挡住（速度被清），除 is_dashing 外也接受冲刺起手窗口
+			var dashing: bool = b.has_method("is_dashing") and bool(b.call("is_dashing"))
+			var just_dashed: bool = b.get("dash_attack_timer") != null and float(b.get("dash_attack_timer")) > 0.0
+			if dashing or just_dashed:
 				_player = b
 				_active = true
 				var dir: Vector2 = b.velocity
