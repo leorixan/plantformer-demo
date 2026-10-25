@@ -294,8 +294,8 @@ func _ready() -> void:
 	generated.add_child(labels)
 
 	var player_scene: PackedScene = load("res://scenes/player/player.tscn")
-	var theo_scene: PackedScene = load("res://scenes/components/theo.tscn")
-	var jelly_scene: PackedScene = load("res://scenes/components/jellyfish.tscn")
+	var theo_scene: PackedScene = null
+	var jelly_scene: PackedScene = null
 
 	var x_tile := 0
 	for zone in ZONES:
@@ -324,12 +324,12 @@ func _ready() -> void:
 						add_child(_player)
 					"T":
 						if editor: continue
-						var theo: Node2D = theo_scene.instantiate()
+						var theo: Node2D = Node2D.new()
 						theo.global_position = _cell_center(x_tile + col, row_index)
 						add_child(theo)
 					"J":
 						if editor: continue
-						var jelly: Node2D = jelly_scene.instantiate()
+						var jelly: Node2D = Node2D.new()
 						jelly.global_position = _cell_center(x_tile + col, row_index)
 						add_child(jelly)
 					"x":
