@@ -1,16 +1,15 @@
 class_name GrayboxParts
 extends RefCounted
-## 灰盒组件：全部用代码构建（不使用 tscn）。
-## 放置方式：在 TileMap 里刷对应的 tile（tile 只是占位图；运行时按 cell 生成这些节点）。
 
 
 class Hazard extends Area2D:
 	var level: Node
+	var size := Vector2(8, 8)
 
 	func _ready() -> void:
 		var cs := CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
-		rect.size = Vector2(8, 8)
+		rect.size = size
 		cs.shape = rect
 		add_child(cs)
 		body_entered.connect(_on_body)
@@ -21,10 +20,12 @@ class Hazard extends Area2D:
 
 
 class Crystal extends Area2D:
+	var size := Vector2(8, 8)
+
 	func _ready() -> void:
 		var cs := CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
-		rect.size = Vector2(8, 8)
+		rect.size = size
 		cs.shape = rect
 		add_child(cs)
 		body_entered.connect(_on_body)
@@ -36,14 +37,14 @@ class Crystal extends Area2D:
 
 
 class Spring extends Area2D:
+	var size := Vector2(8, 8)
 	var bounce := 260.0
 
 	func _ready() -> void:
 		var cs := CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
-		rect.size = Vector2(8, 6)
+		rect.size = size
 		cs.shape = rect
-		cs.position = Vector2(0, 1)
 		add_child(cs)
 		body_entered.connect(_on_body)
 
@@ -55,12 +56,13 @@ class Spring extends Area2D:
 
 
 class Jelly extends Area2D:
+	var size := Vector2(8, 8)
 	var bounce := 300.0
 
 	func _ready() -> void:
 		var cs := CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
-		rect.size = Vector2(8, 8)
+		rect.size = size
 		cs.shape = rect
 		add_child(cs)
 		body_entered.connect(_on_body)
@@ -73,12 +75,21 @@ class Jelly extends Area2D:
 
 
 class Breakable extends StaticBody2D:
+	var size := Vector2(8, 8)
+
 	func _ready() -> void:
 		var cs := CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
-		rect.size = Vector2(8, 8)
+		rect.size = size
 		cs.shape = rect
 		add_child(cs)
+		var area := Area2D.new()
+		var acs := CollisionShape2D.new()
+		var arect := RectangleShape2D.new()
+		arect.size = size + Vector2(4, 4)
+		acs.shape = arect
+		area.add_child(acs)
+		add_child(area)
 
 	func _physics_process(_delta: float) -> void:
 		for child in get_children():
@@ -91,15 +102,16 @@ class Breakable extends StaticBody2D:
 
 class Checkpoint extends Area2D:
 	var level: Node
+	var size := Vector2(8, 8)
 
 	func _ready() -> void:
 		var cs := CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
-		rect.size = Vector2(8, 8)
+		rect.size = size
 		cs.shape = rect
 		add_child(cs)
 		body_entered.connect(_on_body)
 
 	func _on_body(body: Node2D) -> void:
-		if body is CharacterBody2D:
+		if body is CharacterBody2D and level:
 			level.call("set_checkpoint", global_position)

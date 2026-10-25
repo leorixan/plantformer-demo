@@ -1,7 +1,4 @@
 extends Node2D
-## 灰盒关卡：Terrain(TileMapLayer) 里每个 tile 就是可拖拽放置的组件。
-## tile 自定义数据 "kind"：terrain / hazard / crystal / spring / breakable / jelly
-## 运行管线：读取 tile → 建地形碰撞(合并成矩形) + 生成对应机关节点（纯代码，无 tscn）
 
 const TILE := 8.0
 const PLAYER_SCENE := "res://scenes/player/player.tscn"
@@ -9,8 +6,8 @@ const KIND_ORDER := ["terrain", "hazard", "crystal", "spring", "breakable", "jel
 
 var player: CharacterBody2D
 var spawn_pos := Vector2.ZERO
-var _kinds: Dictionary = {}
 var checkpoint_pos := Vector2.ZERO
+var _kinds: Dictionary = {}
 
 
 func _ready() -> void:
@@ -22,6 +19,7 @@ func _ready() -> void:
 	_build_parts()
 	var marker := get_node_or_null("Spawn") as Node2D
 	spawn_pos = marker.global_position if marker else Vector2(16, 0)
+	checkpoint_pos = spawn_pos
 	_spawn_player()
 	var goal := get_node_or_null("Goal") as Node2D
 	if goal:
@@ -92,31 +90,47 @@ func _add_solid(body: Node, row: int, start: int, end_col: int) -> void:
 
 
 func _build_parts() -> void:
-	var parts := load("res://scripts/components/graybox_parts.gd")
 	for cell in _kinds:
-		var kind: String = _kinds[cell]
 		var pos := Vector2(float(cell.x) * TILE + TILE * 0.5, float(cell.y) * TILE + TILE * 0.5)
-		var node: Node2D = null
-		match kind:
-			"hazard":
-				var h = parts.Hazard.new()
-				h.level = self
-				node = h
-			"crystal":
-				node = parts.Crystal.new()
-			"spring":
-				node = parts.Spring.new()
-			"breakable":
-				node = parts.Breakable.new()
-			"jelly":
-				node = parts.Jelly.new()
-			"checkpoint":
-				var cp = parts.Checkpoint.new()
-				cp.level = self
-				node = cp
-		if node:
-			node.position = pos
-			add_child(node)
+		_make_part(_kinds[cell], Vector2(TILE, TILE), pos)
+	_scan_entities()
+
+
+func _scan_entities() -> void:
+	for child in get_children():
+		if not (child is Node2D) or child.get_script() == null:
+			continue
+		if not String(child.get_script().resource_path).ends_with("graybox_entity.gd"):
+			continue
+		_make_part(String(child.get("kind")), child.get("size_px"), child.position)
+		child.visible = false
+
+
+func _make_part(kind: String, size: Vector2, pos: Vector2) -> void:
+	var parts := load("res://scripts/components/graybox_parts.gd")
+	var node: Node2D = null
+	match kind:
+		"hazard":
+			var h = parts.Hazard.new()
+			h.level = self
+			node = h
+		"crystal":
+			node = parts.Crystal.new()
+		"spring":
+			node = parts.Spring.new()
+		"breakable":
+			node = parts.Breakable.new()
+		"jelly":
+			node = parts.Jelly.new()
+		"checkpoint":
+			var cp = parts.Checkpoint.new()
+			cp.level = self
+			node = cp
+		_:
+			return
+	node.set("size", size)
+	node.position = pos
+	add_child(node)
 
 
 func _spawn_player() -> void:
@@ -128,10 +142,9 @@ func _spawn_player() -> void:
 func respawn_player() -> void:
 	if player == null:
 		return
-	player.global_position = spawn_pos
+	player.global_position = checkpoint_pos
 	player.velocity = Vector2.ZERO
 
 
 func set_checkpoint(pos: Vector2) -> void:
 	checkpoint_pos = pos
-	spawn_pos = pos
