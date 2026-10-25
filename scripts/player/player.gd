@@ -55,6 +55,7 @@ const SHAPE_INSET := 1.0
 @export var dash_cooldown := 0.20 # DashCooldown
 @export var dash_refill_cooldown := 0.10 # DashRefillCooldown；落地补 dash 的冷却，Extended Dash 的来源
 @export var dash_attack_time := 0.30 # DashAttackTime
+@export var attack_speed_threshold := 240.0 # is_attacking 速度阈值（蔚蓝 8px 标准）
 @export var dash_buffer_time := 0.12
 @export var super_jump_speed := 260.0 # SuperJumpH
 @export var dodge_slide_speed_mult := 1.2 # DodgeSlideSpeedMult
