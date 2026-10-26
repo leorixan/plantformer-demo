@@ -173,8 +173,10 @@ class DreamBlock extends StaticBody2D:
 		return r.has_point(p.global_position - Vector2(0, 5.5))
 
 	func player_inside(p: Node2D) -> bool:
-		# 持续判定用：必须真的在方块本体范围内，离开即结束（避免出去后还处在 dream 状态被墙杀）
-		var r := Rect2(global_position - size * 0.5 - Vector2(1, 1), size + Vector2(2, 2))
+		# 持续判定：玩家身体（8x11）还有一部分在方块内就继续保持 Dream Dash，
+		# 避免提前恢复碰撞导致头顶/身体卡在方块边缘
+		var half := Vector2(4, 5.5)
+		var r := Rect2(global_position - size * 0.5 - half, size + half * 2.0)
 		return r.has_point(p.global_position - Vector2(0, 5.5))
 
 
@@ -242,8 +244,10 @@ class OneWay extends StaticBody2D:
 			var real := Rect2(global_position - size * 0.5, size)
 			if real.has_point(center):
 				_entered = true
-			var far := center.distance_to(global_position) > size.length() + 24.0
-			if (_entered and not full.has_point(center)) or (not _entered and far):
+			var rel := center - global_position
+			var passed_side := rel.dot(pass_dir) > size.length() * 0.5 + 6.0
+			var far := rel.length() > size.length() + 40.0
+			if (_entered and passed_side) or (not _entered and far) or far:
 				p.remove_collision_exception_with(self)
 				_exception = false
 				_player = null
