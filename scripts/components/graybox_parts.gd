@@ -143,7 +143,7 @@ class DreamBlock extends StaticBody2D:
 			var dashing: bool = b.has_method("is_dashing") and bool(b.call("is_dashing"))
 			var just_dashed: bool = b.get("dash_attack_timer") != null and float(b.get("dash_attack_timer")) > 0.0
 			var pressed: bool = (b.has_method("is_dash_pressed") and bool(b.call("is_dash_pressed"))) or Input.is_action_pressed("dash")
-			if not player_inside(b):
+			if not player_near(b):
 				continue
 			var toward: Vector2 = (global_position - b.global_position).normalized()
 			var aim: Vector2 = Vector2.ZERO
@@ -167,8 +167,14 @@ class DreamBlock extends StaticBody2D:
 					b.call("start_dream_dash", dir, self)
 				return
 
-	func player_inside(p: Node2D) -> bool:
+	func player_near(p: Node2D) -> bool:
+		# 触发用：离方块 8px 内（贴脸也包含）
 		var r := Rect2(global_position - size * 0.5 - Vector2(8, 8), size + Vector2(16, 16))
+		return r.has_point(p.global_position - Vector2(0, 5.5))
+
+	func player_inside(p: Node2D) -> bool:
+		# 持续判定用：必须真的在方块本体范围内，离开即结束（避免出去后还处在 dream 状态被墙杀）
+		var r := Rect2(global_position - size * 0.5 - Vector2(1, 1), size + Vector2(2, 2))
 		return r.has_point(p.global_position - Vector2(0, 5.5))
 
 
