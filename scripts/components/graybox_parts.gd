@@ -96,7 +96,17 @@ class Breakable extends StaticBody2D:
 		for child in get_children():
 			if child is Area2D:
 				for b in child.get_overlapping_bodies():
-					if b is CharacterBody2D and b.has_method("is_attacking") and b.call("is_attacking"):
+					if not (b is CharacterBody2D) or not b.has_method("is_attacking") or not b.call("is_attacking"):
+						continue
+					var dir: Vector2 = b.velocity
+					if b.has_method("get_dash_dir"):
+						var dd: Vector2 = b.call("get_dash_dir")
+						if dd.length() > 0.01:
+							dir = dd
+					if dir.length() < 0.01:
+						continue
+					var to_block: Vector2 = global_position - b.global_position
+					if to_block.length() < 0.01 or dir.normalized().dot(to_block.normalized()) > 0.2:
 						queue_free()
 						return
 
@@ -132,7 +142,7 @@ class DreamBlock extends StaticBody2D:
 				return
 			var dashing: bool = b.has_method("is_dashing") and bool(b.call("is_dashing"))
 			var just_dashed: bool = b.get("dash_attack_timer") != null and float(b.get("dash_attack_timer")) > 0.0
-			var pressed: bool = (b.has_method("is_dash_pressed") and bool(b.call("is_dash_pressed"))) or Input.is_action_just_pressed("dash")
+			var pressed: bool = (b.has_method("is_dash_pressed") and bool(b.call("is_dash_pressed"))) or Input.is_action_pressed("dash")
 			if not player_inside(b):
 				continue
 			var toward: Vector2 = (global_position - b.global_position).normalized()

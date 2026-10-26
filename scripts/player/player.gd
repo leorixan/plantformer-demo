@@ -182,9 +182,15 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	_dream_dash_lifecycle()
 	if dream_dashing and _dream_time > 0.05:
-		var col := KinematicCollision2D.new()
-		if test_move(global_transform, dream_dir * 3.0, col) and col.get_normal().dot(dream_dir) < -0.2:
-			_dream_dash_die()
+		var space := get_world_2d().direct_space_state
+		var q := PhysicsRayQueryParameters2D.create(global_position, global_position + dream_dir * 5.0, 0xFFFFFFFF, [get_rid()])
+		var hit := space.intersect_ray(q)
+		if not hit.is_empty():
+			var hc = hit.get("collider")
+			if hc == null or not (hc is Node and (hc as Node).is_in_group("dream_blocks")):
+				var hn: Vector2 = hit.get("normal", Vector2.ZERO)
+				if hn.dot(dream_dir) < -0.2:
+					_dream_dash_die()
 	_poll_input(delta)
 	_tick_timers(delta)
 	_update_facing()
@@ -811,6 +817,7 @@ var _dream_exceptions: Array = []
 var _dream_last_pos := Vector2.ZERO
 var _dream_stall := 0.0
 var _dream_time := 0.0
+var _dream_saved_mask := 1
 
 
 func dash_input_dir() -> Vector2:
@@ -839,6 +846,8 @@ func start_dream_dash(dir: Vector2, block: Node = null) -> void:
 	dash_dir = dream_dir
 	dash_timer = 999.0
 	_dash_buffer = 0.0
+	_dream_saved_mask = collision_mask
+	collision_mask = 0
 	_dream_time = 0.0
 	# 清理攀爬/贴墙/外力残留，避免先回弹再冲进去
 	_grab_pressed = false
@@ -864,6 +873,7 @@ func end_dream_dash(block: Node = null) -> void:
 	if not dream_dashing:
 		return
 	dream_dashing = false
+	collision_mask = _dream_saved_mask if _dream_saved_mask != 0 else 1
 	dash_timer = 0.0
 	mode = Mode.NORMAL
 	velocity = dream_dir * dash_speed   # 离开方块保持原速
