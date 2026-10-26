@@ -517,7 +517,7 @@ func _try_jump() -> void:
 	if _dream_exit_timer > 0.0 and absf(_dream_exit_dir.x) > 0.01:
 		_dream_exit_timer = 0.0
 		_jump_buffer = 0.0
-		velocity = Vector2(_dream_exit_dir.x * float(super_jump_speed), -jump_speed)
+		velocity = Vector2(signf(_dream_exit_dir.x) * float(wall_jump_speed), -jump_speed)
 		dash_count = max_dashes
 		return
 	if is_ducking: return
@@ -915,8 +915,7 @@ func end_dream_dash(block: Node = null) -> void:
 	# 出紫块时如果缓存了跳跃，则做一个带水平速度的跳出（类似 super jump）
 	if _jump_buffer > 0.0 and absf(dream_dir.x) > 0.01:
 		_jump_buffer = 0.0
-		var sj := float(super_jump_speed)
-		velocity = Vector2(dream_dir.x * sj, -jump_speed)
+		velocity = Vector2(signf(dream_dir.x) * float(wall_jump_speed), -jump_speed)
 		dash_count = max_dashes
 	else:
 		velocity = dream_dir * dash_speed   # 离开方块保持原速
