@@ -204,6 +204,7 @@ class OneWay extends StaticBody2D:
 	var _detector: Area2D
 	var _player: CharacterBody2D = null
 	var _exception := false
+	var _entered := false
 
 	func _ready() -> void:
 		var cs := CollisionShape2D.new()
@@ -233,13 +234,20 @@ class OneWay extends StaticBody2D:
 			_player = null
 			return
 		if _exception:
-			# 必须整个角色完全离开墙体范围（含角色尺寸余量）才恢复碰撞
+			# 例外必须维持到"进入过墙 → 完全离开"；只根据是否离开会在靠近阶段被提前移除，
+			# 导致下向单向墙下落时刚加例外就被取消、于是能站在上面
+			var center := p.global_position - Vector2(0, 5.5)
 			var expand := Vector2(8.0, 11.0)
 			var full := Rect2(global_position - size * 0.5 - expand * 0.5, size + expand)
-			if not full.has_point(p.global_position - Vector2(0, 5.5)):
+			var real := Rect2(global_position - size * 0.5, size)
+			if real.has_point(center):
+				_entered = true
+			var far := center.distance_to(global_position) > size.length() + 24.0
+			if (_entered and not full.has_point(center)) or (not _entered and far):
 				p.remove_collision_exception_with(self)
 				_exception = false
 				_player = null
+				_entered = false
 			return
 		# 用输入方向 + 速度共同判断（贴住墙时速度已被碰撞清零，只看速度永远不触发）
 		var want_move := p.velocity.dot(pass_dir) > 0.1
@@ -249,5 +257,6 @@ class OneWay extends StaticBody2D:
 		if want_move:
 			p.add_collision_exception_with(self)
 			_exception = true
+			_entered = false
 			_player = p
 			print("[oneway] pass dir=", pass_dir, " player=", p.global_position)
