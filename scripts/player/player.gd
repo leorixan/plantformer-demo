@@ -181,8 +181,15 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	_dream_dash_lifecycle()
-	if dream_dashing and is_on_wall() and get_wall_normal().dot(dream_dir) < -0.4:
-		_dream_dash_die()
+	if dream_dashing:
+		# 斜向/正向撞墙都判死亡：检查上一帧 move_and_slide 的所有碰撞法线
+		for i in get_slide_collision_count():
+			var n := get_slide_collision(i).get_normal()
+			if n.dot(dream_dir) < -0.2:
+				_dream_dash_die()
+				break
+		if not dream_dashing:
+			return
 	_poll_input(delta)
 	_tick_timers(delta)
 	_update_facing()
