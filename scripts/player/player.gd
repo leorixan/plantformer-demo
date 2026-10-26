@@ -181,7 +181,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	_dream_dash_lifecycle()
-	if dream_dashing and is_on_wall() and get_wall_normal().dot(dream_dir) < -0.4:
+	if dream_dashing and is_on_wall() and get_wall_normal().dot(dream_dir) < -0.4 and not _wall_is_dream_block():
 		_dream_dash_die()
 	_poll_input(delta)
 	_tick_timers(delta)
@@ -886,3 +886,14 @@ func _dream_dash_lifecycle() -> void:
 		if db.has_method("player_inside") and bool(db.call("player_inside", self)):
 			return
 	end_dream_dash()
+
+
+func _wall_is_dream_block() -> bool:
+	# 攀爬在紫块上往里冲刺时，is_on_wall 指向的其实是紫块本身，不能算撞墙
+	var wn := get_wall_normal()
+	for i in get_slide_collision_count():
+		var col := get_slide_collision(i)
+		var c := col.get_collider()
+		if c != null and c.is_in_group("dream_blocks") and col.get_normal().dot(wn) > 0.7:
+			return true
+	return false
