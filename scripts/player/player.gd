@@ -181,7 +181,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	_dream_dash_lifecycle()
-	if dream_dashing and is_on_wall() and get_wall_normal().dot(dream_dir) < -0.4 and not _wall_is_dream_block():
+	if dream_dashing and _dream_time > 0.05 and velocity.dot(dream_dir) > dash_speed * 0.3 \
+			and is_on_wall() and get_wall_normal().dot(dream_dir) < -0.4 and not _wall_is_dream_block():
 		_dream_dash_die()
 	_poll_input(delta)
 	_tick_timers(delta)
@@ -806,6 +807,11 @@ var _dream_block: Node = null
 var _dream_exceptions: Array = []
 var _dream_last_pos := Vector2.ZERO
 var _dream_stall := 0.0
+var _dream_time := 0.0
+
+
+func dash_input_dir() -> Vector2:
+	return Vector2(move_x, move_y)
 
 
 func is_dash_pressed() -> bool:
@@ -830,6 +836,14 @@ func start_dream_dash(dir: Vector2, block: Node = null) -> void:
 	dash_dir = dream_dir
 	dash_timer = 999.0
 	_dash_buffer = 0.0
+	_dream_time = 0.0
+	# 清理攀爬/贴墙/外力残留，避免先回弹再冲进去
+	_grab_pressed = false
+	_wall_slide_dir = 0
+	_force_move_x = 0.0
+	_force_move_x_timer = 0.0
+	_wall_boost_timer = 0.0
+	_wall_speed_retention_timer = 0.0
 	velocity = dream_dir * dash_speed
 	_dream_last_pos = global_position
 	_dream_stall = 0.0
@@ -873,6 +887,7 @@ func _dream_dash_lifecycle() -> void:
 	# Dream Dash 只有在完全离开所有紫块后才结束（对厚墙/贴脸/斜向都适用）
 	if not dream_dashing:
 		return
+	_dream_time += get_physics_process_delta_time()
 	var moved := global_position.distance_to(_dream_last_pos)
 	_dream_last_pos = global_position
 	if moved < 0.15:
