@@ -180,6 +180,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_apply_hitbox()
 
 func _physics_process(delta: float) -> void:
+	_dream_dash_lifecycle()
 	if dream_dashing and is_on_wall() and velocity.length() < dash_speed * 0.6:
 		_dream_dash_die()
 	_poll_input(delta)
@@ -805,6 +806,10 @@ var _dream_block: Node = null
 var _dream_exceptions: Array = []
 
 
+func is_dream_dashing() -> bool:
+	return dream_dashing
+
+
 func is_dashing() -> bool:
 	return mode == Mode.DASH and dash_timer > 0.0
 
@@ -851,3 +856,13 @@ func _dream_dash_die() -> void:
 	var lvl := get_parent()
 	if lvl and lvl.has_method("respawn_player"):
 		lvl.call("respawn_player")
+
+
+func _dream_dash_lifecycle() -> void:
+	# Dream Dash 只有在完全离开所有紫块后才结束（对厚墙/贴脸/斜向都适用）
+	if not dream_dashing:
+		return
+	for db in get_tree().get_nodes_in_group("dream_blocks"):
+		if db.has_method("player_inside") and bool(db.call("player_inside", self)):
+			return
+	end_dream_dash()

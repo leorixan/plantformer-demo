@@ -102,13 +102,12 @@ class Breakable extends StaticBody2D:
 
 
 class DreamBlock extends StaticBody2D:
-	## 蔚蓝 Dream Block：常态实心；冲刺状态接触时进入 Dream Dash（保持方向原速），
-	## 只对本方块加碰撞例外（不关闭碰撞，方块内撞墙/机关照常），离开后结束
+	## 只负责"触发"：冲刺状态接触即通知玩家进入 Dream Dash。
+	## Dream Dash 的持续/结束由 player 统一管理（对组内所有紫块加碰撞例外，
+	## 直到完全离开全部紫块才结束），避免厚墙/贴脸时被卡住。
 	var level: Node
 	var size := Vector2(8, 8)
 	var _detector: Area2D
-	var _active := false
-	var _player: CharacterBody2D
 
 	func _ready() -> void:
 		var cs := CollisionShape2D.new()
@@ -126,25 +125,14 @@ class DreamBlock extends StaticBody2D:
 		add_child(_detector)
 
 	func _physics_process(_delta: float) -> void:
-		var overlapping := _detector.get_overlapping_bodies()
-		if _active:
-			for b in overlapping:
-				if b == _player:
-					return
-			_active = false
-			if is_instance_valid(_player) and _player.has_method("end_dream_dash"):
-				_player.call("end_dream_dash", self)
-			_player = null
-			return
-		for b in overlapping:
+		for b in _detector.get_overlapping_bodies():
 			if not (b is CharacterBody2D):
 				continue
-			# 紧贴方块时冲刺可能先被碰撞挡住（速度被清），除 is_dashing 外也接受冲刺起手窗口
+			if b.has_method("is_dream_dashing") and bool(b.call("is_dream_dashing")):
+				return
 			var dashing: bool = b.has_method("is_dashing") and bool(b.call("is_dashing"))
 			var just_dashed: bool = b.get("dash_attack_timer") != null and float(b.get("dash_attack_timer")) > 0.0
 			if dashing or just_dashed:
-				_player = b
-				_active = true
 				var dir: Vector2 = b.velocity
 				var dd = b.get("dash_dir")
 				if dd is Vector2 and (dd as Vector2).length() > 0.01:
@@ -152,6 +140,10 @@ class DreamBlock extends StaticBody2D:
 				if b.has_method("start_dream_dash"):
 					b.call("start_dream_dash", dir, self)
 				return
+
+	func player_inside(p: Node2D) -> bool:
+		var r := Rect2(global_position - size * 0.5 - Vector2(12, 12), size + Vector2(24, 24))
+		return r.has_point(p.global_position)
 
 
 class Checkpoint extends Area2D:
