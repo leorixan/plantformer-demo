@@ -199,6 +199,18 @@ func _physics_process(delta: float) -> void:
 			if hn.dot(dream_dir) < -0.2:
 				_dream_dash_die()
 			break
+		# 防隧穿：前方 4px 处做点查询，已经嵌进墙体也算撞墙
+		if dream_dashing:
+			var pq := PhysicsPointQueryParameters2D.new()
+			pq.position = from + dream_dir * 4.0
+			pq.collision_mask = 0xFFFFFFFF
+			pq.exclude = [get_rid()]
+			for r in space.intersect_point(pq, 8):
+				var rc = r.get("collider")
+				if rc != null and rc is Node and (rc as Node).is_in_group("dream_blocks"):
+					continue
+				_dream_dash_die()
+				break
 	_poll_input(delta)
 	_tick_timers(delta)
 	_update_facing()
