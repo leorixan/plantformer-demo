@@ -181,7 +181,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	_dream_dash_lifecycle()
-	if dream_dashing and is_on_wall() and velocity.length() < dash_speed * 0.6:
+	if dream_dashing and is_on_wall() and get_wall_normal().dot(dream_dir) < -0.4:
 		_dream_dash_die()
 	_poll_input(delta)
 	_tick_timers(delta)
@@ -804,6 +804,8 @@ func refill_dash() -> void:
 
 var _dream_block: Node = null
 var _dream_exceptions: Array = []
+var _dream_last_pos := Vector2.ZERO
+var _dream_stall := 0.0
 
 
 func is_dream_dashing() -> bool:
@@ -823,6 +825,8 @@ func start_dream_dash(dir: Vector2, block: Node = null) -> void:
 	dash_dir = dream_dir
 	dash_timer = 999.0
 	velocity = dream_dir * dash_speed
+	_dream_last_pos = global_position
+	_dream_stall = 0.0
 	_dream_exceptions.clear()
 	for db in get_tree().get_nodes_in_group("dream_blocks"):
 		if db is CollisionObject2D:
@@ -850,7 +854,8 @@ func end_dream_dash(block: Node = null) -> void:
 
 
 func _dream_dash_die() -> void:
-	dream_dashing = false
+	if dream_dashing:
+		end_dream_dash()
 	dash_timer = 0.0
 	mode = Mode.NORMAL
 	var lvl := get_parent()
@@ -862,6 +867,15 @@ func _dream_dash_lifecycle() -> void:
 	# Dream Dash 只有在完全离开所有紫块后才结束（对厚墙/贴脸/斜向都适用）
 	if not dream_dashing:
 		return
+	var moved := global_position.distance_to(_dream_last_pos)
+	_dream_last_pos = global_position
+	if moved < 0.15:
+		_dream_stall += get_physics_process_delta_time()
+		if _dream_stall > 0.12:
+			_dream_dash_die()
+			return
+	else:
+		_dream_stall = 0.0
 	for db in get_tree().get_nodes_in_group("dream_blocks"):
 		if db.has_method("player_inside") and bool(db.call("player_inside", self)):
 			return

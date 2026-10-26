@@ -17,7 +17,7 @@ tile_map_data = PackedByteArray("AAAXABsAAAAAAAAAAAAYABsAAAAAAAAAAAAZABsAAAAAAAA
 tile_set = ExtResource("3_m1lu5")
 
 [node name="Spawn" type="Marker2D" parent="." unique_id=153257157]
-position = Vector2(16, 160)
+position = Vector2(26, 166)
 
 [node name="Goal" type="Marker2D" parent="." unique_id=1925174942]
 position = Vector2(300, 160)
