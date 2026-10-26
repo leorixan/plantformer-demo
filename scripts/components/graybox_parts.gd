@@ -199,14 +199,15 @@ class Checkpoint extends Area2D:
 
 
 class OneWay extends StaticBody2D:
-	## 单向墙：只有沿 pass_dir 方向移动时穿过，其余情况实心。
-	## pass_dir 由关卡按贴附地形自动判定（下贴地→向上穿，上贴顶→向下穿，左贴墙→向右穿，右贴墙→向左穿）
+	## 单向墙：只有朝 pass_dir 移动才穿过。
+	## 玩家"身体范围内"才加碰撞例外；一旦身体完全离开墙（含玩家尺寸余量）立刻恢复实心。
 	var size := Vector2(8, 8)
 	var pass_dir := Vector2.UP
 	var _detector: Area2D
 	var _player: CharacterBody2D = null
 	var _exception := false
 	var _entered := false
+	const HALF := Vector2(4.0, 5.5)
 
 	func _ready() -> void:
 		var cs := CollisionShape2D.new()
@@ -223,6 +224,9 @@ class OneWay extends StaticBody2D:
 		_detector.add_child(dcs)
 		add_child(_detector)
 
+	func _body_rect() -> Rect2:
+		return Rect2(global_position - size * 0.5 - HALF, size + HALF * 2.0)
+
 	func _physics_process(_delta: float) -> void:
 		var p: CharacterBody2D = null
 		for b in _detector.get_overlapping_bodies():
@@ -235,32 +239,21 @@ class OneWay extends StaticBody2D:
 			_exception = false
 			_player = null
 			return
+		var center := p.global_position - Vector2(0, 5.5)
+		var body := _body_rect()
 		if _exception:
-			# 例外必须维持到"进入过墙 → 完全离开"；只根据是否离开会在靠近阶段被提前移除，
-			# 导致下向单向墙下落时刚加例外就被取消、于是能站在上面
-			var center := p.global_position - Vector2(0, 5.5)
-			var expand := Vector2(8.0, 11.0)
-			var full := Rect2(global_position - size * 0.5 - expand * 0.5, size + expand)
-			var real := Rect2(global_position - size * 0.5, size)
-			if real.has_point(center):
-				_entered = true
-			var rel := center - global_position
-			var passed_side := rel.dot(pass_dir) > size.length() * 0.5 + 6.0
-			var far := rel.length() > size.length() + 40.0
-			if (_entered and passed_side) or (not _entered and far) or far:
+			# 身体完全离开墙范围就立即恢复实心（回到墙边会重新挡住）
+			if not body.has_point(center):
 				p.remove_collision_exception_with(self)
 				_exception = false
 				_player = null
-				_entered = false
 			return
-		# 用输入方向 + 速度共同判断（贴住墙时速度已被碰撞清零，只看速度永远不触发）
 		var want_move := p.velocity.dot(pass_dir) > 0.1
 		if not want_move and p.has_method("get_move_input"):
 			var inp: Vector2 = p.call("get_move_input")
 			want_move = inp.dot(pass_dir) > 0.3
-		if want_move:
+		if want_move and body.has_point(center):
 			p.add_collision_exception_with(self)
 			_exception = true
-			_entered = false
 			_player = p
-			print("[oneway] pass dir=", pass_dir, " player=", p.global_position)
+			print("[oneway] pass dir=", pass_dir)

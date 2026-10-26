@@ -1,4 +1,4 @@
-[gd_resource type="TileSet" format=3]
+[gd_resource type="TileSet" format=3 uid="uid://b6rcmajptthgi"]
 
 [sub_resource type="Image" id="Image_0lo4f"]
 data = {
