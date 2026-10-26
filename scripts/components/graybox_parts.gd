@@ -132,11 +132,15 @@ class DreamBlock extends StaticBody2D:
 				return
 			var dashing: bool = b.has_method("is_dashing") and bool(b.call("is_dashing"))
 			var just_dashed: bool = b.get("dash_attack_timer") != null and float(b.get("dash_attack_timer")) > 0.0
-			if dashing or just_dashed:
+			var pressed: bool = b.has_method("is_dash_pressed") and bool(b.call("is_dash_pressed"))
+			if dashing or just_dashed or pressed:
 				var dir: Vector2 = b.velocity
 				var dd = b.get("dash_dir")
 				if dd is Vector2 and (dd as Vector2).length() > 0.01:
 					dir = dd
+				elif pressed:
+					# 头顶贴块上冲时 dash 会被立刻取消，这里用"朝方块中心"作为方向
+					dir = global_position - b.global_position
 				if b.has_method("start_dream_dash"):
 					b.call("start_dream_dash", dir, self)
 				return

@@ -808,6 +808,11 @@ var _dream_last_pos := Vector2.ZERO
 var _dream_stall := 0.0
 
 
+func is_dash_pressed() -> bool:
+	# 冲刺按下的缓冲窗口（顶头贴块时 dash 可能被立刻取消，但按键仍在缓冲里）
+	return _dash_buffer > 0.0
+
+
 func is_dream_dashing() -> bool:
 	return dream_dashing
 
@@ -824,6 +829,7 @@ func start_dream_dash(dir: Vector2, block: Node = null) -> void:
 	mode = Mode.DASH
 	dash_dir = dream_dir
 	dash_timer = 999.0
+	_dash_buffer = 0.0
 	velocity = dream_dir * dash_speed
 	_dream_last_pos = global_position
 	_dream_stall = 0.0
