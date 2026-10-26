@@ -183,14 +183,22 @@ func _physics_process(delta: float) -> void:
 	_dream_dash_lifecycle()
 	if dream_dashing and _dream_time > 0.05:
 		var space := get_world_2d().direct_space_state
-		var q := PhysicsRayQueryParameters2D.create(global_position, global_position + dream_dir * 5.0, 0xFFFFFFFF, [get_rid()])
-		var hit := space.intersect_ray(q)
-		if not hit.is_empty():
+		var from := global_position - Vector2(0, 5.5)   # 身体中心
+		for _i in 4:
+			var q := PhysicsRayQueryParameters2D.create(from, from + dream_dir * 10.0, 0xFFFFFFFF, [get_rid()])
+			q.hit_from_inside = true
+			var hit := space.intersect_ray(q)
+			if hit.is_empty():
+				break
 			var hc = hit.get("collider")
-			if hc == null or not (hc is Node and (hc as Node).is_in_group("dream_blocks")):
-				var hn: Vector2 = hit.get("normal", Vector2.ZERO)
-				if hn.dot(dream_dir) < -0.2:
-					_dream_dash_die()
+			if hc != null and hc is Node and (hc as Node).is_in_group("dream_blocks"):
+				# 跳过紫块自身，继续向前探测（紫块可能紧挨墙）
+				from = (hit.get("position") as Vector2) + dream_dir * 0.5
+				continue
+			var hn: Vector2 = hit.get("normal", Vector2.ZERO)
+			if hn.dot(dream_dir) < -0.2:
+				_dream_dash_die()
+			break
 	_poll_input(delta)
 	_tick_timers(delta)
 	_update_facing()
