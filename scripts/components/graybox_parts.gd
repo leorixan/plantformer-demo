@@ -39,6 +39,8 @@ class Crystal extends Area2D:
 			return
 		if body.has_method("refill_dash"):
 			body.call("refill_dash")
+		if body.has_method("freeze_frames"):
+			body.call("freeze_frames", 2)
 		_monitor.set_deferred("disabled", true)
 		await get_tree().create_timer(2.5).timeout
 		if is_instance_valid(_monitor):
