@@ -181,20 +181,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	_dream_dash_lifecycle()
-	if dream_dashing:
-		# 斜向/正向撞墙都判死亡：检查上一帧 move_and_slide 的碰撞法线；
-		# 跳过紫块自身（Dream Dash 中已加碰撞例外，旧碰撞数据可能残留）
-		for i in get_slide_collision_count():
-			var col := get_slide_collision(i)
-			var collider := col.get_collider()
-			if collider != null and collider.is_in_group("dream_blocks"):
-				continue
-			var n := col.get_normal()
-			if n.dot(dream_dir) < -0.2:
-				_dream_dash_die()
-				break
-		if not dream_dashing:
-			return
+	if dream_dashing and is_on_wall() and get_wall_normal().dot(dream_dir) < -0.4:
+		_dream_dash_die()
 	_poll_input(delta)
 	_tick_timers(delta)
 	_update_facing()
