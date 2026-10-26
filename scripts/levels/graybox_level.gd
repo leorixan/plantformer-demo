@@ -9,7 +9,7 @@ const HALF := 4.0
 const PLAYER_SCENE := "res://scenes/player/player.tscn"
 const KIND_ORDER := ["terrain", "hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
 const ENTITY_KINDS := ["hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
-const ENTITY_ATLAS := ["hazard", "crystal", "spring", "breakable8", "breakable16", "dream", "oneway_up", "oneway_down", "oneway_left", "oneway_right", "checkpoint"]
+const ENTITY_ATLAS := ["hazard", "crystal", "spring", "breakable8", "breakable16", "dream", "oneway_up", "oneway_down", "oneway_left", "oneway_right", "checkpoint", "hazard_hidden"]
 
 var player: CharacterBody2D
 var spawn_pos := Vector2.ZERO
@@ -24,6 +24,7 @@ func _ready() -> void:
 	_build_terrain()
 	_build_tile_parts()
 	_build_entity_rects()
+	_hide_invisible_hazards()
 	_setup_dream_visuals()
 	_build_node_entities()
 	var marker := get_node_or_null("Spawn") as Node2D
@@ -257,7 +258,7 @@ func _make_part(kind: String, size: Vector2, pos: Vector2) -> Node2D:
 	var parts := load("res://scripts/components/graybox_parts.gd")
 	var node: Node2D = null
 	match kind:
-		"hazard":
+		"hazard", "hazard_hidden":
 			var h = parts.Hazard.new()
 			h.level = self
 			node = h
@@ -385,3 +386,17 @@ func _setup_dream_visuals() -> void:
 		visual.queue_free()
 	else:
 		print("[graybox] DreamBlock 高层半透明视觉: ", moved, " cells")
+
+
+func _hide_invisible_hazards() -> void:
+	# 浅红死亡区：功能同红块，但运行时把 tile 从可见层擦掉（游戏中不可见）
+	var ents := _entity_layer()
+	if ents == null:
+		return
+	var count := 0
+	for cell in ents.get_used_cells():
+		if _kind_of(ents, cell) == "hazard_hidden":
+			ents.erase_cell(cell)
+			count += 1
+	if count > 0:
+		print("[graybox] 隐藏死亡区: ", count, " cells")

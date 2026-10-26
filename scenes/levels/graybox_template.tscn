@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bqsqglqv8ifip" path="res://scripts/levels/graybox_level.gd" id="1_e7vnk"]
 [ext_resource type="TileSet" uid="uid://c3xeqmx10ig2e" path="res://assets/graybox/graybox_tileset.tres" id="2_brdm3"]
-[ext_resource type="TileSet" uid="uid://bcuyth1fbg53k" path="res://assets/graybox/entity_tileset_v3.tres" id="3_m1lu5"]
+[ext_resource type="TileSet" uid="uid://bcuyth1fbg53k" path="res://assets/graybox/entity_tileset_v4.tres" id="3_m1lu5"]
 [ext_resource type="Script" uid="uid://cc25m630f54mn" path="res://scripts/components/rooms_definition.gd" id="4_m1lu5"]
 
 [node name="GrayboxLevel" type="Node2D" unique_id=1334964103]

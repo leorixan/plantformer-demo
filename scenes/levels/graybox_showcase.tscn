@@ -1,6 +1,6 @@
 [gd_scene format=4 uid="uid://ebwgd6c6488r"]
 
-[ext_resource type="TileSet" uid="uid://bcuyth1fbg53k" path="res://assets/graybox/entity_tileset_v3.tres" id="3_abxfv"]
+[ext_resource type="TileSet" uid="uid://bcuyth1fbg53k" path="res://assets/graybox/entity_tileset_v4.tres" id="3_abxfv"]
 
 [sub_resource type="SystemFont" id="SystemFont_dtlu3"]
 font_names = PackedStringArray("Microsoft YaHei", "SimHei", "Arial")
