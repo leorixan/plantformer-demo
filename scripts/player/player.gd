@@ -817,6 +817,7 @@ var _dream_exceptions: Array = []
 var _dream_last_pos := Vector2.ZERO
 var _dream_stall := 0.0
 var _dream_time := 0.0
+var _dream_entered := false
 var _dream_saved_mask := 1
 
 
@@ -849,6 +850,7 @@ func start_dream_dash(dir: Vector2, block: Node = null) -> void:
 	_dream_saved_mask = collision_mask
 	collision_mask = 0
 	_dream_time = 0.0
+	_dream_entered = false
 	# 清理攀爬/贴墙/外力残留，避免先回弹再冲进去
 	_grab_pressed = false
 	_wall_slide_dir = 0
@@ -911,10 +913,23 @@ func _dream_dash_lifecycle() -> void:
 			return
 	else:
 		_dream_stall = 0.0
+	# 刚触发时人在方块外（接近范围）→ 先允许它进入方块；
+	# 进入过方块后才以"是否为玩家在方块内"作为结束条件，防止刚触发就结束
+	var near := false
+	var inside := false
 	for db in get_tree().get_nodes_in_group("dream_blocks"):
+		if db.has_method("player_near") and bool(db.call("player_near", self)):
+			near = true
 		if db.has_method("player_inside") and bool(db.call("player_inside", self)):
-			return
-	end_dream_dash()
+			inside = true
+	if inside:
+		_dream_entered = true
+	if _dream_entered:
+		if not inside:
+			end_dream_dash()
+	else:
+		if not near:
+			end_dream_dash()
 
 
 func _wall_is_dream_block() -> bool:
