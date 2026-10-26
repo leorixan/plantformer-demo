@@ -207,8 +207,6 @@ class OneWay extends StaticBody2D:
 	var _detector: Area2D
 	var _player: CharacterBody2D = null
 	var _exception := false
-	const HALF := Vector2(4.0, 5.5)
-	const NEAR := Vector2(10.0, 11.5)
 
 	func _ready() -> void:
 		var cs := CollisionShape2D.new()
@@ -220,16 +218,17 @@ class OneWay extends StaticBody2D:
 		_detector.collision_mask = 2
 		var dcs := CollisionShape2D.new()
 		var drect := RectangleShape2D.new()
-		drect.size = size + Vector2(24, 24)
+		drect.size = size + Vector2(28, 28)
 		dcs.shape = drect
 		_detector.add_child(dcs)
 		add_child(_detector)
 
-	func _near_rect() -> Rect2:
-		return Rect2(global_position - size * 0.5 - NEAR * 0.5, size + NEAR)
-
-	func _body_rect() -> Rect2:
-		return Rect2(global_position - size * 0.5 - HALF, size + HALF * 2.0)
+	func _want(p: CharacterBody2D) -> bool:
+		if p.velocity.dot(pass_dir) > 0.1:
+			return true
+		if p.has_method("get_move_input"):
+			return (p.call("get_move_input") as Vector2).dot(pass_dir) > 0.3
+		return false
 
 	func _physics_process(_delta: float) -> void:
 		var p: CharacterBody2D = null
@@ -240,20 +239,18 @@ class OneWay extends StaticBody2D:
 		if p == null:
 			if _exception and is_instance_valid(_player):
 				_player.remove_collision_exception_with(self)
-				_exception = false
-				_player = null
+			_exception = false
+			_player = null
 			return
-		var center := p.global_position - Vector2(0, 5.5)
 		if _exception:
-			if not _body_rect().has_point(center):
+			# 只要还在朝通行方向移动就保留例外（不能因为"身体还没进墙"就移除，
+			# 否则靠近阶段就被取消，导致下向墙穿不过去）
+			if not _want(p):
 				p.remove_collision_exception_with(self)
 				_exception = false
 				_player = null
 			return
-		var want := p.velocity.dot(pass_dir) > 0.1
-		if not want and p.has_method("get_move_input"):
-			want = (p.call("get_move_input") as Vector2).dot(pass_dir) > 0.3
-		if want:
+		if _want(p):
 			p.add_collision_exception_with(self)
 			_exception = true
 			_player = p
