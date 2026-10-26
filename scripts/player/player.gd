@@ -181,9 +181,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	_dream_dash_lifecycle()
-	if dream_dashing and _dream_time > 0.05 and velocity.dot(dream_dir) > dash_speed * 0.3 \
-			and is_on_wall() and get_wall_normal().dot(dream_dir) < -0.4 and not _wall_is_dream_block():
-		_dream_dash_die()
+	if dream_dashing and _dream_time > 0.05:
+		var col := KinematicCollision2D.new()
+		if test_move(global_transform, dream_dir * 3.0, col) and col.get_normal().dot(dream_dir) < -0.2:
+			_dream_dash_die()
 	_poll_input(delta)
 	_tick_timers(delta)
 	_update_facing()
@@ -589,6 +590,8 @@ func _consume_jump() -> void:
 
 # 参考 DashBegin：起手只清速度与方向并进入冻结，真正起速留给 _launch_dash。
 func _try_start_dash() -> bool:
+	if dream_dashing:
+		return false
 	if _dash_buffer <= 0.0 or dash_count <= 0 or dash_cooldown_timer > 0.0: return false
 	_dash_buffer = 0.0
 	dash_count -= 1
@@ -887,6 +890,7 @@ func _dream_dash_lifecycle() -> void:
 	# Dream Dash 只有在完全离开所有紫块后才结束（对厚墙/贴脸/斜向都适用）
 	if not dream_dashing:
 		return
+	velocity = dream_dir * dash_speed
 	_dream_time += get_physics_process_delta_time()
 	var moved := global_position.distance_to(_dream_last_pos)
 	_dream_last_pos = global_position

@@ -119,7 +119,7 @@ class DreamBlock extends StaticBody2D:
 		_detector.collision_mask = 2
 		var dcs := CollisionShape2D.new()
 		var drect := RectangleShape2D.new()
-		drect.size = size + Vector2(24, 24)
+		drect.size = size + Vector2(16, 16)
 		dcs.shape = drect
 		_detector.add_child(dcs)
 		add_child(_detector)
@@ -133,6 +133,8 @@ class DreamBlock extends StaticBody2D:
 			var dashing: bool = b.has_method("is_dashing") and bool(b.call("is_dashing"))
 			var just_dashed: bool = b.get("dash_attack_timer") != null and float(b.get("dash_attack_timer")) > 0.0
 			var pressed: bool = (b.has_method("is_dash_pressed") and bool(b.call("is_dash_pressed"))) or Input.is_action_just_pressed("dash")
+			if not player_inside(b):
+				continue
 			var toward: Vector2 = (global_position - b.global_position).normalized()
 			var aim: Vector2 = Vector2.ZERO
 			if b.has_method("dash_input_dir"):
@@ -152,7 +154,7 @@ class DreamBlock extends StaticBody2D:
 				return
 
 	func player_inside(p: Node2D) -> bool:
-		var r := Rect2(global_position - size * 0.5 - Vector2(12, 12), size + Vector2(24, 24))
+		var r := Rect2(global_position - size * 0.5 - Vector2(8, 8), size + Vector2(16, 16))
 		return r.has_point(p.global_position)
 
 
