@@ -972,3 +972,13 @@ func _wall_is_dream_block() -> bool:
 		if c != null and c.is_in_group("dream_blocks") and col.get_normal().dot(wn) > 0.7:
 			return true
 	return false
+
+
+func _dream_hit_solid() -> void:
+	# 身体中心在紫块内 → 撞墙死亡；否则只是身体一部分擦到地形，应被挡住
+	var c := global_position - Vector2(0, 5.5)
+	for db in get_tree().get_nodes_in_group("dream_blocks"):
+		if db.has_method("contains_center") and bool(db.call("contains_center", c)):
+			_dream_dash_die()
+			return
+	end_dream_dash()
