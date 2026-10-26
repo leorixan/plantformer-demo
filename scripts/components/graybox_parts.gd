@@ -253,7 +253,7 @@ class OneWay extends StaticBody2D:
 		var want := p.velocity.dot(pass_dir) > 0.1
 		if not want and p.has_method("get_move_input"):
 			want = (p.call("get_move_input") as Vector2).dot(pass_dir) > 0.3
-		if want and _near_rect().has_point(center):
+		if want:
 			p.add_collision_exception_with(self)
 			_exception = true
 			_player = p

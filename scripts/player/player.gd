@@ -181,6 +181,16 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	_dream_dash_lifecycle()
+	if _dream_exit_timer > 0.0:
+		_dream_exit_timer = maxf(0.0, _dream_exit_timer - delta)
+		if Input.is_action_pressed("jump") and Input.is_action_just_pressed("jump"):
+			_jump_buffer = 0.0
+			_dream_exit_timer = 0.0
+			velocity = Vector2(signf(_dream_exit_dir.x) * float(wall_jump_speed), -jump_speed)
+			_var_jump_speed = -jump_speed
+			_var_jump_timer = var_jump_time
+			_dream_jump_full = true
+			dash_count = max_dashes
 	if dream_dashing and _dream_time > 0.05:
 		var space := get_world_2d().direct_space_state
 		var from := global_position - Vector2(0, 5.5)   # 身体中心
@@ -953,7 +963,6 @@ func _dream_dash_lifecycle() -> void:
 		return
 	velocity = dream_dir * dash_speed
 	_dream_time += get_physics_process_delta_time()
-	_dream_exit_timer = maxf(0.0, _dream_exit_timer - get_physics_process_delta_time())
 	var moved := global_position.distance_to(_dream_last_pos)
 	_dream_last_pos = global_position
 	if moved < 0.15:
