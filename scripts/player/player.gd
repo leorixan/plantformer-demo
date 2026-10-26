@@ -802,6 +802,7 @@ func refill_dash() -> void:
 	stamina = max_stamina
 
 var _dream_block: Node = null
+var _dream_exceptions: Array = []
 
 
 func is_dashing() -> bool:
@@ -817,8 +818,14 @@ func start_dream_dash(dir: Vector2, block: Node = null) -> void:
 	dash_dir = dream_dir
 	dash_timer = 999.0
 	velocity = dream_dir * dash_speed
-	if block is CollisionObject2D:
+	_dream_exceptions.clear()
+	for db in get_tree().get_nodes_in_group("dream_blocks"):
+		if db is CollisionObject2D:
+			add_collision_exception_with(db)
+			_dream_exceptions.append(db)
+	if block is CollisionObject2D and not _dream_exceptions.has(block):
 		add_collision_exception_with(block)
+		_dream_exceptions.append(block)
 
 
 func end_dream_dash(block: Node = null) -> void:
@@ -830,9 +837,10 @@ func end_dream_dash(block: Node = null) -> void:
 	velocity = dream_dir * dash_speed   # 离开方块保持原速
 	dash_count = max_dashes
 	stamina = max_stamina
-	var b: Node = block if block != null else _dream_block
-	if b is CollisionObject2D:
-		remove_collision_exception_with(b)
+	for db in _dream_exceptions:
+		if is_instance_valid(db):
+			remove_collision_exception_with(db)
+	_dream_exceptions.clear()
 	_dream_block = null
 
 

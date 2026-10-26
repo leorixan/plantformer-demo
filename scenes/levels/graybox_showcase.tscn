@@ -4,6 +4,7 @@
 
 [sub_resource type="SystemFont" id="SystemFont_dtlu3"]
 font_names = PackedStringArray("Microsoft YaHei", "SimHei", "Arial")
+subpixel_positioning = 0
 
 [node name="Showcase" type="Node2D" unique_id=298439859]
 
@@ -124,7 +125,7 @@ text = "右"
 [node name="Note_oneway" type="Label" parent="." unique_id=1872719847]
 offset_left = 64.0
 offset_top = 272.0
-offset_right = 579.0
+offset_right = 294.0
 offset_bottom = 295.0
 theme_override_colors/font_color = Color(0.42, 0.42, 0.45, 1)
 theme_override_fonts/font = SubResource("SystemFont_dtlu3")

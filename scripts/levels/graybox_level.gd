@@ -272,6 +272,7 @@ func _make_part(kind: String, size: Vector2, pos: Vector2) -> Node2D:
 		"jelly", "dream":
 			var db = parts.DreamBlock.new()
 			db.level = self
+			db.add_to_group("dream_blocks")
 			node = db
 		"oneway", "oneway_up":
 			var ow = parts.OneWay.new()

@@ -120,7 +120,7 @@ class DreamBlock extends StaticBody2D:
 		_detector.collision_mask = 2
 		var dcs := CollisionShape2D.new()
 		var drect := RectangleShape2D.new()
-		drect.size = size + Vector2(10, 10)
+		drect.size = size + Vector2(24, 24)
 		dcs.shape = drect
 		_detector.add_child(dcs)
 		add_child(_detector)
@@ -209,8 +209,10 @@ class OneWay extends StaticBody2D:
 			_player = null
 			return
 		if _exception:
-			var passed := (p.global_position - global_position).dot(pass_dir) > size.length() * 0.5
-			if passed:
+			# 必须整个角色完全离开墙体范围（含角色尺寸余量）才恢复碰撞
+			var expand := Vector2(8.0, 11.0)
+			var full := Rect2(global_position - size * 0.5 - expand * 0.5, size + expand)
+			if not full.has_point(p.global_position):
 				p.remove_collision_exception_with(self)
 				_exception = false
 				_player = null
