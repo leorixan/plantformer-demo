@@ -312,6 +312,9 @@ func _spawn_player() -> void:
 func respawn_player() -> void:
 	if player == null:
 		return
+	if player.has_method("end_dream_dash") and bool(player.get("dream_dashing")):
+		player.call("end_dream_dash")
+	player.set("collision_mask", 1)
 	player.global_position = checkpoint_pos
 	player.velocity = Vector2.ZERO
 

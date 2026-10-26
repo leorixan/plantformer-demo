@@ -169,7 +169,7 @@ class DreamBlock extends StaticBody2D:
 
 	func player_inside(p: Node2D) -> bool:
 		var r := Rect2(global_position - size * 0.5 - Vector2(8, 8), size + Vector2(16, 16))
-		return r.has_point(p.global_position)
+		return r.has_point(p.global_position - Vector2(0, 5.5))
 
 
 class Checkpoint extends Area2D:
@@ -230,7 +230,7 @@ class OneWay extends StaticBody2D:
 			# 必须整个角色完全离开墙体范围（含角色尺寸余量）才恢复碰撞
 			var expand := Vector2(8.0, 11.0)
 			var full := Rect2(global_position - size * 0.5 - expand * 0.5, size + expand)
-			if not full.has_point(p.global_position):
+			if not full.has_point(p.global_position - Vector2(0, 5.5)):
 				p.remove_collision_exception_with(self)
 				_exception = false
 				_player = null
