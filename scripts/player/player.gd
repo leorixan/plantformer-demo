@@ -252,6 +252,8 @@ func _tick_timers(delta: float) -> void:
 		return
 	_coyote = maxf(0.0, _coyote - delta)
 	_var_jump_timer = maxf(0.0, _var_jump_timer - delta)
+	if _var_jump_timer <= 0.0:
+		_dream_jump_full = false
 	_climb_lock = maxf(0.0, _climb_lock - delta)
 	dash_attack_timer = maxf(0.0, dash_attack_timer - delta)
 	dash_cooldown_timer = maxf(0.0, dash_cooldown_timer - delta)
@@ -510,7 +512,7 @@ func _apply_gravity(delta: float) -> void:
 			mult = 0.5
 		velocity.y = move_toward(velocity.y, limit, gravity * mult * delta)
 	if _var_jump_timer > 0.0:
-		if Input.is_action_pressed("jump"): velocity.y = minf(velocity.y, _var_jump_speed)
+		if Input.is_action_pressed("jump") or _dream_jump_full: velocity.y = minf(velocity.y, _var_jump_speed)
 		else: _var_jump_timer = 0.0
 
 func _try_jump() -> void:
@@ -518,6 +520,9 @@ func _try_jump() -> void:
 		_dream_exit_timer = 0.0
 		_jump_buffer = 0.0
 		velocity = Vector2(signf(_dream_exit_dir.x) * float(wall_jump_speed), -jump_speed)
+		_var_jump_speed = -jump_speed
+		_var_jump_timer = var_jump_time
+		_dream_jump_full = true
 		dash_count = max_dashes
 		return
 	if is_ducking: return
@@ -851,6 +856,7 @@ var _dream_entered := false
 var _dream_saved_mask := 1
 var _dream_exit_dir := Vector2.ZERO
 var _dream_exit_timer := 0.0
+var _dream_jump_full := false
 
 
 func dash_input_dir() -> Vector2:
@@ -916,6 +922,9 @@ func end_dream_dash(block: Node = null) -> void:
 	if _jump_buffer > 0.0 and absf(dream_dir.x) > 0.01:
 		_jump_buffer = 0.0
 		velocity = Vector2(signf(dream_dir.x) * float(wall_jump_speed), -jump_speed)
+		_var_jump_speed = -jump_speed
+		_var_jump_timer = var_jump_time
+		_dream_jump_full = true
 		dash_count = max_dashes
 	else:
 		velocity = dream_dir * dash_speed   # 离开方块保持原速
