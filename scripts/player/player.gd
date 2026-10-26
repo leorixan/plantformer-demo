@@ -197,7 +197,7 @@ func _physics_process(delta: float) -> void:
 				continue
 			var hn: Vector2 = hit.get("normal", Vector2.ZERO)
 			if hn.dot(dream_dir) < -0.2:
-				_dream_dash_die()
+				_dream_hit_solid()
 			break
 		# 防隧穿：前方 4px 处做点查询，已经嵌进墙体也算撞墙
 		if dream_dashing:

@@ -167,6 +167,9 @@ class DreamBlock extends StaticBody2D:
 					b.call("start_dream_dash", dir, self)
 				return
 
+	func contains_center(c: Vector2) -> bool:
+		return Rect2(global_position - size * 0.5, size).has_point(c)
+
 	func player_near(p: Node2D) -> bool:
 		# 触发用：离方块 8px 内（贴脸也包含）
 		var r := Rect2(global_position - size * 0.5 - Vector2(8, 8), size + Vector2(16, 16))
