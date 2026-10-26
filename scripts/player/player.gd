@@ -743,6 +743,10 @@ func _dash_corner_correction(pre_move_velocity: Vector2) -> bool:
 				return true
 	return false
 
+func get_move_input() -> Vector2:
+	return Vector2(move_x, move_y)
+
+
 func get_dash_direction() -> Vector2:
 	# 参考 Input.GetAimVector：无方向输入时退回面朝方向；用原始输入，不受 forceMoveX 影响。
 	var direction := Vector2(_raw_move_x, move_y)
