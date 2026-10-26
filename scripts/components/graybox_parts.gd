@@ -152,14 +152,18 @@ class DreamBlock extends StaticBody2D:
 			var aim_ok: bool = aim.length() < 0.01 or aim.normalized().dot(toward) > 0.25
 			if dashing or just_dashed or (pressed and aim_ok):
 				var dir: Vector2 = b.velocity
-				var dd = b.get("dash_dir")
-				if dd is Vector2 and (dd as Vector2).length() > 0.01:
-					dir = dd
-				elif aim.length() > 0.01:
-					dir = aim
+				if dashing or just_dashed:
+					var dd = b.get("dash_dir")
+					if dd is Vector2 and (dd as Vector2).length() > 0.01:
+						dir = dd
 				elif pressed:
-					dir = toward
+					# 关键：按住冲刺触发时优先用当前输入方向，避免读到上一次冲刺的 dash_dir（导致向上冲却向下走）
+					if aim.length() > 0.01:
+						dir = aim
+					else:
+						dir = toward
 				if b.has_method("start_dream_dash"):
+					print("[dream] trigger pressed=", pressed, " dir=", dir, " player=", b.global_position)
 					b.call("start_dream_dash", dir, self)
 				return
 
