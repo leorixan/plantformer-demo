@@ -202,56 +202,59 @@ class Checkpoint extends Area2D:
 
 
 class OneWay extends StaticBody2D:
-	## 单向墙：朝 pass_dir 移动时临时关闭自身碰撞体让玩家通过；
-	## 玩家身体完全离开墙范围后恢复碰撞。不用玩家碰撞例外，避免残留状态。
 	var size := Vector2(8, 8)
 	var pass_dir := Vector2.UP
-	var _cs: CollisionShape2D
 	var _detector: Area2D
-	var _off := 0.0
+	var _player: CharacterBody2D = null
+	var _exception := false
 	const HALF := Vector2(4.0, 5.5)
+	const NEAR := Vector2(10.0, 11.5)
 
 	func _ready() -> void:
-		_cs = CollisionShape2D.new()
+		var cs := CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
 		rect.size = size
-		_cs.shape = rect
-		add_child(_cs)
+		cs.shape = rect
+		add_child(cs)
 		_detector = Area2D.new()
 		_detector.collision_mask = 2
 		var dcs := CollisionShape2D.new()
 		var drect := RectangleShape2D.new()
-		drect.size = size + Vector2(20, 20)
+		drect.size = size + Vector2(24, 24)
 		dcs.shape = drect
 		_detector.add_child(dcs)
 		add_child(_detector)
 
+	func _near_rect() -> Rect2:
+		return Rect2(global_position - size * 0.5 - NEAR * 0.5, size + NEAR)
+
 	func _body_rect() -> Rect2:
 		return Rect2(global_position - size * 0.5 - HALF, size + HALF * 2.0)
 
-	func _physics_process(delta: float) -> void:
-		if _off > 0.0:
-			_off -= delta
+	func _physics_process(_delta: float) -> void:
 		var p: CharacterBody2D = null
 		for b in _detector.get_overlapping_bodies():
 			if b is CharacterBody2D:
 				p = b
 				break
 		if p == null:
-			if _off <= 0.0 and _cs.disabled:
-				_cs.set_deferred("disabled", false)
+			if _exception and is_instance_valid(_player):
+				_player.remove_collision_exception_with(self)
+				_exception = false
+				_player = null
 			return
 		var center := p.global_position - Vector2(0, 5.5)
-		var inside := _body_rect().has_point(center)
-		if not inside:
-			if _off <= 0.0 and _cs.disabled:
-				_cs.set_deferred("disabled", false)
+		if _exception:
+			if not _body_rect().has_point(center):
+				p.remove_collision_exception_with(self)
+				_exception = false
+				_player = null
 			return
 		var want := p.velocity.dot(pass_dir) > 0.1
 		if not want and p.has_method("get_move_input"):
 			want = (p.call("get_move_input") as Vector2).dot(pass_dir) > 0.3
-		if want:
-			if not _cs.disabled:
-				_cs.set_deferred("disabled", true)
-				print("[oneway] pass dir=", pass_dir)
-			_off = 0.12
+		if want and _near_rect().has_point(center):
+			p.add_collision_exception_with(self)
+			_exception = true
+			_player = p
+			print("[oneway] pass dir=", pass_dir)

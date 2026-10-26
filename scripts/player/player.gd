@@ -514,6 +514,12 @@ func _apply_gravity(delta: float) -> void:
 		else: _var_jump_timer = 0.0
 
 func _try_jump() -> void:
+	if _dream_exit_timer > 0.0 and absf(_dream_exit_dir.x) > 0.01:
+		_dream_exit_timer = 0.0
+		_jump_buffer = 0.0
+		velocity = Vector2(_dream_exit_dir.x * float(super_jump_speed), -jump_speed)
+		dash_count = max_dashes
+		return
 	if is_ducking: return
 	if _jump_buffer <= 0.0: return
 	if _coyote > 0.0:
@@ -843,6 +849,8 @@ var _dream_stall := 0.0
 var _dream_time := 0.0
 var _dream_entered := false
 var _dream_saved_mask := 1
+var _dream_exit_dir := Vector2.ZERO
+var _dream_exit_timer := 0.0
 
 
 func dash_input_dir() -> Vector2:
@@ -899,6 +907,8 @@ func end_dream_dash(block: Node = null) -> void:
 	if not dream_dashing:
 		return
 	dream_dashing = false
+	_dream_exit_dir = Vector2(dream_dir.x, 0.0)
+	_dream_exit_timer = 0.12
 	collision_mask = _dream_saved_mask if _dream_saved_mask != 0 else 1
 	dash_timer = 0.0
 	mode = Mode.NORMAL
@@ -935,6 +945,7 @@ func _dream_dash_lifecycle() -> void:
 		return
 	velocity = dream_dir * dash_speed
 	_dream_time += get_physics_process_delta_time()
+	_dream_exit_timer = maxf(0.0, _dream_exit_timer - get_physics_process_delta_time())
 	var moved := global_position.distance_to(_dream_last_pos)
 	_dream_last_pos = global_position
 	if moved < 0.15:
