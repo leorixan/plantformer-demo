@@ -241,7 +241,13 @@ class OneWay extends StaticBody2D:
 				_exception = false
 				_player = null
 			return
-		if p.velocity.dot(pass_dir) > 1.0:
+		# 用输入方向 + 速度共同判断（贴住墙时速度已被碰撞清零，只看速度永远不触发）
+		var want_move := p.velocity.dot(pass_dir) > 1.0
+		if not want_move and p.has_method("get_move_input"):
+			var inp: Vector2 = p.call("get_move_input")
+			want_move = inp.dot(pass_dir) > 0.3
+		if want_move:
 			p.add_collision_exception_with(self)
 			_exception = true
 			_player = p
+			print("[oneway] pass dir=", pass_dir, " player=", p.global_position)
