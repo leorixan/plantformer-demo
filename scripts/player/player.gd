@@ -655,7 +655,7 @@ func _try_start_dash() -> bool:
 	dash_timer = dash_duration
 	dash_cooldown_timer = dash_cooldown
 	dash_attack_timer = dash_attack_time
-	_dash_freeze = 2.0 / 60.0   # 冲刺起手冻结 2 帧
+	_dash_freeze = 5.0 / 60.0   # 冲刺起手冻结 5 帧
 	_dash_refill_cooldown_timer = dash_refill_cooldown
 	_wall_slide_timer = wall_slide_time
 	mode = Mode.DASH
@@ -899,7 +899,7 @@ func start_dream_dash(dir: Vector2, block: Node = null) -> void:
 	dash_dir = dream_dir
 	dash_timer = 999.0
 	_dash_buffer = 0.0
-	_dash_freeze = maxf(_dash_freeze, 2.0 / 60.0)   # 进紫块冻结 2 帧
+	_dash_freeze = maxf(_dash_freeze, 5.0 / 60.0)   # 进紫块冻结 5 帧
 	_dream_saved_mask = collision_mask
 	collision_mask = 0
 	_dream_time = 0.0
