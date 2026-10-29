@@ -1,140 +1,149 @@
-[gd_scene format=4 uid="uid://ebwgd6c6488r"]
+[gd_scene format=4]
 
-[ext_resource type="TileSet" uid="uid://bcuyth1fbg53k" path="res://assets/graybox/entity_tileset_v4.tres" id="3_abxfv"]
+[ext_resource type="TileSet" path="res://assets/graybox/entity_tileset_v4.tres" id="1_dtlu3"]
 
-[sub_resource type="SystemFont" id="SystemFont_dtlu3"]
+[sub_resource type="SystemFont" id="SystemFont_iigis"]
 font_names = PackedStringArray("Microsoft YaHei", "SimHei", "Arial")
-subpixel_positioning = 0
 
-[node name="Showcase" type="Node2D" unique_id=298439859]
+[node name="Showcase" type="Node2D" unique_id=928797521]
 
-[node name="Entities" type="TileMapLayer" parent="." unique_id=1499086043]
-tile_map_data = PackedByteArray("AAACAAIAAAAAAAAAAAACAAMAAAAAAAAAAAADAAIAAAAAAAAAAAADAAMAAAAAAAAAAAACAAYAAAABAAAAAAACAAcAAAABAAAAAAADAAYAAAABAAAAAAADAAcAAAABAAAAAAACAAoAAAACAAAAAAACAAsAAAACAAAAAAADAAoAAAACAAAAAAADAAsAAAACAAAAAAACAA4AAAADAAAAAAACAA8AAAADAAAAAAADAA4AAAADAAAAAAADAA8AAAADAAAAAAACABIAAAAEAAAAAAACABMAAAAEAAAAAAADABIAAAAEAAAAAAADABMAAAAEAAAAAAACABYAAAAFAAAAAAACABcAAAAFAAAAAAADABYAAAAFAAAAAAADABcAAAAFAAAAAAACABoAAAAKAAAAAAACABsAAAAKAAAAAAADABoAAAAKAAAAAAADABsAAAAKAAAAAAACAB4AAAAGAAAAAAACAB8AAAAGAAAAAAAFAB4AAAAHAAAAAAAFAB8AAAAHAAAAAAAIAB4AAAAIAAAAAAAIAB8AAAAIAAAAAAALAB4AAAAJAAAAAAALAB8AAAAJAAAAAAA=")
-tile_set = ExtResource("3_abxfv")
+[node name="Entities" type="TileMapLayer" parent="." unique_id=981042445]
+tile_map_data = PackedByteArray("AAACAAIAAAAAAAAAAAACAAMAAAAAAAAAAAADAAIAAAAAAAAAAAADAAMAAAAAAAAAAAACAAYAAAABAAAAAAACAAcAAAABAAAAAAADAAYAAAABAAAAAAADAAcAAAABAAAAAAACAAoAAAACAAAAAAACAAsAAAACAAAAAAADAAoAAAACAAAAAAADAAsAAAACAAAAAAACAA4AAAADAAAAAAACAA8AAAADAAAAAAADAA4AAAADAAAAAAADAA8AAAADAAAAAAACABIAAAAEAAAAAAACABMAAAAEAAAAAAADABIAAAAEAAAAAAADABMAAAAEAAAAAAACABYAAAAFAAAAAAACABcAAAAFAAAAAAADABYAAAAFAAAAAAADABcAAAAFAAAAAAACABoAAAAKAAAAAAACABsAAAAKAAAAAAADABoAAAAKAAAAAAADABsAAAAKAAAAAAACAB4AAAALAAAAAAACAB8AAAALAAAAAAADAB4AAAALAAAAAAADAB8AAAALAAAAAAACACIAAAAGAAAAAAACACMAAAAGAAAAAAAFACIAAAAHAAAAAAAFACMAAAAHAAAAAAAIACIAAAAIAAAAAAAIACMAAAAIAAAAAAALACIAAAAJAAAAAAALACMAAAAJAAAAAAA=")
+tile_set = ExtResource("1_dtlu3")
 
-[node name="Note_hazard" type="Label" parent="." unique_id=1162739141]
+[node name="@Label@2" type="Label" parent="." unique_id=790277629]
 offset_left = 64.0
 offset_top = 16.0
 offset_right = 377.0
 offset_bottom = 39.0
-theme_override_colors/font_color = Color(0.78, 0.24, 0.28, 1)
-theme_override_fonts/font = SubResource("SystemFont_dtlu3")
+theme_override_fonts/font = SubResource("SystemFont_iigis")
 theme_override_font_sizes/font_size = 7
+theme_override_colors/font_color = Color(0.78, 0.24, 0.28, 1)
 text = "红：伤害区 —— 碰到即死亡，回最近存档点"
 
-[node name="Note_crystal" type="Label" parent="." unique_id=771566513]
+[node name="@Label@3" type="Label" parent="." unique_id=1478387024]
 offset_left = 64.0
 offset_top = 48.0
-offset_right = 345.0
+offset_right = 480.0
 offset_bottom = 71.0
-theme_override_colors/font_color = Color(0.28, 0.78, 0.82, 1)
-theme_override_fonts/font = SubResource("SystemFont_dtlu3")
+theme_override_fonts/font = SubResource("SystemFont_iigis")
 theme_override_font_sizes/font_size = 7
-text = "青：冲刺水晶 —— 回满冲刺次数与体力"
+theme_override_colors/font_color = Color(0.28, 0.78, 0.82, 1)
+text = "青：冲刺水晶 —— 回满冲刺次数与体力（冷却 2.5s 变灰）"
 
-[node name="Note_spring" type="Label" parent="." unique_id=1993081255]
+[node name="@Label@4" type="Label" parent="." unique_id=371211479]
 offset_left = 64.0
 offset_top = 80.0
-offset_right = 329.0
+offset_right = 364.0
 offset_bottom = 103.0
-theme_override_colors/font_color = Color(0.35, 0.75, 0.35, 1)
-theme_override_fonts/font = SubResource("SystemFont_dtlu3")
+theme_override_fonts/font = SubResource("SystemFont_iigis")
 theme_override_font_sizes/font_size = 7
+theme_override_colors/font_color = Color(0.35, 0.75, 0.35, 1)
 text = "绿：弹簧 —— 自动判朝向，向上弹起"
 
-[node name="Note_breakable8" type="Label" parent="." unique_id=380138657]
+[node name="@Label@5" type="Label" parent="." unique_id=1577509329]
 offset_left = 64.0
 offset_top = 112.0
-offset_right = 360.0
+offset_right = 364.0
 offset_bottom = 135.0
-theme_override_colors/font_color = Color(0.67, 0.51, 0.35, 1)
-theme_override_fonts/font = SubResource("SystemFont_dtlu3")
+theme_override_fonts/font = SubResource("SystemFont_iigis")
 theme_override_font_sizes/font_size = 7
+theme_override_colors/font_color = Color(0.67, 0.51, 0.35, 1)
 text = "棕：可破坏块 —— 冲刺撞碎（8×8 一块）"
 
-[node name="Note_breakable16" type="Label" parent="." unique_id=808926541]
+[node name="@Label@6" type="Label" parent="." unique_id=1198225084]
 offset_left = 64.0
 offset_top = 144.0
 offset_right = 395.0
 offset_bottom = 167.0
-theme_override_colors/font_color = Color(0.45, 0.3, 0.16, 1)
-theme_override_fonts/font = SubResource("SystemFont_dtlu3")
+theme_override_fonts/font = SubResource("SystemFont_iigis")
 theme_override_font_sizes/font_size = 7
+theme_override_colors/font_color = Color(0.45, 0.3, 0.16, 1)
 text = "深棕：可破坏块 —— 冲刺撞碎（16×16 一块）"
 
-[node name="Note_dream" type="Label" parent="." unique_id=1431776980]
+[node name="@Label@7" type="Label" parent="." unique_id=1310456490]
 offset_left = 64.0
 offset_top = 176.0
 offset_right = 459.0
 offset_bottom = 199.0
-theme_override_colors/font_color = Color(0.59, 0.39, 0.86, 1)
-theme_override_fonts/font = SubResource("SystemFont_dtlu3")
+theme_override_fonts/font = SubResource("SystemFont_iigis")
 theme_override_font_sizes/font_size = 7
+theme_override_colors/font_color = Color(0.59, 0.39, 0.86, 1)
 text = "紫：Dream Block —— 冲刺穿过，出块回满，撞墙死亡"
 
-[node name="Note_checkpoint" type="Label" parent="." unique_id=1650214075]
+[node name="@Label@8" type="Label" parent="." unique_id=2048430550]
 offset_left = 64.0
 offset_top = 208.0
 offset_right = 393.0
 offset_bottom = 231.0
-theme_override_colors/font_color = Color(0.95, 0.8, 0.25, 1)
-theme_override_fonts/font = SubResource("SystemFont_dtlu3")
+theme_override_fonts/font = SubResource("SystemFont_iigis")
 theme_override_font_sizes/font_size = 7
+theme_override_colors/font_color = Color(0.95, 0.8, 0.25, 1)
 text = "金：存档点 —— 碰到记录位置，死亡在此复活"
 
-[node name="Dir_上" type="Label" parent="." unique_id=1036321211]
-offset_left = 14.0
-offset_top = 256.0
-offset_right = 14.0
-offset_bottom = 256.0
-theme_override_colors/font_color = Color(0.42, 0.42, 0.45, 1)
-theme_override_fonts/font = SubResource("SystemFont_dtlu3")
+[node name="@Label@9" type="Label" parent="." unique_id=1465839151]
+offset_left = 64.0
+offset_top = 240.0
+offset_right = 425.0
+offset_bottom = 263.0
+theme_override_fonts/font = SubResource("SystemFont_iigis")
 theme_override_font_sizes/font_size = 7
+theme_override_colors/font_color = Color(1, 0.55, 0.55, 1)
+text = "浅红：隐藏死亡区 —— 功能同红块，游戏中不可见"
+
+[node name="@Label@10" type="Label" parent="." unique_id=225518388]
+offset_left = 14.0
+offset_top = 288.0
+offset_right = 14.0
+offset_bottom = 288.0
+theme_override_fonts/font = SubResource("SystemFont_iigis")
+theme_override_font_sizes/font_size = 7
+theme_override_colors/font_color = Color(0.42, 0.42, 0.45, 1)
 text = "上"
 
-[node name="Dir_下" type="Label" parent="." unique_id=1543936961]
+[node name="@Label@11" type="Label" parent="." unique_id=789068243]
 offset_left = 38.0
-offset_top = 256.0
+offset_top = 288.0
 offset_right = 38.0
-offset_bottom = 256.0
-theme_override_colors/font_color = Color(0.42, 0.42, 0.45, 1)
-theme_override_fonts/font = SubResource("SystemFont_dtlu3")
+offset_bottom = 288.0
+theme_override_fonts/font = SubResource("SystemFont_iigis")
 theme_override_font_sizes/font_size = 7
+theme_override_colors/font_color = Color(0.42, 0.42, 0.45, 1)
 text = "下"
 
-[node name="Dir_左" type="Label" parent="." unique_id=1077893307]
+[node name="@Label@12" type="Label" parent="." unique_id=558048166]
 offset_left = 62.0
-offset_top = 256.0
+offset_top = 288.0
 offset_right = 62.0
-offset_bottom = 256.0
-theme_override_colors/font_color = Color(0.42, 0.42, 0.45, 1)
-theme_override_fonts/font = SubResource("SystemFont_dtlu3")
+offset_bottom = 288.0
+theme_override_fonts/font = SubResource("SystemFont_iigis")
 theme_override_font_sizes/font_size = 7
+theme_override_colors/font_color = Color(0.42, 0.42, 0.45, 1)
 text = "左"
 
-[node name="Dir_右" type="Label" parent="." unique_id=1259212380]
+[node name="@Label@13" type="Label" parent="." unique_id=926371077]
 offset_left = 86.0
-offset_top = 256.0
+offset_top = 288.0
 offset_right = 86.0
-offset_bottom = 256.0
-theme_override_colors/font_color = Color(0.42, 0.42, 0.45, 1)
-theme_override_fonts/font = SubResource("SystemFont_dtlu3")
+offset_bottom = 288.0
+theme_override_fonts/font = SubResource("SystemFont_iigis")
 theme_override_font_sizes/font_size = 7
+theme_override_colors/font_color = Color(0.42, 0.42, 0.45, 1)
 text = "右"
 
-[node name="Note_oneway" type="Label" parent="." unique_id=1872719847]
+[node name="@Label@14" type="Label" parent="." unique_id=130297601]
 offset_left = 64.0
-offset_top = 272.0
-offset_right = 294.0
-offset_bottom = 295.0
-theme_override_colors/font_color = Color(0.42, 0.42, 0.45, 1)
-theme_override_fonts/font = SubResource("SystemFont_dtlu3")
+offset_top = 304.0
+offset_right = 579.0
+offset_bottom = 327.0
+theme_override_fonts/font = SubResource("SystemFont_iigis")
 theme_override_font_sizes/font_size = 7
+theme_override_colors/font_color = Color(0.42, 0.42, 0.45, 1)
 text = "深灰：单向墙 ×4 —— 地形色边所在侧 = 可通行方向（顺序上/下/左/右）"
 
-[node name="Title" type="Label" parent="." unique_id=374018809]
+[node name="@Label@15" type="Label" parent="." unique_id=715337087]
 offset_left = 8.0
 offset_right = 8.0
-theme_override_fonts/font = SubResource("SystemFont_dtlu3")
+theme_override_fonts/font = SubResource("SystemFont_iigis")
 theme_override_font_sizes/font_size = 10
 text = "灰盒组件备忘 / Graybox Components Reference"
