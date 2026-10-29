@@ -153,6 +153,10 @@ class DreamBlock extends StaticBody2D:
 				continue
 			if b.has_method("is_dream_dashing") and bool(b.call("is_dream_dashing")):
 				return
+			# 刚离开紫块 0.12s 内不重新触发，避免"结束→再触发"循环
+			var exit_t = b.get("_dream_exit_timer")
+			if exit_t != null and float(exit_t) > 0.0:
+				return
 			var dashing: bool = b.has_method("is_dashing") and bool(b.call("is_dashing"))
 			var just_dashed: bool = b.get("dash_attack_timer") != null and float(b.get("dash_attack_timer")) > 0.0
 			var pressed: bool = (b.has_method("is_dash_pressed") and bool(b.call("is_dash_pressed"))) or Input.is_action_pressed("dash")

@@ -934,16 +934,8 @@ func end_dream_dash(block: Node = null) -> void:
 	collision_mask = _dream_saved_mask if _dream_saved_mask != 0 else 1
 	dash_timer = 0.0
 	mode = Mode.NORMAL
-	# 出紫块时如果缓存了跳跃，则做一个带水平速度的跳出（类似 super jump）
-	if _jump_buffer > 0.0 and absf(dream_dir.x) > 0.01:
-		_jump_buffer = 0.0
-		velocity = Vector2(signf(dream_dir.x) * float(wall_jump_speed), -jump_speed)
-		_var_jump_speed = -jump_speed
-		_var_jump_timer = var_jump_time
-		_dream_jump_full = true
-		dash_count = max_dashes
-	else:
-		velocity = dream_dir * dash_speed   # 离开方块保持原速
+		# 出块保持原速；主动按跳的墙跳式跳出由 0.12s 窗口处理
+	velocity = dream_dir * dash_speed   # 离开方块保持原速
 	dash_count = max_dashes
 	stamina = max_stamina
 	for db in _dream_exceptions:
