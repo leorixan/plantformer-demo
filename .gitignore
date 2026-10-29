@@ -1,19 +1,17 @@
-# Godot 4+ specific ignores
+﻿# Godot 4+ specific ignores
 .godot/
 /android/
-.claude/settings.local.json
+.ai/settings.local.json
 .mcp.json
 .codemap/
 
-# 第三方参考源码：非开源许可，仅本地保留，不纳入版本控制
-docs/CelestePlayerReference.txt
+# 绗笁鏂瑰弬鑰冩簮鐮侊細闈炲紑婧愯鍙紝浠呮湰鍦颁繚鐣欙紝涓嶇撼鍏ョ増鏈帶鍒?docs/CelestePlayerReference.txt
 docs/Player.cs
 
-# 本地 AI 工具配置与工作记录，不纳入版本控制
-.claude/
+# 鏈湴 AI 宸ュ叿閰嶇疆涓庡伐浣滆褰曪紝涓嶇撼鍏ョ増鏈帶鍒?.ai/
 .funplay/
 CLAUDE.md
 AGENTS.md
 addons/funplay_mcp/
 
-# 本地 project.godot 会因启用编辑器插件而增删 [autoload] / [editor_plugins] 条目，提交时注意不要带上
+# 鏈湴 project.godot 浼氬洜鍚敤缂栬緫鍣ㄦ彃浠惰€屽鍒?[autoload] / [editor_plugins] 鏉＄洰锛屾彁浜ゆ椂娉ㄦ剰涓嶈甯︿笂

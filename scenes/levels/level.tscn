@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://7uy2ql5w4us6"]
+
+[ext_resource type="PackedScene" uid="uid://25ah4thw46k3" path="res://scenes/levels/graybox_template.tscn" id="1_u52ul"]
+
+[node name="GrayboxLevel" unique_id=1813269018 instance=ExtResource("1_u52ul")]
+
+[node name="Terrain" parent="." index="0" unique_id=937811059]
+tile_map_data = PackedByteArray()
+
+[node name="Entities" parent="." index="1" unique_id=132348048]
+tile_map_data = PackedByteArray()
+
+[node name="Spawn" parent="." index="2" unique_id=575090847]
+position = Vector2(16, 16)
+
+[node name="Goal" parent="." index="3" unique_id=1175670727]
+position = Vector2(44, 16)
