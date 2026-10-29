@@ -233,6 +233,17 @@ func _build_entity_rects() -> void:
 									if is_instance_valid(el):
 										for cc in clear_cells:
 											el.erase_cell(cc))
+				elif kind == "crystal":
+					var cnode := _make_part(kind, size, pos)
+					if cnode:
+						var ccells: Array = []
+						for yy in range(y0, y1 + 1):
+							for xx in range(x0, x1 + 1):
+								var ccell := Vector2i(xx, yy)
+								ccells.append([ccell, _entity_layer().get_cell_source_id(ccell), _entity_layer().get_cell_atlas_coords(ccell)])
+						cnode.set("entity_layer", _entity_layer())
+						cnode.set("cooldown_layer", _ensure_cooldown_layer())
+						cnode.set("cells", ccells)
 				else:
 					_make_part(kind, size, pos)
 
