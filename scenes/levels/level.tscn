@@ -1,7 +1,13 @@
 [gd_scene format=4 uid="uid://7uy2ql5w4us6"]
 
 [ext_resource type="PackedScene" uid="uid://25ah4thw46k3" path="res://scenes/levels/graybox_template.tscn" id="1_377w7"]
-[ext_resource type="PackedScene" path="res://scenes/components/label_trigger.tscn" id="2_bovvr"]
+[ext_resource type="Script" uid="uid://dkwwkrbc3yrpr" path="res://scripts/components/label_trigger.gd" id="2_bovvr"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_b2cq8"]
+size = Vector2(31, 14)
+
+[sub_resource type="SystemFont" id="SystemFont_zh"]
+font_names = PackedStringArray("Microsoft YaHei", "SimHei", "Arial")
 
 [node name="GrayboxLevel" unique_id=1813269018 instance=ExtResource("1_377w7")]
 
@@ -11,8 +17,9 @@ rooms = Array[Rect2]([])
 color = Color(0.27558208, 0.78638554, 0.80618167, 0.9019608)
 
 [node name="room1" type="ReferenceRect" parent="Rooms" index="0" unique_id=1114735341]
+offset_top = 1.0
 offset_right = 480.0
-offset_bottom = 269.0
+offset_bottom = 270.0
 mouse_filter = 2
 
 [node name="Terrain" parent="." index="1" unique_id=937811059]
@@ -27,5 +34,40 @@ position = Vector2(48, 198)
 [node name="Goal" parent="." index="4" unique_id=1175670727]
 position = Vector2(31, 23)
 
-[node name="LabelTrigger" parent="." index="5" unique_id=887701033 instance=ExtResource("2_bovvr")]
-position = Vector2(118, 183)
+[node name="LabelTrigger" type="Area2D" parent="." index="5" unique_id=1748788967]
+position = Vector2(131, 171)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("2_bovvr")
+once = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LabelTrigger" index="0" unique_id=2048782902]
+position = Vector2(1, 29)
+shape = SubResource("RectangleShape2D_b2cq8")
+
+[node name="WorldLabel" type="Node2D" parent="LabelTrigger" index="1" unique_id=1370144773]
+visible = false
+z_index = 20
+
+[node name="Panel" type="ColorRect" parent="LabelTrigger/WorldLabel" index="0" unique_id=1427425625]
+offset_left = -60.0
+offset_top = -8.0
+offset_right = 60.0
+offset_bottom = 8.0
+mouse_filter = 2
+color = Color(0, 0, 0, 0.55)
+
+[node name="Text" type="Label" parent="LabelTrigger/WorldLabel" index="1" unique_id=1029760066]
+offset_left = -54.0
+offset_top = -4.0
+offset_right = 54.0
+offset_bottom = 12.0
+theme_override_colors/font_color = Color(0.96, 0.96, 0.96, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 1
+theme_override_fonts/font = SubResource("SystemFont_zh")
+theme_override_font_sizes/font_size = 8
+text = "提示文字"
+autowrap_mode = 3
+autowrap_trim_flags = 0
+justification_flags = 0

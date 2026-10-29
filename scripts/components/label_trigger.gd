@@ -10,7 +10,7 @@ extends Area2D
 @export var panel_color := Color(0.0, 0.0, 0.0, 0.55) : set = _set_panel_color
 @export var world_offset := Vector2(0.0, -18.0) : set = _set_world_offset
 @export var box_size := Vector2(120.0, 0.0) : set = _set_box_size   # x=宽(<=0自适应) y=高(<=0自适应)
-@export var once := true
+@export var once := false
 @export var hide_delay := 0.0   # 0 = 玩家离开区域才消失
 
 var _holder: Node2D
@@ -84,13 +84,13 @@ func _layout() -> void:
 	_holder.position = world_offset
 	_panel.color = panel_color
 	_label.text = text
+	_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	_label.add_theme_font_size_override("font_size", font_size)
 	_label.add_theme_color_override("font_color", font_color)
 	var font := _label.get_theme_font("font")
-	var wrap := box_size.x if box_size.x > 0.0 else 220.0
-	var inner := maxf(8.0, wrap - 12.0)
-	var measured := font.get_multiline_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, inner, font_size)
-	var w := box_size.x if box_size.x > 0.0 else minf(232.0, measured.x + 12.0)
+	# 不自动换行：只按显式换行测量整行宽度
+	var measured := font.get_multiline_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size)
+	var w := box_size.x if box_size.x > 0.0 else measured.x + 12.0
 	var h := box_size.y if box_size.y > 0.0 else measured.y + 8.0
 	_panel.position = Vector2(-w * 0.5, -h * 0.5)
 	_panel.size = Vector2(w, h)
