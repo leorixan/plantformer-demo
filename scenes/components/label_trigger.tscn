@@ -19,6 +19,7 @@ shape = SubResource("RectangleShape2D_lbl")
 [node name="WorldLabel" type="Node2D" parent="."]
 visible = false
 z_index = 20
+position = Vector2(0, -18)
 
 [node name="Panel" type="ColorRect" parent="WorldLabel"]
 offset_left = -60.0

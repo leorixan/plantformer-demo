@@ -8,7 +8,7 @@ extends Area2D
 @export var font_size: int = 8 : set = _set_font_size
 @export var font_color := Color(0.96, 0.96, 0.96, 1.0) : set = _set_font_color
 @export var panel_color := Color(0.0, 0.0, 0.0, 0.55) : set = _set_panel_color
-@export var world_offset := Vector2(0.0, -18.0) : set = _set_world_offset
+@export var label_path: NodePath = NodePath("") : set = _set_label_path   # 留空 = 用子节点 WorldLabel；填路径 = 用外部标签节点
 @export var box_size := Vector2(120.0, 0.0) : set = _set_box_size   # x=宽(<=0自适应) y=高(<=0自适应)
 @export var once := false
 @export var hide_delay := 0.0   # 0 = 玩家离开区域才消失
@@ -36,12 +36,15 @@ func _ready() -> void:
 
 
 func _refs() -> void:
+	var base := "WorldLabel"
+	if not label_path.is_empty():
+		base = String(label_path)
 	if _holder == null:
-		_holder = get_node_or_null("WorldLabel")
+		_holder = get_node_or_null(base) as Node2D
 	if _panel == null:
-		_panel = get_node_or_null("WorldLabel/Panel")
+		_panel = get_node_or_null(base + "/Panel") as ColorRect
 	if _label == null:
-		_label = get_node_or_null("WorldLabel/Text")
+		_label = get_node_or_null(base + "/Text") as Label
 
 
 func _process(delta: float) -> void:
@@ -81,7 +84,6 @@ func _layout() -> void:
 	_refs()
 	if _holder == null or _panel == null or _label == null:
 		return
-	_holder.position = world_offset
 	_panel.color = panel_color
 	_label.text = text
 	_label.autowrap_mode = TextServer.AUTOWRAP_OFF
@@ -108,6 +110,15 @@ func _draw() -> void:
 	draw_rect(Rect2(-size * 0.5, size), Color(0.95, 0.6, 0.2, 0.9), false, 1.0)
 
 
+func _set_label_path(_v: NodePath) -> void:
+	label_path = _v
+	_holder = null
+	_panel = null
+	_label = null
+	if is_node_ready():
+		_layout()
+
+
 func _set_text(_v: String) -> void:
 	text = _v
 	if _holder != null:
@@ -130,12 +141,6 @@ func _set_font_color(_v: Color) -> void:
 
 func _set_panel_color(_v: Color) -> void:
 	panel_color = _v
-	if _holder != null:
-		_layout()
-
-
-func _set_world_offset(_v: Vector2) -> void:
-	world_offset = _v
 	if _holder != null:
 		_layout()
 
