@@ -1,20 +1,11 @@
 [gd_scene format=4 uid="uid://25ah4thw46k3"]
 
-[ext_resource type="Script" path="res://scripts/levels/graybox_level.gd" id="1_m1lu5"]
-[ext_resource type="TileSet" path="res://assets/graybox/graybox_tileset_v2.tres" id="2_m1lu5"]
-[ext_resource type="TileSet" path="res://assets/graybox/entity_tileset_v4.tres" id="3_1dmtg"]
-[ext_resource type="Script" path="res://scripts/components/rooms_definition.gd" id="4_3mujq"]
+[ext_resource type="Script" uid="uid://bqsqglqv8ifip" path="res://scripts/levels/graybox_level.gd" id="1_m1lu5"]
+[ext_resource type="TileSet" uid="uid://c3xeqmx10ig2f" path="res://assets/graybox/graybox_tileset_v2.tres" id="2_m1lu5"]
+[ext_resource type="TileSet" uid="uid://b6rcmajptthgi" path="res://assets/graybox/entity_tileset_v4.tres" id="3_1dmtg"]
+[ext_resource type="Script" uid="uid://cc25m630f54mn" path="res://scripts/components/rooms_definition.gd" id="4_3mujq"]
 
-[sub_resource type="Gradient" id="Gradient_m1lu5"]
-colors = PackedColorArray(0.38, 0.66, 0.92, 1, 0.98, 0.86, 0.68, 1)
-
-[sub_resource type="GradientTexture2D" id="GradientTexture2D_eq5rr"]
-gradient = SubResource("Gradient_m1lu5")
-width = 480
-height = 270
-fill_to = Vector2(0, 1)
-
-[node name="GrayboxLevel" type="Node2D" unique_id=1813269018]
+[node name="GrayboxLevel2" type="Node2D" unique_id=1813269018]
 script = ExtResource("1_m1lu5")
 
 [node name="Rooms" type="Node2D" parent="." unique_id=899541594]
@@ -34,57 +25,3 @@ position = Vector2(16, 165)
 
 [node name="Goal" type="Marker2D" parent="." unique_id=1175670727]
 position = Vector2(300, 164)
-
-[node name="ParallaxBackground" type="ParallaxBackground" parent="." unique_id=953933975]
-layer = -10
-
-[node name="SkyGradient" type="ParallaxLayer" parent="ParallaxBackground" unique_id=1778746056]
-motion_scale = Vector2(0, 0)
-
-[node name="Sky" type="Sprite2D" parent="ParallaxBackground/SkyGradient" unique_id=285701208]
-texture = SubResource("GradientTexture2D_eq5rr")
-centered = false
-
-[node name="Clouds" type="ParallaxLayer" parent="ParallaxBackground" unique_id=299607554]
-motion_scale = Vector2(0.04, 0)
-motion_mirroring = Vector2(480, 0)
-
-[node name="@Polygon2D@2" type="Polygon2D" parent="ParallaxBackground/Clouds" unique_id=1001264626]
-color = Color(1, 1, 1, 0.55)
-polygon = PackedVector2Array(108, 46, 103.444565, 52.07437, 90.68053, 56.94564, 72.23596, 59.64899, 51.764038, 59.64899, 33.31947, 56.94564, 20.555431, 52.07437, 16, 46, 20.555431, 39.92563, 33.31947, 35.05436, 51.764038, 32.35101, 72.23596, 32.35101, 90.68053, 35.05436, 103.444565, 39.92563)
-
-[node name="@Polygon2D@3" type="Polygon2D" parent="ParallaxBackground/Clouds" unique_id=1838966953]
-color = Color(1, 1, 1, 0.55)
-polygon = PackedVector2Array(226, 30, 222.63293, 34.338837, 213.19865, 37.818314, 199.5657, 39.74928, 184.4343, 39.74928, 170.80135, 37.818314, 161.36707, 34.338837, 158, 30, 161.36707, 25.661163, 170.80135, 22.181684, 184.4343, 20.250721, 199.5657, 20.250721, 213.19865, 22.181684, 222.63293, 25.661163)
-
-[node name="@Polygon2D@4" type="Polygon2D" parent="ParallaxBackground/Clouds" unique_id=463703716]
-color = Color(1, 1, 1, 0.55)
-polygon = PackedVector2Array(374, 62, 368.85037, 68.94214, 354.42148, 74.50931, 333.57108, 77.59885, 310.42892, 77.59885, 289.57852, 74.50931, 275.14963, 68.94214, 270, 62, 275.14963, 55.05786, 289.57852, 49.490696, 310.42892, 46.401154, 333.57108, 46.401154, 354.42148, 49.490696, 368.85037, 55.05786)
-
-[node name="@Polygon2D@5" type="Polygon2D" parent="ParallaxBackground/Clouds" unique_id=17023484]
-color = Color(1, 1, 1, 0.55)
-polygon = PackedVector2Array(462, 38, 459.02905, 41.904953, 450.70468, 45.036484, 438.67563, 46.774353, 425.32437, 46.774353, 413.29532, 45.036484, 404.97095, 41.904953, 402, 38, 404.97095, 34.095047, 413.29532, 30.963516, 425.32437, 29.225649, 438.67563, 29.225649, 450.70468, 30.963516, 459.02905, 34.095047)
-
-[node name="FarHills" type="ParallaxLayer" parent="ParallaxBackground" unique_id=903465024]
-motion_scale = Vector2(0.1, 0)
-motion_mirroring = Vector2(480, 0)
-
-[node name="FarHillsShape" type="Polygon2D" parent="ParallaxBackground/FarHills" unique_id=191930328]
-color = Color(0.44, 0.57, 0.72, 1)
-polygon = PackedVector2Array(0, 330, 0, 190, 13.333333, 181.08528, 26.666666, 173.55714, 40, 168.4655, 53.333332, 166.28017, 66.666664, 166.80707, 80, 169.28563, 93.333336, 172.63733, 106.666664, 175.79282, 120, 178.00305, 133.33333, 179.04556, 146.66667, 179.26694, 160, 179.45087, 173.33333, 180.55081, 186.66667, 183.36607, 200, 188.2564, 213.33333, 194.9795, 226.66667, 202.70117, 240, 210.17781, 253.33333, 216.06238, 266.66666, 219.2488, 280, 219.15842, 293.33334, 215.88835, 306.66666, 210.18002, 320, 203.21732, 333.33334, 196.31122, 346.66666, 190.5601, 360, 186.58081, 373.33334, 184.38498, 386.66666, 183.43344, 400, 182.85, 413.33334, 181.7306, 426.66666, 179.45648, 440, 175.91899, 453.33334, 171.58955, 466.66666, 167.41261, 480, 164.55081, 480, 330)
-
-[node name="MidHills" type="ParallaxLayer" parent="ParallaxBackground" unique_id=1797762044]
-motion_scale = Vector2(0.25, 0)
-motion_mirroring = Vector2(480, 0)
-
-[node name="MidHillsShape" type="Polygon2D" parent="ParallaxBackground/MidHills" unique_id=2049470909]
-color = Color(0.31, 0.43, 0.57, 1)
-polygon = PackedVector2Array(0, 330, 0, 186.93324, 13.333333, 193.41034, 26.666666, 199.17819, 40, 203.30952, 53.333332, 205.6455, 66.666664, 206.78868, 80, 207.86592, 93.333336, 210.13182, 106.666664, 214.53035, 120, 221.34357, 133.33333, 230.03223, 146.66667, 239.31761, 160, 247.48524, 173.33333, 252.82648, 186.66667, 254.09464, 200, 250.84683, 213.33333, 243.5746, 226.66667, 233.58583, 240, 222.67065, 253.33333, 212.6445, 266.66666, 204.89632, 280, 200.06741, 293.33334, 197.94876, 306.66666, 197.62228, 320, 197.80104, 333.33334, 197.26775, 346.66666, 195.28218, 360, 191.83847, 373.33334, 187.6961, 386.66666, 184.1745, 400, 182.76907, 413.33334, 184.69899, 426.66666, 190.517, 440, 199.89488, 453.33334, 211.64888, 466.66666, 224.00122, 480, 235.00696, 480, 330)
-
-[node name="NearHills" type="ParallaxLayer" parent="ParallaxBackground" unique_id=1768670561]
-motion_scale = Vector2(0.45, 0)
-motion_mirroring = Vector2(480, 0)
-
-[node name="NearHillsShape" type="Polygon2D" parent="ParallaxBackground/NearHills" unique_id=1290581702]
-color = Color(0.19, 0.29, 0.41, 1)
-polygon = PackedVector2Array(0, 330, 0, 241.52502, 13.333333, 243.1221, 26.666666, 246.03975, 40, 251.37187, 53.333332, 259.3397, 66.666664, 269.13922, 80, 279.09534, 93.333336, 287.08282, 106.666664, 291.09653, 120, 289.81, 133.33333, 282.96365, 146.66667, 271.47107, 160, 257.21136, 173.33333, 242.5645, 186.66667, 229.8181, 200, 220.6112, 213.33333, 215.56868, 226.66667, 214.22554, 240, 215.2574, 253.33333, 216.94637, 266.66666, 217.7448, 280, 216.77191, 293.33334, 214.09892, 306.66666, 210.73927, 320, 208.34631, 333.33334, 208.70543, 346.66666, 213.16762, 360, 222.1889, 373.33334, 235.11151, 386.66666, 250.25325, 400, 265.28516, 413.33334, 277.7944, 426.66666, 285.87714, 440, 288.59674, 453.33334, 286.18115, 466.66666, 279.9061, 480, 271.70068, 480, 330)
