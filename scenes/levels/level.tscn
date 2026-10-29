@@ -39,14 +39,12 @@ position = Vector2(127, 168)
 collision_layer = 0
 collision_mask = 2
 script = ExtResource("2_bovvr")
-text = "Press J to jump"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="LabelTrigger" index="0" unique_id=881309534]
 position = Vector2(2, 17.5)
 shape = SubResource("RectangleShape2D_bovvr")
 
 [node name="WorldLabel" type="Node2D" parent="LabelTrigger" index="1" unique_id=2110261054]
-visible = false
 z_index = 20
 position = Vector2(0, -18)
 
