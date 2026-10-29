@@ -17,7 +17,7 @@ script = ExtResource("1_lbl")
 shape = SubResource("RectangleShape2D_lbl")
 
 [node name="WorldLabel" type="Node2D" parent="." unique_id=1382567610]
-z_index = 20
+z_index = 0
 position = Vector2(0, -18)
 
 [node name="Panel" type="ColorRect" parent="WorldLabel" unique_id=668872600]

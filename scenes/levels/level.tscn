@@ -44,7 +44,6 @@ position = Vector2(31, 23)
 [node name="texts" type="Node2D" parent="." index="5" unique_id=544331111]
 
 [node name="tip_move" type="Area2D" parent="texts" index="0" unique_id=1572678557]
-z_index = -1
 position = Vector2(49, 195)
 collision_layer = 0
 collision_mask = 2
@@ -55,7 +54,7 @@ position = Vector2(3, 0)
 shape = SubResource("RectangleShape2D_b2cq8")
 
 [node name="WorldLabel" type="Node2D" parent="texts/tip_move" index="1" unique_id=1382567610]
-z_index = 20
+z_index = 0
 position = Vector2(0, -18)
 
 [node name="Text" type="Label" parent="texts/tip_move/WorldLabel" index="0" unique_id=587215605]
@@ -72,7 +71,6 @@ theme_override_font_sizes/font_size = 8
 text = "Press A/D to move"
 
 [node name="tip_jump" type="Area2D" parent="texts" index="1" unique_id=320904872]
-z_index = 1
 position = Vector2(155, 187)
 collision_layer = 0
 collision_mask = 2
@@ -83,7 +81,7 @@ position = Vector2(-35, -10)
 shape = SubResource("RectangleShape2D_bovvr")
 
 [node name="WorldLabel" type="Node2D" parent="texts/tip_jump" index="1" unique_id=440251195]
-z_index = 20
+z_index = 0
 position = Vector2(0, -18)
 
 [node name="Text" type="Label" parent="texts/tip_jump/WorldLabel" index="0" unique_id=1129237616]
