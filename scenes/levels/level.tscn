@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://dkwwkrbc3yrpr" path="res://scripts/components/label_trigger.gd" id="2_bovvr"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_bovvr"]
-size = Vector2(47, 45)
+size = Vector2(64, 62)
 
 [sub_resource type="SystemFont" id="SystemFont_zh"]
 font_names = PackedStringArray("Microsoft YaHei", "SimHei", "Arial")
@@ -34,34 +34,36 @@ position = Vector2(48, 198)
 [node name="Goal" parent="." index="4" unique_id=1175670727]
 position = Vector2(31, 23)
 
-[node name="LabelTrigger" type="Area2D" parent="." index="5" unique_id=904776674]
-position = Vector2(127, 168)
+[node name="texts" type="Node2D" parent="." index="5" unique_id=544331111]
+
+[node name="LabelTrigger" type="Area2D" parent="texts" index="0" unique_id=320904872]
+position = Vector2(138, 188)
 collision_layer = 0
 collision_mask = 2
 script = ExtResource("2_bovvr")
-once = false
+once = true
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="LabelTrigger" index="0" unique_id=881309534]
-position = Vector2(2, 17.5)
+[node name="CollisionShape2D" type="CollisionShape2D" parent="texts/LabelTrigger" index="0" unique_id=1529075344]
+position = Vector2(-18, -11)
 shape = SubResource("RectangleShape2D_bovvr")
 
-[node name="WorldLabel" type="Node2D" parent="LabelTrigger" index="1" unique_id=2110261054]
+[node name="WorldLabel" type="Node2D" parent="texts/LabelTrigger" index="1" unique_id=440251195]
 z_index = 20
 position = Vector2(0, -18)
 
-[node name="Panel" type="ColorRect" parent="LabelTrigger/WorldLabel" index="0" unique_id=225769194]
-offset_left = -60.0
-offset_top = -10.0
-offset_right = 60.0
-offset_bottom = 10.0
+[node name="Panel" type="ColorRect" parent="texts/LabelTrigger/WorldLabel" index="0" unique_id=1070490281]
+offset_left = -51.0
+offset_top = -23.0
+offset_right = 14.0
+offset_bottom = -6.0
 mouse_filter = 2
 color = Color(0, 0, 0, 0.55)
 
-[node name="Text" type="Label" parent="LabelTrigger/WorldLabel" index="1" unique_id=2062814709]
-offset_left = -54.0
-offset_top = -6.0
-offset_right = 54.0
-offset_bottom = 6.0
+[node name="Text" type="Label" parent="texts/LabelTrigger/WorldLabel" index="1" unique_id=1129237616]
+offset_left = -47.0
+offset_top = -21.0
+offset_right = 13.0
+offset_bottom = -5.0
 theme_override_colors/font_color = Color(0.96, 0.96, 0.96, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
 theme_override_constants/outline_size = 1

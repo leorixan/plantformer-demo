@@ -1,6 +1,6 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene format=3 uid="uid://ldlrl7de1g10"]
 
-[ext_resource type="Script" path="res://scripts/components/label_trigger.gd" id="1_lbl"]
+[ext_resource type="Script" uid="uid://dkwwkrbc3yrpr" path="res://scripts/components/label_trigger.gd" id="1_lbl"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_lbl"]
 size = Vector2(64, 24)
@@ -8,19 +8,19 @@ size = Vector2(64, 24)
 [sub_resource type="SystemFont" id="SystemFont_zh"]
 font_names = PackedStringArray("Microsoft YaHei", "SimHei", "Arial")
 
-[node name="LabelTrigger" type="Area2D"]
+[node name="LabelTrigger" type="Area2D" unique_id=1572678557]
 collision_layer = 0
 collision_mask = 2
 script = ExtResource("1_lbl")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1065926033]
 shape = SubResource("RectangleShape2D_lbl")
 
-[node name="WorldLabel" type="Node2D" parent="."]
+[node name="WorldLabel" type="Node2D" parent="." unique_id=1382567610]
 z_index = 20
 position = Vector2(0, -18)
 
-[node name="Panel" type="ColorRect" parent="WorldLabel"]
+[node name="Panel" type="ColorRect" parent="WorldLabel" unique_id=668872600]
 offset_left = -60.0
 offset_top = -8.0
 offset_right = 60.0
@@ -28,12 +28,11 @@ offset_bottom = 8.0
 mouse_filter = 2
 color = Color(0, 0, 0, 0.55)
 
-[node name="Text" type="Label" parent="WorldLabel"]
-offset_left = -54.0
-offset_top = -4.0
-offset_right = 54.0
-offset_bottom = 12.0
-mouse_filter = 2
+[node name="Text" type="Label" parent="WorldLabel" unique_id=587215605]
+offset_left = -47.0
+offset_top = -6.0
+offset_right = 8.0
+offset_bottom = 10.0
 theme_override_colors/font_color = Color(0.96, 0.96, 0.96, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
 theme_override_constants/outline_size = 1

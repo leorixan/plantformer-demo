@@ -4,7 +4,7 @@ extends Area2D
 ## Panel/Text 的文字、字号、尺寸都可以在编辑器里直接改/拖
 ## 脚本只负责：玩家进入区域时显示 WorldLabel，离开/超时后隐藏
 
-@export var once := true
+@export var once := false
 @export var hide_delay := 0.0   # 0 = 玩家离开区域才消失
 @export var label_path: NodePath = NodePath("") : set = _set_label_path   # 留空=用子节点 WorldLabel
 
