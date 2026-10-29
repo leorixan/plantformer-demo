@@ -321,11 +321,10 @@ func _spawn_player() -> void:
 
 
 var _dying := false
-var _death_flash: ColorRect = null
 
 
 func respawn_player() -> void:
-	# 死亡延迟：定格 0.25s（真实时间）+ 白闪，然后回到存档点
+	# 死亡延迟：定格 0.24s（真实时间），期间角色闪烁，让玩家看清死亡瞬间
 	if player == null or _dying:
 		return
 	_dying = true
@@ -333,32 +332,20 @@ func respawn_player() -> void:
 		player.call("end_dream_dash")
 	player.set("_hitstop_frames", 0)
 	player.set_physics_process(false)
-	_show_death_flash(true)
 	Engine.time_scale = 0.0
-	await get_tree().create_timer(0.25, true, false, true).timeout
+	for i in 3:
+		player.visible = false
+		await get_tree().create_timer(0.04, true, false, true).timeout
+		player.visible = true
+		await get_tree().create_timer(0.04, true, false, true).timeout
 	Engine.time_scale = 1.0
-	_show_death_flash(false)
 	player.set("collision_mask", 1)
 	player.global_position = checkpoint_pos
 	player.velocity = Vector2.ZERO
 	player.reset_physics_interpolation()
+	player.visible = true
 	player.set_physics_process(true)
 	_dying = false
-
-
-func _show_death_flash(on: bool) -> void:
-	if _death_flash == null:
-		var cl := CanvasLayer.new()
-		cl.name = "DeathFlashLayer"
-		cl.layer = 100
-		add_child(cl)
-		_death_flash = ColorRect.new()
-		_death_flash.name = "Flash"
-		_death_flash.color = Color(1.0, 1.0, 1.0, 0.85)
-		_death_flash.set_anchors_preset(Control.PRESET_FULL_RECT)
-		_death_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		cl.add_child(_death_flash)
-	_death_flash.visible = on
 
 
 func set_checkpoint(pos: Vector2) -> void:

@@ -24,4 +24,4 @@ position = Vector2(300, 164)
 
 [node name="Rooms" type="Node2D" parent="." unique_id=899541594]
 script = ExtResource("4_3mujq")
-rooms = Array[Rect2]([Rect2(0, 0, 320, 180), Rect2(320, 0, 320, 180)])
+rooms = Array[Rect2]([Rect2(0, 0, 640, 360), Rect2(640, 0, 640, 360)])
