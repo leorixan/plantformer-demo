@@ -27,7 +27,7 @@ func attach(cam: Camera2D, player: Node2D, rects: Array) -> void:
 	_cam.process_callback = Camera2D.CAMERA2D_PROCESS_IDLE
 	_current = _room_at(_player.global_position)
 	_to = _target_for(_current)
-	_cam.global_position = _to.round()
+	_cam.global_position = _snap(_to)
 	_cam.reset_physics_interpolation()
 
 
@@ -42,7 +42,7 @@ func _process(delta: float) -> void:
 	if _t < 1.0:
 		_t = minf(1.0, _t + delta / PAN_TIME)
 		var k := _t * _t * (3.0 - 2.0 * _t)
-		_cam.global_position = _from.lerp(_to, k).round()
+		_cam.global_position = _snap(_from.lerp(_to, k))
 		return
 	var idx := _room_at(_player.global_position)
 	if idx != _current:
@@ -51,7 +51,15 @@ func _process(delta: float) -> void:
 		_to = _target_for(idx)
 		_wait = PAUSE_TIME
 		return
-	_cam.global_position = _target_for(_current).round()
+	_cam.global_position = _snap(_target_for(_current))
+
+
+func _snap(v: Vector2) -> Vector2:
+	# 按屏幕像素取整：zoom=2 时步进为 0.5 世界像素，避免 2px 一跳的抖动
+	var z := _cam.zoom
+	if z.x <= 0.0 or z.y <= 0.0:
+		return v.round()
+	return (v * z).round() / z
 
 
 func _room_at(pos: Vector2) -> int:

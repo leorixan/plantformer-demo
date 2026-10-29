@@ -190,6 +190,8 @@ func freeze_frames(frames: int) -> void:
 
 func _physics_process(delta: float) -> void:
 	_dream_dash_lifecycle()
+	if is_dashing():
+		_spawn_afterimage_tick()
 	if _dream_exit_timer > 0.0:
 		_dream_exit_timer = maxf(0.0, _dream_exit_timer - delta)
 		if Input.is_action_pressed("jump") and Input.is_action_just_pressed("jump"):
@@ -869,6 +871,7 @@ var _dream_exit_timer := 0.0
 var _dream_jump_full := false
 var _hitstop_frames := 0
 var _stamina_flash_timer := 0.0
+var _afterimage_tick := 0
 var _stamina_flash_red := false
 
 
@@ -1038,3 +1041,24 @@ func _update_stamina_flash(delta: float) -> void:
 			_stamina_flash_red = false
 			visuals.modulate = Color.WHITE
 		_stamina_flash_timer = 0.0
+
+
+func _spawn_afterimage_tick() -> void:
+	# 致敬历史上 1ecaa21 的冲刺残影：每 3 帧留一个半透明淡出残像
+	_afterimage_tick += 1
+	if _afterimage_tick % 3 != 0:
+		return
+	if visuals == null or get_parent() == null:
+		return
+	var holder := Node2D.new()
+	holder.z_index = z_index - 1
+	for src in visuals.get_children():
+		if src is ColorRect:
+			var dup: ColorRect = src.duplicate()
+			dup.color = Color(0.55, 0.82, 1.0, 0.5)
+			holder.add_child(dup)
+	get_parent().add_child(holder)
+	holder.global_transform = visuals.global_transform
+	var tween := holder.create_tween()
+	tween.tween_property(holder, "modulate:a", 0.0, 0.22)
+	tween.tween_callback(holder.queue_free)
