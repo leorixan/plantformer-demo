@@ -21,5 +21,5 @@ func _ready() -> void:
 			break
 	print("MANUAL_ROOMS camera_node=", found != null)
 	if found:
-		print("MANUAL_ROOMS rooms_prop=", found.get("rooms"))
+		print("MANUAL_ROOMS rects_count=", (found.get("_rects") as Array).size(), " rects=", found.get("_rects"))
 	get_tree().quit()

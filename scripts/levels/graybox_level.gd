@@ -362,9 +362,9 @@ func _setup_room_camera() -> void:
 		if ch is Control:
 			var c := ch as Control
 			rects.append(Rect2(c.global_position, c.size))
-	# 方式 A：Rooms 节点自带 rooms 数组（RoomsDefinition，Inspector 编辑）
+	# 方式 A：Rooms 节点自带 rooms 数组（仅在没有手动 ReferenceRect 时使用）
 	var arr = rooms.get("rooms")
-	if arr is Array and not (arr as Array).is_empty():
+	if rects.is_empty() and arr is Array and not (arr as Array).is_empty():
 		for r in arr:
 			if r is Rect2:
 				rects.append(Rect2(rooms.global_position + (r as Rect2).position, (r as Rect2).size))

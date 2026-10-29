@@ -24,12 +24,13 @@ func attach(cam: Camera2D, player: Node2D, rects: Array) -> void:
 	_rects = rects
 	_view = get_viewport().get_visible_rect().size / _cam.zoom
 	_cam.position_smoothing_enabled = false
+	_cam.process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
 	_current = _room_at(_player.global_position)
 	_to = _target_for(_current)
 	_cam.global_position = _to.round()
 
 
-func _process(delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if _cam == null or _player == null or _rects.is_empty():
 		return
 	if _wait > 0.0:
