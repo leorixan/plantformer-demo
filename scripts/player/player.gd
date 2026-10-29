@@ -403,7 +403,7 @@ func _box_is_solid(center: Vector2, size: Vector2) -> bool:
 func _dash_update() -> void:
 	# 参考 DashBegin 的 Celeste.Freeze(.05)：冻结期原地不动，方向键还能继续补按。
 	if _dash_freeze > 0.0:
-		# 冻结期间保留速度，不移动即可（清速度会导致吃水晶/冲刺后明显减速）
+		velocity = Vector2.ZERO
 		return
 	# 参考 DashCoroutine 开头的 yield return null：方向留到冻结结束才采样，
 	# 所以 K 与方向键同帧按下（或方向晚一两帧）都能吃到正确的八向方向。

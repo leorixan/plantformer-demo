@@ -403,3 +403,16 @@ func _hide_invisible_hazards() -> void:
 			count += 1
 	if count > 0:
 		print("[graybox] 隐藏死亡区: ", count, " cells")
+
+
+func _ensure_cooldown_layer() -> TileMapLayer:
+	var layer := get_node_or_null("CrystalCooldown") as TileMapLayer
+	if layer != null:
+		return layer
+	layer = TileMapLayer.new()
+	layer.name = "CrystalCooldown"
+	layer.tile_set = _entity_layer().tile_set if _entity_layer() else null
+	layer.modulate = Color(0.45, 0.45, 0.45, 0.75)
+	layer.z_index = 2
+	add_child(layer)
+	return layer

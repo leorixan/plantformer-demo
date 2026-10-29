@@ -23,10 +23,12 @@ class Hazard extends Area2D:
 
 class Crystal extends Area2D:
 	var size := Vector2(8, 8)
+	var entity_layer: TileMapLayer
+	var cooldown_layer: TileMapLayer
+	var cells: Array = []
 	var _monitor: CollisionShape2D
 
 	func _ready() -> void:
-		collision_mask = 2
 		_monitor = CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
 		rect.size = size
@@ -40,12 +42,20 @@ class Crystal extends Area2D:
 		if body.has_method("refill_dash"):
 			body.call("refill_dash")
 		if body.has_method("freeze_frames"):
-			body.call("freeze_frames", 5)
+			body.call("freeze_frames", 3)
 		_monitor.set_deferred("disabled", true)
+		# 冷却视觉：水晶从 Entities 层移到灰色层
+		if entity_layer and cooldown_layer:
+			for e in cells:
+				entity_layer.erase_cell(e[0])
+				cooldown_layer.set_cell(e[0], int(e[1]), e[2])
 		await get_tree().create_timer(2.5).timeout
 		if is_instance_valid(_monitor):
 			_monitor.set_deferred("disabled", false)
-
+		if entity_layer and cooldown_layer:
+			for e in cells:
+				cooldown_layer.erase_cell(e[0])
+				entity_layer.set_cell(e[0], int(e[1]), e[2])
 
 class Spring extends Area2D:
 	var size := Vector2(8, 8)
