@@ -12,7 +12,7 @@ func _ready() -> void:
 	lvl.call("respawn_player")
 	var ts_after: float = Engine.time_scale
 	var frozen: bool = not player.is_physics_processing()
-	await get_tree().create_timer(2.2, true, false, true).timeout
+	await get_tree().create_timer(1.0, true, false, true).timeout
 	var flash_ok := true
 	var fl = lvl.get_node_or_null("DeathFlashLayer/Flash")
 	if fl != null and (fl as ColorRect).visible:
