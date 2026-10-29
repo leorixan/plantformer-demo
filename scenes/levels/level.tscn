@@ -1,6 +1,13 @@
 [gd_scene format=4 uid="uid://7uy2ql5w4us6"]
 
 [ext_resource type="PackedScene" uid="uid://25ah4thw46k3" path="res://scenes/levels/graybox_template.tscn" id="1_377w7"]
+[ext_resource type="Script" uid="uid://dkwwkrbc3yrpr" path="res://scripts/components/label_trigger.gd" id="2_bovvr"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bovvr"]
+size = Vector2(47, 45)
+
+[sub_resource type="SystemFont" id="SystemFont_zh"]
+font_names = PackedStringArray("Microsoft YaHei", "SimHei", "Arial")
 
 [node name="GrayboxLevel" unique_id=1813269018 instance=ExtResource("1_377w7")]
 
@@ -10,9 +17,9 @@ rooms = Array[Rect2]([])
 color = Color(0.27558208, 0.78638554, 0.80618167, 0.9019608)
 
 [node name="room1" type="ReferenceRect" parent="Rooms" index="0" unique_id=1114735341]
-offset_top = 1.0
+visible = false
 offset_right = 480.0
-offset_bottom = 270.0
+offset_bottom = 269.0
 mouse_filter = 2
 
 [node name="Terrain" parent="." index="1" unique_id=937811059]
@@ -26,3 +33,39 @@ position = Vector2(48, 198)
 
 [node name="Goal" parent="." index="4" unique_id=1175670727]
 position = Vector2(31, 23)
+
+[node name="LabelTrigger" type="Area2D" parent="." index="5" unique_id=904776674]
+position = Vector2(127, 168)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("2_bovvr")
+text = "Press J to jump"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LabelTrigger" index="0" unique_id=881309534]
+position = Vector2(2, 17.5)
+shape = SubResource("RectangleShape2D_bovvr")
+
+[node name="WorldLabel" type="Node2D" parent="LabelTrigger" index="1" unique_id=2110261054]
+visible = false
+z_index = 20
+position = Vector2(0, -18)
+
+[node name="Panel" type="ColorRect" parent="LabelTrigger/WorldLabel" index="0" unique_id=225769194]
+offset_left = -60.0
+offset_top = -10.0
+offset_right = 60.0
+offset_bottom = 10.0
+mouse_filter = 2
+color = Color(0, 0, 0, 0.55)
+
+[node name="Text" type="Label" parent="LabelTrigger/WorldLabel" index="1" unique_id=2062814709]
+offset_left = -54.0
+offset_top = -6.0
+offset_right = 54.0
+offset_bottom = 6.0
+theme_override_colors/font_color = Color(0.96, 0.96, 0.96, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 1
+theme_override_fonts/font = SubResource("SystemFont_zh")
+theme_override_font_sizes/font_size = 8
+text = "Press J to jump"
