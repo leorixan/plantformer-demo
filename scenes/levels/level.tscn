@@ -86,7 +86,6 @@ position = Vector2(0, -18)
 
 [node name="Text" type="Label" parent="texts/tip_jump/WorldLabel" index="0" unique_id=1129237616]
 visibility_layer = 2
-z_index = 1
 offset_left = -64.0
 offset_top = -1.0
 offset_right = -4.0
