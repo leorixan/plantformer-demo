@@ -17,7 +17,6 @@ var _timer := 0.0
 func _ready() -> void:
 	_refs()
 	if Engine.is_editor_hint():
-		queue_redraw()
 		return
 	collision_layer = 0
 	monitoring = true
@@ -67,15 +66,6 @@ func _apply_visible(on: bool) -> void:
 	if _holder != null:
 		_holder.visible = on
 
-
-func _draw() -> void:
-	if not Engine.is_editor_hint():
-		return
-	var shape_node := get_node_or_null("CollisionShape2D") as CollisionShape2D
-	if shape_node == null or shape_node.shape == null:
-		return
-	var size := (shape_node.shape as RectangleShape2D).size
-	draw_rect(Rect2(-size * 0.5, size), Color(0.95, 0.6, 0.2, 0.9), false, 1.0)
 
 
 func _set_label_path(_v: NodePath) -> void:
