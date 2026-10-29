@@ -68,6 +68,5 @@ theme_override_constants/outline_size = 1
 theme_override_fonts/font = SubResource("SystemFont_zh")
 theme_override_font_sizes/font_size = 8
 text = "提示文字"
-autowrap_mode = 3
 autowrap_trim_flags = 0
 justification_flags = 0
