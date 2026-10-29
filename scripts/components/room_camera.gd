@@ -34,6 +34,7 @@ func attach(cam: Camera2D, player: Node2D, rects: Array) -> void:
 func _process(delta: float) -> void:
 	if _cam == null or _player == null or _rects.is_empty():
 		return
+	_view = get_viewport().get_visible_rect().size / _cam.zoom
 	if _wait > 0.0:
 		_wait -= delta
 		if _wait <= 0.0:

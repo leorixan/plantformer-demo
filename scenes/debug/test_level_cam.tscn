@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/debug/test_level_cam.gd" id="1"]
+
+[node name="TestLevelCam" type="Node"]
+script = ExtResource("1")
