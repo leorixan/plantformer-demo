@@ -321,6 +321,7 @@ func _spawn_player() -> void:
 
 
 func respawn_player() -> void:
+	Engine.time_scale = 1.0
 	if player == null:
 		return
 	if player.has_method("end_dream_dash") and bool(player.get("dream_dashing")):

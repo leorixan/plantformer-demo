@@ -1012,3 +1012,7 @@ func _process(_delta: float) -> void:
 		_hitstop_frames -= 1
 		if _hitstop_frames <= 0:
 			Engine.time_scale = 1.0
+
+
+func _exit_tree() -> void:
+	Engine.time_scale = 1.0
