@@ -899,6 +899,7 @@ func start_dream_dash(dir: Vector2, block: Node = null) -> void:
 	dash_dir = dream_dir
 	dash_timer = 999.0
 	_dash_buffer = 0.0
+	_jump_buffer = 0.0   # 清掉进入紫块前残留的跳跃缓冲，避免不按跳也自动跳出
 	_dash_freeze = maxf(_dash_freeze, 5.0 / 60.0)   # 进紫块冻结 5 帧
 	_dream_saved_mask = collision_mask
 	collision_mask = 0
