@@ -333,11 +333,12 @@ func respawn_player() -> void:
 	player.set("_hitstop_frames", 0)
 	player.set_physics_process(false)
 	Engine.time_scale = 0.0
+	# 死亡闪烁：周期 0.6s（灭 0.3s / 亮 0.3s），共闪 3 次 = 1.8s
 	for i in 3:
 		player.visible = false
-		await get_tree().create_timer(0.04, true, false, true).timeout
+		await get_tree().create_timer(0.3, true, false, true).timeout
 		player.visible = true
-		await get_tree().create_timer(0.04, true, false, true).timeout
+		await get_tree().create_timer(0.3, true, false, true).timeout
 	Engine.time_scale = 1.0
 	player.set("collision_mask", 1)
 	player.global_position = checkpoint_pos
