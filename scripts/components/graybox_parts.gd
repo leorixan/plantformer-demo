@@ -42,8 +42,8 @@ class Crystal extends Area2D:
 			return
 		if body.has_method("refill_dash"):
 			body.call("refill_dash")
-		if body.has_method("freeze_frames"):
-			body.call("freeze_frames", 3)
+		if body.has_method("hitstop_frames"):
+			body.call("hitstop_frames", 2)
 		_monitor.set_deferred("disabled", true)
 		# 冷却视觉：水晶从 Entities 层移到灰色层
 		if entity_layer and cooldown_layer:

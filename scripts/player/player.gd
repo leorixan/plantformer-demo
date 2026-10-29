@@ -179,6 +179,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			config.reload_and_apply(self)
 			_apply_hitbox()
 
+func hitstop_frames(frames: int) -> void:
+	Engine.time_scale = 0.0
+	_hitstop_frames = maxi(_hitstop_frames, frames)
+
+
 func freeze_frames(frames: int) -> void:
 	_dash_freeze = maxf(_dash_freeze, float(frames) / 60.0)
 
@@ -530,15 +535,6 @@ func _apply_gravity(delta: float) -> void:
 		else: _var_jump_timer = 0.0
 
 func _try_jump() -> void:
-	if _dream_exit_timer > 0.0 and absf(_dream_exit_dir.x) > 0.01:
-		_dream_exit_timer = 0.0
-		_jump_buffer = 0.0
-		velocity = Vector2(signf(_dream_exit_dir.x) * float(wall_jump_speed), -jump_speed)
-		_var_jump_speed = -jump_speed
-		_var_jump_timer = var_jump_time
-		_dream_jump_full = true
-		dash_count = max_dashes
-		return
 	if is_ducking: return
 	if _jump_buffer <= 0.0: return
 	if _coyote > 0.0:
@@ -871,6 +867,7 @@ var _dream_saved_mask := 1
 var _dream_exit_dir := Vector2.ZERO
 var _dream_exit_timer := 0.0
 var _dream_jump_full := false
+var _hitstop_frames := 0
 
 
 func dash_input_dir() -> Vector2:
@@ -1008,3 +1005,10 @@ func _dream_hit_solid() -> void:
 			_dream_dash_die()
 			return
 	end_dream_dash()
+
+
+func _process(_delta: float) -> void:
+	if _hitstop_frames > 0:
+		_hitstop_frames -= 1
+		if _hitstop_frames <= 0:
+			Engine.time_scale = 1.0
