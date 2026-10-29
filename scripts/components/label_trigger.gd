@@ -76,14 +76,17 @@ func _build_ui() -> void:
 	_ui.layer = 10
 	add_child(_ui)
 	var root := Control.new()
+	root.name = "Root"
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_ui.add_child(root)
 	_panel = ColorRect.new()
+	_panel.name = "Panel"
 	_panel.color = panel_color
 	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(_panel)
 	_label = Label.new()
+	_label.name = "Text"
 	_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var font := SystemFont.new()

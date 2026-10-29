@@ -16,6 +16,6 @@ func _ready() -> void:
 	for i in 10:
 		await get_tree().physics_frame
 	var ui: CanvasLayer = trig.get_node_or_null("LabelUI")
-	var label: Label = trig.get_node_or_null("LabelUI/Control/Label") if ui else null
+	var label: Label = trig.get("_label")
 	print("LABEL ui=", ui != null, " visible=", ui.visible if ui else false, " text=", label.text if label else "none")
 	get_tree().quit()
