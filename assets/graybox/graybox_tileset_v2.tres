@@ -1,0 +1,29 @@
+[gd_resource type="TileSet" format=3 uid="uid://c3xeqmx10ig2f"]
+
+[ext_resource type="Texture2D" uid="uid://cbtfdo1j8bf80" path="res://assets/graybox/tiles.png" id="1_vfjn8"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_vfjn8"]
+texture = ExtResource("1_vfjn8")
+texture_region_size = Vector2i(8, 8)
+0:0/0 = 0
+0:0/0/custom_data_0 = "terrain"
+1:0/0 = 0
+1:0/0/custom_data_0 = "hazard"
+2:0/0 = 0
+2:0/0/custom_data_0 = "crystal"
+3:0/0 = 0
+3:0/0/custom_data_0 = "spring"
+4:0/0 = 0
+4:0/0/custom_data_0 = "breakable"
+5:0/0 = 0
+5:0/0/custom_data_0 = "jelly"
+6:0/0 = 0
+6:0/0/custom_data_0 = "checkpoint"
+7:0/0 = 0
+7:0/0/custom_data_0 = "hazard_hidden"
+
+[resource]
+tile_size = Vector2i(8, 8)
+custom_data_layer_0/name = "kind"
+custom_data_layer_0/type = 4
+sources/0 = SubResource("TileSetAtlasSource_vfjn8")

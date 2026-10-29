@@ -16,7 +16,7 @@
 | 9 | 深灰 | oneway_right | 单向墙(右) | 地形色边在右；只能向右穿过 |
 | 10 | 金 | checkpoint | 存档点 | 记录当前位置，死亡后在此复活 |
 
-地形层（Terrain，8px 网格）：灰 = 地形方块。
+地形层（Terrain，8px 网格，`graybox_tileset_v2.tres`）：灰 = 地形方块；**索引 7 = 浅红隐藏死亡区**（见下）。
 
 ## 示例场景
 
@@ -30,8 +30,12 @@
 
 ## 隐藏死亡区（hazard_hidden）
 
-| 索引 | 颜色 | kind | 行为 |
-|---|---|---|---|
-| 11 | 浅红 | hazard_hidden | 功能与红色伤害区完全相同；**运行时 tile 被擦除，游戏中不可见**，仅编辑器里可见（方便摆放） |
+粉色方块现在**放在地形层（Terrain，8px 整格）**，不再作为实体机关：
 
-实体图集已升级为 `entity_tileset_v4.tres`（12 tiles），模板/示例场景引用已切换。
+| 图层 | 图集 | 索引 | 颜色 | 行为 |
+|---|---|---|---|---|
+| Terrain（8px） | `graybox_tileset_v2.tres` | 7 | 浅红 (1.0,0.55,0.55) | 功能同红色伤害区；**运行时 tile 被擦除，游戏中不可见**，仅编辑器里可见 |
+| Entities（4px，兼容旧图） | `entity_tileset_v4.tres` | 11 | 浅红 | 旧地图保留；新地图请用地形层粉色 |
+
+- 模板、`level.tscn`、两个 showcase 都已切到 `graybox_tileset_v2.tres`
+- 旧地图实体层的粉色 tile 已迁移到地形层（每个 4px cell → 对应 8px 地形格）

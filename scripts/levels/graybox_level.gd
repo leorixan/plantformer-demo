@@ -436,6 +436,13 @@ func _hide_invisible_hazards() -> void:
 		if _kind_of(ents, cell) == "hazard_hidden":
 			ents.erase_cell(cell)
 			count += 1
+	# 地形层（8px）：粉色 tile 由 _build_tile_parts 生成 Hazard，这里只擦除可见 tile
+	var terr := _terrain_layer()
+	if terr != null:
+		for cell in terr.get_used_cells():
+			if _kind_of(terr, cell) == "hazard_hidden":
+				terr.erase_cell(cell)
+				count += 1
 	if count > 0:
 		print("[graybox] 隐藏死亡区: ", count, " cells")
 
