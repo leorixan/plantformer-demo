@@ -4,8 +4,8 @@ extends Node
 ## - 切换节奏：先停顿 PAUSE_TIME，再用 PAN_TIME 平滑滑动到新房间目标
 ## - 小房间锁定居中；大房间跟随玩家并夹在房间边界内
 
-const PAN_TIME := 0.16
-const PAUSE_TIME := 0.16
+const PAN_TIME := 0.40
+const PAUSE_TIME := 0.20
 
 var _cam: Camera2D
 var _player: Node2D
