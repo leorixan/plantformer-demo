@@ -17,6 +17,9 @@ const CONTACT_MARGIN := 0.001
 const SHAPE_INSET := 1.0
 
 @export_category("Body")
+const BODY_CRYSTAL_COLOR := Color(0.28, 0.78, 0.82, 1.0)
+const BODY_NO_DASH_COLOR := Color(0.45, 0.45, 0.48, 1.0)
+const CRYSTAL_COLOR := Color(0.28, 0.78, 0.82, 1.0)
 @export var body_width := 8.0 # normalHitbox 宽
 @export var stand_height := 11.0 # normalHitbox 高
 @export var duck_height := 6.0 # duckHitbox 高
@@ -155,6 +158,9 @@ var _event_timer := 0.0
 var carried_item: CarryItem
 
 func _ready() -> void:
+	var ui_node := get_node_or_null("UI")
+	if ui_node:
+		ui_node.visible = false
 	var config := get_node_or_null("/root/Config")
 	if config: config.apply_to(self)
 	if collider.shape: collider.shape = collider.shape.duplicate()
@@ -842,6 +848,8 @@ func _get_nearest_item() -> CarryItem:
 	return nearest
 
 func _update_indicators() -> void:
+	if is_instance_valid(body_rect):
+		body_rect.color = BODY_CRYSTAL_COLOR if dash_count > 0 else BODY_NO_DASH_COLOR
 	if not is_instance_valid(stamina_fill): return
 	for index in dash_pips.size():
 		dash_pips[index].visible = index < max_dashes
