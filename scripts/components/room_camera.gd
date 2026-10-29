@@ -28,6 +28,7 @@ func attach(cam: Camera2D, player: Node2D, rects: Array) -> void:
 	_current = _room_at(_player.global_position)
 	_to = _target_for(_current)
 	_cam.global_position = _to.round()
+	_cam.reset_physics_interpolation()
 
 
 func _physics_process(delta: float) -> void:

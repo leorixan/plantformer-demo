@@ -17,7 +17,9 @@ position = Vector2(29, 132)
 position = Vector2(16, 19)
 
 [node name="Rooms" parent="." index="4" unique_id=899541594]
-rooms = Array[Rect2]([Rect2(0, 0, 320, 184), Rect2(320, 0, 320, 184), Rect2(640, 0, 640, 184)])
+room_size = Vector2i(320, 184)
+rooms = Array[Rect2]([])
+color = Color(0.27558208, 0.78638554, 0.80618167, 0.9019608)
 
 [node name="room1" type="ReferenceRect" parent="Rooms" index="0" unique_id=1114735341]
 offset_right = 640.0

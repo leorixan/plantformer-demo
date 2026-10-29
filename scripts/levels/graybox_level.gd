@@ -329,6 +329,7 @@ func respawn_player() -> void:
 	player.set("collision_mask", 1)
 	player.global_position = checkpoint_pos
 	player.velocity = Vector2.ZERO
+	player.reset_physics_interpolation()
 
 
 func set_checkpoint(pos: Vector2) -> void:
