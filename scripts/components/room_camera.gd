@@ -56,11 +56,18 @@ func _process(delta: float) -> void:
 
 
 func _snap(v: Vector2) -> Vector2:
-	# 按屏幕像素取整：zoom=2 时步进为 0.5 世界像素，避免 2px 一跳的抖动
+	# 按"屏幕像素"取整：世界像素 * zoom * 窗口缩放 对齐到整数屏幕像素，
+	# 跟随滚动时步进更细，避免整数取整造成的顿挫
 	var z := _cam.zoom
 	if z.x <= 0.0 or z.y <= 0.0:
 		return v.round()
-	return (v * z).round() / z
+	var scale := 1.0
+	var win := get_window()
+	if win != null:
+		var vis := get_viewport().get_visible_rect().size
+		if vis.x > 0.0:
+			scale = maxf(1.0, floorf(win.size.x / vis.x))
+	return (v * z * scale).round() / (z * scale)
 
 
 func _room_at(pos: Vector2) -> int:
