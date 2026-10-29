@@ -8,6 +8,7 @@ extends Area2D
 @export var font_color := Color(0.96, 0.96, 0.96, 1.0)
 @export var panel_color := Color(0.0, 0.0, 0.0, 0.55)
 @export var world_offset := Vector2(0.0, -18.0) : set = _set_world_offset
+@export var box_size := Vector2(120.0, 0.0) : set = _set_box_size   # x=宽度(<=0 自适应)，y=高度(<=0 自适应)
 @export var once := true
 @export var hide_delay := 0.0   # 0 = 玩家离开区域才消失
 
@@ -99,15 +100,19 @@ func _layout() -> void:
 		return
 	_holder.position = world_offset
 	var font := _label.get_theme_font("font")
-	var size := font.get_multiline_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, 220.0, font_size)
-	var w := minf(232.0, size.x + 12.0)
-	var h := size.y + 8.0
-	# 以 world_offset 为中心水平居中
+	var wrap := box_size.x if box_size.x > 0.0 else 220.0
+	var inner := maxf(8.0, wrap - 12.0)
+	var measured := font.get_multiline_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, inner, font_size)
+	var w := box_size.x if box_size.x > 0.0 else minf(232.0, measured.x + 12.0)
+	var h := box_size.y if box_size.y > 0.0 else measured.y + 8.0
+	# 以 world_offset 为中心
 	_panel.position = Vector2(-w * 0.5, -h * 0.5)
 	_panel.size = Vector2(w, h)
 	_label.position = Vector2(-w * 0.5 + 6.0, -h * 0.5 + 4.0)
-	_label.size = Vector2(w - 12.0, h - 8.0)
+	_label.size = Vector2(maxf(1.0, w - 12.0), maxf(1.0, h - 8.0))
 	_label.text = text
+	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 
 
 func _draw() -> void:
@@ -122,8 +127,15 @@ func _draw() -> void:
 	if _preview_font == null:
 		_preview_font = SystemFont.new()
 		_preview_font.font_names = PackedStringArray(["Microsoft YaHei", "SimHei", "Arial"])
-	draw_string(_preview_font, world_offset + Vector2(0.0, -font_size), text,
-		HORIZONTAL_ALIGNMENT_LEFT, -1.0, font_size, color)
+	var wrap := box_size.x if box_size.x > 0.0 else 220.0
+	var measured := _preview_font.get_multiline_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, maxf(8.0, wrap - 12.0), font_size)
+	var w := box_size.x if box_size.x > 0.0 else minf(232.0, measured.x + 12.0)
+	var h := box_size.y if box_size.y > 0.0 else measured.y + 8.0
+	var r := Rect2(world_offset - Vector2(w * 0.5, h * 0.5), Vector2(w, h))
+	draw_rect(r, Color(0, 0, 0, 0.28), true)
+	draw_rect(r, Color(0.95, 0.6, 0.2, 0.85), false, 1.0)
+	draw_string(_preview_font, r.position + Vector2(6.0, 4.0 + font_size), text,
+		HORIZONTAL_ALIGNMENT_LEFT, w - 12.0, font_size, color)
 
 
 func _set_text(_v: String) -> void:
@@ -140,6 +152,14 @@ func _set_font_size(_v: int) -> void:
 		queue_redraw()
 	elif _label != null:
 		_label.add_theme_font_size_override("font_size", font_size)
+		_layout()
+
+
+func _set_box_size(_v: Vector2) -> void:
+	box_size = _v
+	if Engine.is_editor_hint():
+		queue_redraw()
+	else:
 		_layout()
 
 

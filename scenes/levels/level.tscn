@@ -1,6 +1,7 @@
 [gd_scene format=4 uid="uid://7uy2ql5w4us6"]
 
 [ext_resource type="PackedScene" uid="uid://25ah4thw46k3" path="res://scenes/levels/graybox_template.tscn" id="1_377w7"]
+[ext_resource type="PackedScene" path="res://scenes/components/label_trigger.tscn" id="2_bovvr"]
 
 [node name="GrayboxLevel" unique_id=1813269018 instance=ExtResource("1_377w7")]
 
@@ -21,7 +22,10 @@ tile_map_data = PackedByteArray("AAAAABYAAAAAAAAAAAAAABcAAAAAAAAAAAABABYAAAAAAAA
 tile_map_data = PackedByteArray()
 
 [node name="Spawn" parent="." index="3" unique_id=575090847]
-position = Vector2(29, 132)
+position = Vector2(48, 198)
 
 [node name="Goal" parent="." index="4" unique_id=1175670727]
 position = Vector2(31, 23)
+
+[node name="LabelTrigger" parent="." index="5" unique_id=887701033 instance=ExtResource("2_bovvr")]
+position = Vector2(118, 183)

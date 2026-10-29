@@ -11,6 +11,7 @@ func _ready() -> void:
 	var trig: Node2D = trig_ps.instantiate()
 	trig.set("text", "世界坐标提示：按 K 冲刺")
 	trig.set("font_size", 8)
+	trig.set("box_size", Vector2(80, 40))
 	trig.global_position = player.global_position
 	lvl.add_child(trig)
 	for i in 10:
@@ -19,5 +20,6 @@ func _ready() -> void:
 	var label: Label = trig.get("_label")
 	print("LABEL holder=", holder != null, " class=", holder.get_class() if holder else "none",
 		" visible=", holder.visible if holder else false, " text=", label.text if label else "none",
-		" layer_z=", holder.z_index if holder else -1)
+		" layer_z=", holder.z_index if holder else -1,
+		" panel_size=", trig.get_node("WorldLabel/Panel").size if holder else Vector2.ZERO)
 	get_tree().quit()
