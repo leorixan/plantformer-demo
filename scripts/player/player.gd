@@ -868,6 +868,8 @@ var _dream_exit_dir := Vector2.ZERO
 var _dream_exit_timer := 0.0
 var _dream_jump_full := false
 var _hitstop_frames := 0
+var _stamina_flash_timer := 0.0
+var _stamina_flash_red := false
 
 
 func dash_input_dir() -> Vector2:
@@ -1014,5 +1016,28 @@ func _process(_delta: float) -> void:
 			Engine.time_scale = 1.0
 
 
+func _process(delta2: float) -> void:
+	_update_stamina_flash(delta2)
+
+
 func _exit_tree() -> void:
 	Engine.time_scale = 1.0
+
+
+func _update_stamina_flash(delta: float) -> void:
+	# 体力 <=30%：每 0.4s 红闪一次；<=10%：每 0.2s 红闪一次
+	if visuals == null:
+		return
+	var ratio := stamina / maxf(max_stamina, 0.001)
+	if ratio <= 0.3:
+		var period := 0.2 if ratio <= 0.1 else 0.4
+		_stamina_flash_timer += delta
+		if _stamina_flash_timer >= period * 0.5:
+			_stamina_flash_timer = 0.0
+			_stamina_flash_red = not _stamina_flash_red
+		visuals.modulate = Color(1.0, 0.35, 0.35) if _stamina_flash_red else Color.WHITE
+	else:
+		if _stamina_flash_red:
+			_stamina_flash_red = false
+			visuals.modulate = Color.WHITE
+		_stamina_flash_timer = 0.0
