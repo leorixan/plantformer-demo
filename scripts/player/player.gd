@@ -1010,14 +1010,11 @@ func _dream_hit_solid() -> void:
 
 
 func _process(_delta: float) -> void:
+	_update_stamina_flash(_delta)
 	if _hitstop_frames > 0:
 		_hitstop_frames -= 1
 		if _hitstop_frames <= 0:
 			Engine.time_scale = 1.0
-
-
-func _process(delta2: float) -> void:
-	_update_stamina_flash(delta2)
 
 
 func _exit_tree() -> void:
