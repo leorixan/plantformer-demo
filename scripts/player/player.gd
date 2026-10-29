@@ -18,7 +18,7 @@ const SHAPE_INSET := 1.0
 
 @export_category("Body")
 const BODY_CRYSTAL_COLOR := Color(0.28, 0.78, 0.82, 1.0)
-const BODY_NO_DASH_COLOR := Color(0.45, 0.45, 0.48, 1.0)
+const BODY_NO_DASH_COLOR := Color(0.38, 0.51, 0.53, 1.0)
 const CRYSTAL_COLOR := Color(0.28, 0.78, 0.82, 1.0)
 @export var body_width := 8.0 # normalHitbox 宽
 @export var stand_height := 11.0 # normalHitbox 高
