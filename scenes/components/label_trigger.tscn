@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/components/label_trigger.gd" id="1_lbltrg"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lbl"]
+size = Vector2(64, 24)
+
+[node name="LabelTrigger" type="Area2D"]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_lbltrg")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_lbl")
