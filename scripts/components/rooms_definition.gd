@@ -6,7 +6,7 @@ extends Node2D
 ## 选中节点点 Inspector 里的「按屏幕网格自动生成房间」会扫描 Terrain 覆盖范围，
 ## 按 room_size 生成网格房间，之后可手动删改。
 
-@export var room_size := Vector2i(640, 360)
+@export var room_size := Vector2i(480, 270)
 @export var rooms: Array[Rect2] = []
 @export var color := Color(0.3, 0.75, 1.0, 0.9)
 
