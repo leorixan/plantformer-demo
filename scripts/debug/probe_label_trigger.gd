@@ -17,7 +17,7 @@ func _ready() -> void:
 		await get_tree().physics_frame
 	var holder: Node2D = trig.get_node_or_null("WorldLabel")
 	var label: Label = trig.get("_label")
-	print("LABEL holder=", holder != null, " is_canvas_layer=", holder is CanvasLayer,
+	print("LABEL holder=", holder != null, " class=", holder.get_class() if holder else "none",
 		" visible=", holder.visible if holder else false, " text=", label.text if label else "none",
 		" layer_z=", holder.z_index if holder else -1)
 	get_tree().quit()
