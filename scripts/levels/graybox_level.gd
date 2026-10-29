@@ -357,6 +357,11 @@ func _setup_room_camera() -> void:
 	if rooms == null or player == null:
 		return
 	var rects: Array = []
+	# 方式 0（推荐手动框选）：Rooms 下放 ReferenceRect 子节点，在 2D 视图里直接拖拽/缩放
+	for ch in rooms.get_children():
+		if ch is Control:
+			var c := ch as Control
+			rects.append(Rect2(c.global_position, c.size))
 	# 方式 A：Rooms 节点自带 rooms 数组（RoomsDefinition，Inspector 编辑）
 	var arr = rooms.get("rooms")
 	if arr is Array and not (arr as Array).is_empty():
