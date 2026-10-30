@@ -1,6 +1,6 @@
 [gd_scene format=4]
 
-[ext_resource type="TileSet" path="res://assets/graybox/entity_tileset_v5.tres" id="3_1dmtg"]
+[ext_resource type="TileSet" path="res://assets/graybox/entity_tileset_v6.tres" id="3_1dmtg"]
 [ext_resource type="TileSet" path="res://assets/graybox/graybox_tileset_v2.tres" id="2_wjpwq"]
 
 [sub_resource type="SystemFont" id="SystemFont_u6ky3"]

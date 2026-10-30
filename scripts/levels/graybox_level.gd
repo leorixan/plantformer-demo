@@ -16,7 +16,7 @@ var _collected_trophy_cells: Dictionary = {}
 var trophies_collected := 0
 const KIND_ORDER := ["terrain", "hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
 const ENTITY_KINDS := ["hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
-const ENTITY_ATLAS := ["hazard", "crystal", "spring", "breakable8", "breakable16", "dream", "oneway_up", "oneway_down", "oneway_left", "oneway_right", "checkpoint", "hazard_hidden", "trophy"]
+const ENTITY_ATLAS := ["hazard", "crystal", "spring", "breakable8", "breakable16", "dream", "oneway_up", "oneway_down", "oneway_left", "oneway_right", "checkpoint", "hazard_hidden", "trophy", "spring_down", "spring_left", "spring_right"]
 
 var player: CharacterBody2D
 var spawn_pos := Vector2.ZERO
@@ -247,6 +247,9 @@ func _build_entity_rects() -> void:
 									if is_instance_valid(el):
 										for cc in clear_cells:
 											el.erase_cell(cc))
+								# 立即擦除 tile，改用裂纹视觉节点渲染
+								for cc in clear_cells:
+									el.erase_cell(cc)
 				elif kind == "trophy":
 					var tro := _make_part(kind, Vector2(8, 8), pos)
 					if tro:
@@ -294,10 +297,22 @@ func _make_part(kind: String, size: Vector2, pos: Vector2) -> Node2D:
 			node = h
 		"crystal":
 			node = parts.Crystal.new()
-		"spring":
+		"spring", "spring_up":
 			var sp = parts.Spring.new()
-			sp.dir = _spring_dir(pos, size)
+			sp.dir = Vector2.UP
 			node = sp
+		"spring_down":
+			var spd = parts.Spring.new()
+			spd.dir = Vector2.DOWN
+			node = spd
+		"spring_left":
+			var spl = parts.Spring.new()
+			spl.dir = Vector2.LEFT
+			node = spl
+		"spring_right":
+			var spr = parts.Spring.new()
+			spr.dir = Vector2.RIGHT
+			node = spr
 		"breakable", "breakable8", "breakable16":
 			node = parts.Breakable.new()
 		"jelly", "dream":

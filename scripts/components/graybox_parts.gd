@@ -60,10 +60,26 @@ class Crystal extends Area2D:
 		add_child(_outline)
 		_build_outline()
 		_outline.visible = false
-		_start_breathing()
+		_play_appear()
+
+
+	func _play_appear() -> void:
+		if _breath and _breath.is_valid():
+			_breath.kill()
+		_visual.scale = Vector2(0.01, 0.01)
+		_visual.modulate.a = 0.0
+		var t := create_tween()
+		t.set_parallel(true)
+		t.tween_property(_visual, "scale", Vector2(1.12, 1.12), 0.15)
+		t.tween_property(_visual, "modulate:a", 1.0, 0.15)
+		t.set_parallel(false)
+		t.tween_property(_visual, "scale", Vector2(1.0, 1.0), 0.10)
+		t.finished.connect(_start_breathing)
 
 
 	func _start_breathing() -> void:
+		if _breath and _breath.is_valid():
+			_breath.kill()
 		_breath = create_tween()
 		_breath.set_loops()
 		_breath.tween_property(_visual, "scale", Vector2(1.12, 1.12), 0.6)
@@ -80,26 +96,11 @@ class Crystal extends Area2D:
 
 
 	func _build_visual() -> void:
-		var fill: Dictionary = {}
 		for y in 8:
 			for x in range(int(ROWS[y][0]), int(ROWS[y][1]) + 1):
-				fill[Vector2i(x, y)] = BASE
-		for pt in [Vector2i(3, 1), Vector2i(2, 2), Vector2i(3, 2), Vector2i(2, 3), Vector2i(3, 3)]:
-			fill[pt] = LIGHT
-		fill[Vector2i(4, 1)] = WHITE
-		for pt in [Vector2i(5, 4), Vector2i(6, 4), Vector2i(5, 5), Vector2i(6, 5)]:
-			fill[pt] = DARK
-		var outline: Dictionary = {}
-		for pt in fill:
-			var p: Vector2i = pt
-			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-				var np: Vector2i = p + d
-				if not fill.has(np) and np.x >= 0 and np.x < 8 and np.y >= 0 and np.y < 8:
-					outline[np] = OUTLINE
-		for pt in outline:
-			_cell(pt.x, pt.y, OUTLINE, _visual)
-		for pt in fill:
-			_cell(pt.x, pt.y, fill[pt], _visual)
+				_cell(x, y, BASE, _visual)
+		for pt in [Vector2i(3, 1), Vector2i(2, 2), Vector2i(3, 2), Vector2i(2, 3)]:
+			_cell(pt.x, pt.y, LIGHT, _visual)
 
 
 	func _build_outline() -> void:
@@ -144,6 +145,7 @@ class Crystal extends Area2D:
 		_cooldown = false
 		_visual.visible = true
 		_outline.visible = false
+		_play_appear()
 		_monitor.set_deferred("disabled", false)
 
 
@@ -158,9 +160,12 @@ class Crystal extends Area2D:
 
 
 class Spring extends Area2D:
+	## 四向单向弹簧：只从弹射方向一侧接触才触发；木色半边朝向弹射方向
 	var size := Vector2(8, 8)
 	var dir := Vector2.UP
 	var launch := 300.0
+	var _cooldown := 0.0
+
 
 	func _ready() -> void:
 		collision_mask = 2
@@ -171,22 +176,49 @@ class Spring extends Area2D:
 		add_child(cs)
 		body_entered.connect(_on_body)
 
-	func _on_body(body: Node2D) -> void:
-		if not (body is CharacterBody2D):
+
+	func _physics_process(delta: float) -> void:
+		if _cooldown > 0.0:
+			_cooldown = maxf(0.0, _cooldown - delta)
 			return
+		for body in get_overlapping_bodies():
+			if body is CharacterBody2D and _from_valid_side(body):
+				_launch(body)
+				break
+
+
+	func _from_valid_side(body: Node2D) -> bool:
+		var body_center: Vector2 = body.global_position + Vector2(0.0, -5.5)
+		return (body_center - global_position).dot(dir) >= 0.0
+
+
+	func _on_body(body: Node2D) -> void:
+		if _cooldown > 0.0 or not (body is CharacterBody2D):
+			return
+		if _from_valid_side(body):
+			_launch(body)
+
+
+	func _launch(body: Node2D) -> void:
 		var v: Vector2 = body.velocity
 		if dir.y < 0.0:
 			body.velocity = Vector2(v.x, -launch)
 		elif dir.y > 0.0:
 			body.velocity = Vector2(v.x, launch)
 		elif dir.x < 0.0:
-			body.velocity = Vector2(-launch, -launch * 0.5)
+			body.velocity = Vector2(-launch, v.y)
 		else:
-			body.velocity = Vector2(launch, -launch * 0.5)
+			body.velocity = Vector2(launch, v.y)
+		_cooldown = 0.25
 
 
 class Breakable extends StaticBody2D:
+	const BASE := Color(0.36, 0.39, 0.45, 1.0)
+	const LIGHT := Color(0.45, 0.48, 0.55, 1.0)
+	const DARK := Color(0.25, 0.28, 0.33, 1.0)
+	const CRACK := Color(0.16, 0.18, 0.22, 1.0)
 	var size := Vector2(8, 8)
+	var _visual: Node2D
 
 	func _ready() -> void:
 		collision_mask = 2
@@ -203,6 +235,51 @@ class Breakable extends StaticBody2D:
 		acs.shape = arect
 		area.add_child(acs)
 		add_child(area)
+		_build_visual()
+
+	func _build_visual() -> void:
+		var w := maxi(1, int(round(size.x)))
+		var h := maxi(1, int(round(size.y)))
+		_visual = Node2D.new()
+		_visual.name = "Visual"
+		add_child(_visual)
+		var cells: Dictionary = {}
+		for y in h:
+			for x in w:
+				cells[Vector2i(x, y)] = BASE
+		for x in w:
+			cells[Vector2i(x, 0)] = LIGHT
+			cells[Vector2i(x, h - 1)] = DARK
+		var center := Vector2i(w / 2, h / 2)
+		for d in [Vector2i(-1, -1), Vector2i(1, -1), Vector2i(0, 1)]:
+			var step := 1
+			while true:
+				var pt: Vector2i = center + d * step
+				if pt.x < 0 or pt.y < 0 or pt.x >= w or pt.y >= h:
+					break
+				cells[pt] = CRACK
+				step += 1
+		var rng := RandomNumberGenerator.new()
+		rng.randomize()
+		for i in rng.randi_range(2, 6):
+			var side := rng.randi_range(0, 3)
+			var edge_pt := Vector2i.ZERO
+			if side == 0:
+				edge_pt = Vector2i(rng.randi_range(0, w - 1), 0)
+			elif side == 1:
+				edge_pt = Vector2i(rng.randi_range(0, w - 1), h - 1)
+			elif side == 2:
+				edge_pt = Vector2i(0, rng.randi_range(0, h - 1))
+			else:
+				edge_pt = Vector2i(w - 1, rng.randi_range(0, h - 1))
+			cells.erase(edge_pt)
+		for pt in cells:
+			var r := ColorRect.new()
+			r.color = cells[pt]
+			r.position = Vector2(float(pt.x) - float(w) * 0.5, float(pt.y) - float(h) * 0.5)
+			r.size = Vector2(1, 1)
+			r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			_visual.add_child(r)
 
 	func _physics_process(_delta: float) -> void:
 		for child in get_children():
