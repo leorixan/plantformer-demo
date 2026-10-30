@@ -275,11 +275,12 @@ class OneWay extends StaticBody2D:
 
 
 class Trophy extends Area2D:
-	## 奖杯：固定 8x8 大小，上下浮动；碰到计数 +1 并消失
+	## 奖杯（备选图案 #2 双耳杯）：固定大小 10x8 视觉，碰到计数 +1 并消失
 	var level: Node
 	var size := Vector2(8, 8)
-	const GOLD := Color(0.96, 0.66, 0.16, 1.0)
-	const DARK := Color(0.72, 0.42, 0.08, 1.0)
+	const GOLD := Color(0.949, 0.698, 0.188, 1.0)
+	const LIGHT := Color(1.0, 0.878, 0.510, 1.0)
+	const DARK := Color(0.659, 0.392, 0.063, 1.0)
 	const BOB_AMPLITUDE := 2.0
 	const BOB_PERIOD := 1.6
 
@@ -298,20 +299,52 @@ class Trophy extends Area2D:
 		_base_y = position.y
 		_t = position.x * 0.15
 		_visual = Node2D.new()
+		_visual.name = "Visual"
 		add_child(_visual)
-		var cup := Polygon2D.new()
-		cup.color = GOLD
-		cup.polygon = PackedVector2Array([
-			Vector2(-4, -4), Vector2(4, -4), Vector2(2.5, 1), Vector2(-2.5, 1)
-		])
-		_visual.add_child(cup)
-		var stem := Polygon2D.new()
-		stem.color = DARK
-		stem.polygon = PackedVector2Array([
-			Vector2(-1, 1), Vector2(1, 1), Vector2(2, 3), Vector2(-2, 3)
-		])
-		_visual.add_child(stem)
+		_build_cup()
 		body_entered.connect(_on_body)
+
+
+	func _build_cup() -> void:
+		# 12x12 设计图，居中到 10x8（x -5..+4, y -3..+4）
+		# 杯口
+		for x in range(2, 10):
+			_cell(x, 2, GOLD)
+		# 杯身
+		for y in range(3, 6):
+			for x in range(3, 9):
+				_cell(x, y, GOLD)
+		# 杯身收底
+		for x in range(4, 8):
+			_cell(x, 6, GOLD)
+		# 高光
+		_cell(3, 3, LIGHT)
+		_cell(4, 3, LIGHT)
+		_cell(3, 4, LIGHT)
+		# 杯柄
+		_cell(5, 7, DARK)
+		_cell(6, 7, DARK)
+		# 底座
+		for x in range(4, 8):
+			_cell(x, 8, GOLD)
+		for x in range(2, 10):
+			_cell(x, 9, DARK)
+		# 双耳
+		_cell(1, 3, GOLD)
+		_cell(1, 4, GOLD)
+		_cell(2, 5, GOLD)
+		_cell(10, 3, GOLD)
+		_cell(10, 4, GOLD)
+		_cell(9, 5, GOLD)
+
+
+	func _cell(gx: int, gy: int, color: Color) -> void:
+		var r := ColorRect.new()
+		r.color = color
+		r.position = Vector2(gx - 5, gy - 5)
+		r.size = Vector2(1, 1)
+		r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_visual.add_child(r)
 
 
 	func _process(delta: float) -> void:
