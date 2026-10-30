@@ -585,8 +585,8 @@ func _super_jump() -> void:
 		velocity.y *= duck_super_jump_y_mult
 		_event("Hyper" if dash_started_on_ground else "Ultra")
 	else:
-		_spawn_jump_dust(float(facing))
-	_event("Super")
+		_event("Super")
+	_spawn_jump_dust(float(facing))
 	_var_jump_speed = velocity.y
 	mode = Mode.NORMAL
 
