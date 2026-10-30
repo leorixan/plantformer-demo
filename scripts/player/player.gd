@@ -16,6 +16,8 @@ const CONTACT_MARGIN := 0.001
 ## 内缩 1px（物理盒 7 宽）给 1 砖缝留出 1px 余量，角落修正才能像参考那样稳定命中。
 const SHAPE_INSET := 1.0
 
+const JUMP_DUST := preload("res://scripts/fx/jump_dust.gd")
+
 @export_category("Body")
 const BODY_CRYSTAL_COLOR := Color(0.28, 0.78, 0.82, 1.0)
 const BODY_NO_DASH_COLOR := Color(0.35, 0.49, 0.57, 1.0)
@@ -569,6 +571,7 @@ func _jump() -> void:
 	velocity.y = -jump_speed
 	velocity.x += jump_speed_boost * move_x
 	_var_jump_speed = velocity.y
+	_spawn_jump_dust(0.0)
 	_event("Jump")
 
 # 参考 SuperJump：Ducking 时乘 Duck 倍率，这就是 Hyper / Ultra 的真实来源。
@@ -582,7 +585,8 @@ func _super_jump() -> void:
 		velocity.y *= duck_super_jump_y_mult
 		_event("Hyper" if dash_started_on_ground else "Ultra")
 	else:
-		_event("Super")
+		_spawn_jump_dust(float(facing))
+	_event("Super")
 	_var_jump_speed = velocity.y
 	mode = Mode.NORMAL
 
@@ -602,6 +606,7 @@ func _wall_jump(direction: int, super_wall: bool) -> void:
 	if move_x != 0.0:
 		_force_move_x = float(direction)
 		_force_move_x_timer = super_wall_jump_force_time if super_wall else wall_jump_force_time
+	_spawn_jump_dust(float(direction))
 	_event("SuperWallJump" if super_wall else "WallJump")
 	mode = Mode.NORMAL
 
@@ -633,6 +638,15 @@ func _climb_hop() -> void:
 	climb_hops += 1
 	mode = Mode.NORMAL
 	_event("ClimbHop")
+
+func _spawn_jump_dust(dir: float) -> void:
+	if not is_instance_valid(self) or get_parent() == null:
+		return
+	var dust := JUMP_DUST.new()
+	get_parent().add_child(dust)
+	if dust.has_method("setup"):
+		dust.call("setup", global_position + Vector2(0, -1), dir, 6)
+
 
 func _consume_jump() -> void:
 	_jump_buffer = 0.0
