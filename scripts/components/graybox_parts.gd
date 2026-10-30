@@ -74,7 +74,6 @@ class Crystal extends Area2D:
 		t.tween_property(_visual, "modulate:a", 1.0, 0.15)
 		t.set_parallel(false)
 		t.tween_property(_visual, "scale", Vector2(1.0, 1.0), 0.10)
-		t.finished.connect(_start_breathing)
 
 
 	func _start_breathing() -> void:
