@@ -6,6 +6,7 @@ extends Area2D
 
 @export var once := false
 @export var hide_delay := 0  # 0 = 玩家离开区域才消失
+@export var fade_time := 0.2   # 渐隐/渐显时长（0 = 直接切换）
 @export var label_path: NodePath = NodePath("") : set = _set_label_path   # 留空=用子节点 WorldLabel
 
 var _holder: Node2D
@@ -41,7 +42,7 @@ func _process(delta: float) -> void:
 	if _shown and hide_delay > 0.0:
 		_timer -= delta
 		if _timer <= 0.0:
-			_init_hidden()
+			_apply_visible(false)
 
 
 func _on_body_entered(body: Node2D) -> void:
@@ -59,7 +60,7 @@ func _on_body_exited(body: Node2D) -> void:
 	if not body.is_in_group("player") and body.name != "Player":
 		return
 	if hide_delay <= 0.0:
-		_init_hidden()
+		_apply_visible(false)
 
 
 func _init_hidden() -> void:
