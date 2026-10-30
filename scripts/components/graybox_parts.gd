@@ -272,3 +272,54 @@ class OneWay extends StaticBody2D:
 			_exception = true
 			_player = p
 			print("[oneway] pass dir=", pass_dir)
+
+
+class Trophy extends Area2D:
+	## 奖杯：固定 8x8 大小，上下浮动；碰到计数 +1 并消失
+	var level: Node
+	var size := Vector2(8, 8)
+	const GOLD := Color(0.96, 0.66, 0.16, 1.0)
+	const DARK := Color(0.72, 0.42, 0.08, 1.0)
+	const BOB_AMPLITUDE := 2.0
+	const BOB_PERIOD := 1.6
+
+	var _base_y := 0.0
+	var _t := 0.0
+	var _visual: Node2D
+
+
+	func _ready() -> void:
+		collision_mask = 2
+		var cs := CollisionShape2D.new()
+		var rect := RectangleShape2D.new()
+		rect.size = Vector2(8, 8)
+		cs.shape = rect
+		add_child(cs)
+		_base_y = position.y
+		_t = position.x * 0.15
+		_visual = Node2D.new()
+		add_child(_visual)
+		var cup := Polygon2D.new()
+		cup.color = GOLD
+		cup.polygon = PackedVector2Array([
+			Vector2(-4, -4), Vector2(4, -4), Vector2(2.5, 1), Vector2(-2.5, 1)
+		])
+		_visual.add_child(cup)
+		var stem := Polygon2D.new()
+		stem.color = DARK
+		stem.polygon = PackedVector2Array([
+			Vector2(-1, 1), Vector2(1, 1), Vector2(2, 3), Vector2(-2, 3)
+		])
+		_visual.add_child(stem)
+		body_entered.connect(_on_body)
+
+
+	func _process(delta: float) -> void:
+		_t += delta
+		position.y = _base_y + sin(_t * TAU / BOB_PERIOD) * BOB_AMPLITUDE
+
+
+	func _on_body(body: Node2D) -> void:
+		if body is CharacterBody2D and level:
+			level.call("collect_trophy")
+		queue_free()

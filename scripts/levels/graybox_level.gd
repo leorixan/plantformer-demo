@@ -7,9 +7,12 @@ extends Node2D
 const TILE := 8.0
 const HALF := 4.0
 const PLAYER_SCENE := "res://scenes/player/player.tscn"
+
+signal trophy_collected(total: int)
+var trophies_collected := 0
 const KIND_ORDER := ["terrain", "hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
 const ENTITY_KINDS := ["hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
-const ENTITY_ATLAS := ["hazard", "crystal", "spring", "breakable8", "breakable16", "dream", "oneway_up", "oneway_down", "oneway_left", "oneway_right", "checkpoint", "hazard_hidden"]
+const ENTITY_ATLAS := ["hazard", "crystal", "spring", "breakable8", "breakable16", "dream", "oneway_up", "oneway_down", "oneway_left", "oneway_right", "checkpoint", "hazard_hidden", "trophy"]
 
 var player: CharacterBody2D
 var spawn_pos := Vector2.ZERO
@@ -233,6 +236,12 @@ func _build_entity_rects() -> void:
 									if is_instance_valid(el):
 										for cc in clear_cells:
 											el.erase_cell(cc))
+				elif kind == "trophy":
+					var tro := _make_part(kind, Vector2(8, 8), pos)
+					if tro:
+						for yy in range(y0, y1 + 1):
+							for xx in range(x0, x1 + 1):
+								_entity_layer().erase_cell(Vector2i(xx, yy))
 				elif kind == "crystal":
 					var cnode := _make_part(kind, size, pos)
 					if cnode:
@@ -306,6 +315,10 @@ func _make_part(kind: String, size: Vector2, pos: Vector2) -> Node2D:
 			var cp = parts.Checkpoint.new()
 			cp.level = self
 			node = cp
+		"trophy":
+			var tr = parts.Trophy.new()
+			tr.level = self
+			node = tr
 		_:
 			return
 	node.set("size", size)
@@ -347,6 +360,12 @@ func respawn_player() -> void:
 	player.visible = true
 	player.set_physics_process(true)
 	_dying = false
+
+
+func collect_trophy() -> void:
+	trophies_collected += 1
+	trophy_collected.emit(trophies_collected)
+	print("[graybox] 奖杯计数: ", trophies_collected)
 
 
 func set_checkpoint(pos: Vector2) -> void:
@@ -433,7 +452,8 @@ func _hide_invisible_hazards() -> void:
 		return
 	var count := 0
 	for cell in ents.get_used_cells():
-		if _kind_of(ents, cell) == "hazard_hidden":
+		var k := _kind_of(ents, cell)
+		if k == "hazard_hidden" or k == "checkpoint":
 			ents.erase_cell(cell)
 			count += 1
 	# 地形层（8px）：粉色 tile 由 _build_tile_parts 生成 Hazard，这里只擦除可见 tile
