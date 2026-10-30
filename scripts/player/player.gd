@@ -79,7 +79,7 @@ const CRYSTAL_COLOR := Color(0.28, 0.78, 0.82, 1.0)
 @export var climb_still_stamina_cost := 10.0 # ClimbStillCost 100/10
 @export var climb_jump_stamina_cost := 27.5 # ClimbJumpCost 110/4
 @export var climb_check_distance := 2.0 # ClimbCheckDist；抓墙检测 + 贴墙吸附距离
-@export var wall_check_distance := 3.0 # WallJumpCheckDist
+@export var wall_check_distance := 2.0 # WallJumpCheckDist（墙跳检测距离）
 @export var slip_check_depth := 4.0 # SlipCheck 的探针深度
 @export var wall_jump_speed := 130.0 # WallJumpHSpeed = MaxRun + JumpHBoost
 @export var climb_hop_x := 100.0 # ClimbHopX
@@ -795,6 +795,9 @@ func get_dash_direction() -> Vector2:
 
 # 参考 WallJumpCheck：以 WallJumpCheckDist 做整箱检测。
 func _wall_jump_check(direction: int) -> bool:
+	# 预输入保护：如果人已经在往远离墙的方向移动，就不再判定为墙跳
+	if velocity.x * float(direction) < -20.0:
+		return false
 	return test_move(global_transform, Vector2(direction, 0.0) * wall_check_distance)
 
 func get_wall_direction() -> int:
