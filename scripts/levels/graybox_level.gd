@@ -99,7 +99,7 @@ func _migrate_entity_tiles() -> void:
 	for m in moves:
 		var src: Vector2i = m[0]
 		var dst: Vector2i = m[1]
-		ents.set_cell(dst, 0, ents.get_cell_atlas_coords(src))
+		ents.set_cell(dst, 0, dst)
 		ents.erase_cell(src)
 
 
