@@ -254,28 +254,29 @@ class Breakable extends StaticBody2D:
 		rng.randomize()
 		# 中心三分叉短裂纹（备选方案 2）
 		var center := Vector2i(w / 2, h / 2)
-		var dirs: Array = [Vector2i(-1, -1), Vector2i(1, 1), Vector2i(-1, 1)]
-		dirs.shuffle()
+		var dirs8: Array = [
+			Vector2i(1, 0), Vector2i(1, 1), Vector2i(0, 1), Vector2i(-1, 1),
+			Vector2i(-1, 0), Vector2i(-1, -1), Vector2i(0, -1), Vector2i(1, -1),
+		]
 		for i in 3:
-			var d: Vector2i = dirs[i]
-			var length := rng.randi_range(3, maxi(3, mini(w, h) * 2 / 3))
+			var idx := rng.randi_range(0, dirs8.size() - 1)
+			var length := rng.randi_range(maxi(3, w / 2), maxi(4, w - 2))
 			var pt := center
 			for step in range(length):
+				# mostly keep direction, sometimes turn 45 degrees -> jagged random lines
+				if rng.randf() < 0.35:
+					idx = (idx + rng.randi_range(-1, 1) + dirs8.size()) % dirs8.size()
+				var d: Vector2i = dirs8[idx]
 				pt += d
 				if pt.x < 1 or pt.y < 1 or pt.x >= w - 1 or pt.y >= h - 1:
 					break
 				img.set_pixel(pt.x, pt.y, CRACK)
-				# 抖动：让裂纹呈折线而不是直线
-				if rng.randf() < 0.65:
-					var jitter := Vector2i(rng.randi_range(-1, 1), rng.randi_range(-1, 1))
-					if jitter != Vector2i.ZERO:
-						var jt := pt + jitter
-						if jt.x >= 1 and jt.y >= 1 and jt.x < w - 1 and jt.y < h - 1:
-							img.set_pixel(jt.x, jt.y, CRACK)
+				# occasional short 1px side branch
 				if rng.randf() < 0.3:
-					d += Vector2i(rng.randi_range(-1, 1), rng.randi_range(-1, 1))
-					if d == Vector2i.ZERO:
-						d = dirs[i]
+					var bi := (idx + rng.randi_range(1, 3)) % dirs8.size()
+					var bp: Vector2i = pt + dirs8[bi]
+					if bp.x >= 1 and bp.y >= 1 and bp.x < w - 1 and bp.y < h - 1:
+						img.set_pixel(bp.x, bp.y, CRACK)
 		for off in [Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 1)]:
 			img.set_pixel(center.x + off.x, center.y + off.y, CRACK)
 		# 更多随机 1px 边缘缺损
