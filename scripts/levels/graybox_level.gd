@@ -16,7 +16,18 @@ var _collected_trophy_cells: Dictionary = {}
 var trophies_collected := 0
 const KIND_ORDER := ["terrain", "hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
 const ENTITY_KINDS := ["hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
-const ENTITY_ATLAS := ["hazard", "crystal", "spring", "breakable8", "breakable16", "dream", "oneway_up", "oneway_down", "oneway_left", "oneway_right", "checkpoint", "hazard_hidden", "trophy", "spring_down", "spring_left", "spring_right"]
+const ENTITY_ATLAS := ["hazard", "crystal", "breakable8", "breakable16", "dream", "checkpoint", "hazard_hidden", "trophy", "spring_up", "spring_down", "spring_left", "spring_right", "oneway_up", "oneway_down", "oneway_left", "oneway_right"]
+# 旧版图集坐标 → v7 双行坐标（运行时自动迁移旧地图）
+const ENTITY_TILE_MIGRATION := {
+	Vector2i(0, 0): Vector2i(0, 0), Vector2i(1, 0): Vector2i(1, 0),
+	Vector2i(2, 0): Vector2i(0, 1), Vector2i(3, 0): Vector2i(2, 0),
+	Vector2i(4, 0): Vector2i(3, 0), Vector2i(5, 0): Vector2i(4, 0),
+	Vector2i(6, 0): Vector2i(4, 1), Vector2i(7, 0): Vector2i(5, 1),
+	Vector2i(8, 0): Vector2i(6, 1), Vector2i(9, 0): Vector2i(7, 1),
+	Vector2i(10, 0): Vector2i(5, 0), Vector2i(11, 0): Vector2i(6, 0),
+	Vector2i(12, 0): Vector2i(7, 0), Vector2i(13, 0): Vector2i(1, 1),
+	Vector2i(14, 0): Vector2i(2, 1), Vector2i(15, 0): Vector2i(3, 1),
+}
 
 var player: CharacterBody2D
 var spawn_pos := Vector2.ZERO
@@ -25,6 +36,7 @@ var _terrain_cells: Dictionary = {}
 
 
 func _ready() -> void:
+	_migrate_entity_tiles()
 	# 复活重置用：初始 tile 快照
 	var _el := _entity_layer()
 	var _tl := _terrain_layer()
@@ -70,6 +82,25 @@ func _terrain_layer() -> TileMapLayer:
 
 func _entity_layer() -> TileMapLayer:
 	return get_node_or_null("Entities") as TileMapLayer
+
+
+func _migrate_entity_tiles() -> void:
+	# 把旧版单行图集的格子迁移到 v7 双行图集坐标（弹簧/单向墙移到第二行）
+	var ents := _entity_layer()
+	if ents == null:
+		return
+	var moves: Array = []
+	for cell in ents.get_used_cells():
+		var coord := ents.get_cell_atlas_coords(cell)
+		if coord.y == 0 and ENTITY_TILE_MIGRATION.has(coord):
+			var target: Vector2i = ENTITY_TILE_MIGRATION[coord]
+			if target != coord:
+				moves.append([cell, target])
+	for m in moves:
+		var src: Vector2i = m[0]
+		var dst: Vector2i = m[1]
+		ents.set_cell(dst, 0, ents.get_cell_atlas_coords(src))
+		ents.erase_cell(src)
 
 
 func _kind_of(layer: TileMapLayer, cell: Vector2i) -> String:
