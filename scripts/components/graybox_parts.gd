@@ -22,41 +22,137 @@ class Hazard extends Area2D:
 
 
 class Crystal extends Area2D:
-	var size := Vector2(8, 8)
-	var entity_layer: TileMapLayer
-	var cooldown_layer: TileMapLayer
-	var cells: Array = []
+	## 冲刺水晶：8x8 45°菱形（备选 #1），呼吸缩放；拾取后消失并留下白色虚线勾边，2.5s 恢复
+	const SIZE := Vector2(8, 8)
+	const RESPAWN_TIME := 2.5
+	const BASE := Color(0.28, 0.78, 0.82, 1.0)
+	const LIGHT := Color(0.65, 0.95, 0.98, 1.0)
+	const WHITE := Color(0.90, 0.99, 1.0, 1.0)
+	const DARK := Color(0.12, 0.45, 0.55, 1.0)
+	const OUTLINE := Color(0.05, 0.22, 0.30, 1.0)
+	const DASH_COLOR := Color(1.0, 1.0, 1.0, 0.8)
+	const BURST_COLOR := Color(0.60, 0.95, 0.95, 0.9)
+	const DUST := preload("res://scripts/fx/jump_dust.gd")
+	const ROWS := [[3, 4], [2, 5], [1, 6], [0, 7], [0, 7], [1, 6], [2, 5], [3, 4]]
+
+	var size := SIZE
 	var _monitor: CollisionShape2D
+	var _visual: Node2D
+	var _outline: Node2D
+	var _cooldown := false
+	var _breath: Tween
+
 
 	func _ready() -> void:
 		collision_mask = 2
 		_monitor = CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
-		rect.size = size
+		rect.size = SIZE
 		_monitor.shape = rect
 		add_child(_monitor)
 		body_entered.connect(_on_body)
+		_visual = Node2D.new()
+		_visual.name = "Visual"
+		add_child(_visual)
+		_build_visual()
+		_outline = Node2D.new()
+		_outline.name = "DashedOutline"
+		add_child(_outline)
+		_build_outline()
+		_outline.visible = false
+		_start_breathing()
+
+
+	func _start_breathing() -> void:
+		_breath = create_tween()
+		_breath.set_loops()
+		_breath.tween_property(_visual, "scale", Vector2(1.12, 1.12), 0.6)
+		_breath.tween_property(_visual, "scale", Vector2(1.0, 1.0), 0.6)
+
+
+	func _cell(gx: int, gy: int, color: Color, parent: Node2D) -> void:
+		var r := ColorRect.new()
+		r.color = color
+		r.position = Vector2(gx - 4, gy - 4)
+		r.size = Vector2(1, 1)
+		r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		parent.add_child(r)
+
+
+	func _build_visual() -> void:
+		var fill: Dictionary = {}
+		for y in 8:
+			for x in range(int(ROWS[y][0]), int(ROWS[y][1]) + 1):
+				fill[Vector2i(x, y)] = BASE
+		for pt in [Vector2i(3, 1), Vector2i(2, 2), Vector2i(3, 2), Vector2i(2, 3), Vector2i(3, 3)]:
+			fill[pt] = LIGHT
+		fill[Vector2i(4, 1)] = WHITE
+		for pt in [Vector2i(5, 4), Vector2i(6, 4), Vector2i(5, 5), Vector2i(6, 5)]:
+			fill[pt] = DARK
+		var outline: Dictionary = {}
+		for pt in fill:
+			var p: Vector2i = pt
+			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				var np: Vector2i = p + d
+				if not fill.has(np) and np.x >= 0 and np.x < 8 and np.y >= 0 and np.y < 8:
+					outline[np] = OUTLINE
+		for pt in outline:
+			_cell(pt.x, pt.y, OUTLINE, _visual)
+		for pt in fill:
+			_cell(pt.x, pt.y, fill[pt], _visual)
+
+
+	func _build_outline() -> void:
+		# 菱形边缘格子，每隔一格画一个白点形成虚线勾边
+		var edge_cells: Array = []
+		for y in 8:
+			for x in range(int(ROWS[y][0]), int(ROWS[y][1]) + 1):
+				var is_edge := false
+				for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+					var np: Vector2i = Vector2i(x, y) + d
+					var cx := np.x
+					var cy := np.y
+					var in_rows := cy >= 0 and cy < 8 and cx >= int(ROWS[cy][0]) and cx <= int(ROWS[cy][1])
+					if not in_rows:
+						is_edge = true
+						break
+				if is_edge:
+					edge_cells.append(Vector2i(x, y))
+		for pt in edge_cells:
+			if (pt.x + pt.y) % 2 == 0:
+				_cell(pt.x, pt.y, DASH_COLOR, _outline)
+
 
 	func _on_body(body: Node2D) -> void:
-		if not (body is CharacterBody2D) or _monitor.disabled:
+		if _cooldown or not (body is CharacterBody2D) or _monitor.disabled:
 			return
 		if body.has_method("refill_dash"):
 			body.call("refill_dash")
 		if body.has_method("hitstop_frames"):
 			body.call("hitstop_frames", 2)
+		_cooldown = true
 		_monitor.set_deferred("disabled", true)
-		# 冷却视觉：水晶从 Entities 层移到灰色层
-		if entity_layer and cooldown_layer:
-			for e in cells:
-				entity_layer.erase_cell(e[0])
-				cooldown_layer.set_cell(e[0], int(e[1]), e[2])
-		await get_tree().create_timer(2.5).timeout
-		if is_instance_valid(_monitor):
-			_monitor.set_deferred("disabled", false)
-		if entity_layer and cooldown_layer:
-			for e in cells:
-				cooldown_layer.erase_cell(e[0])
-				entity_layer.set_cell(e[0], int(e[1]), e[2])
+		_visual.visible = false
+		_outline.visible = true
+		_spawn_burst()
+		await get_tree().create_timer(RESPAWN_TIME).timeout
+		if not is_instance_valid(self):
+			return
+		_cooldown = false
+		_visual.visible = true
+		_outline.visible = false
+		_monitor.set_deferred("disabled", false)
+
+
+	func _spawn_burst() -> void:
+		var dust: Node = DUST.new()
+		var parent := get_parent()
+		if parent == null:
+			return
+		parent.add_child(dust)
+		if dust.has_method("setup"):
+			dust.call("setup", global_position, 0.0, 10, BURST_COLOR)
+
 
 class Spring extends Area2D:
 	var size := Vector2(8, 8)
