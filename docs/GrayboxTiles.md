@@ -36,7 +36,7 @@
 | 图层 | 图集 | 索引 | 颜色 | 行为 |
 |---|---|---|---|---|
 | Terrain（8px） | `graybox_tileset_v2.tres` | 7 | 浅红 (1.0,0.55,0.55) | 功能同红色伤害区；**运行时 tile 被擦除，游戏中不可见**，仅编辑器里可见 |
-| Entities（4px，兼容旧图） | `entity_tileset_v4.tres` | 11 | 浅红 | 旧地图保留；新地图请用地形层粉色 |
+| Entities（4px，兼容旧图） | `entity_tileset_v5.tres` | 11 | 浅红 | 旧地图保留；新地图请用地形层粉色 |
 
 - 模板、`level.tscn`、两个 showcase 都已切到 `graybox_tileset_v2.tres`
 - 旧地图实体层的粉色 tile 已迁移到地形层（每个 4px cell → 对应 8px 地形格）
