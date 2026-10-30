@@ -33,6 +33,7 @@ class Crystal extends Area2D:
 	const DASH_COLOR := Color(1.0, 1.0, 1.0, 0.8)
 	const BURST_COLOR := Color(0.60, 0.95, 0.95, 0.9)
 	const DUST := preload("res://scripts/fx/jump_dust.gd")
+	const TEXTURE := preload("res://assets/graybox/crystal_diamond.png")
 	const ROWS := [[3, 4], [2, 5], [1, 6], [0, 7], [0, 7], [1, 6], [2, 5], [3, 4]]
 
 	var size := SIZE
@@ -97,14 +98,8 @@ class Crystal extends Area2D:
 
 
 	func _build_visual() -> void:
-		var img := Image.create(8, 8, false, Image.FORMAT_RGBA8)
-		for y in 8:
-			for x in range(int(ROWS[y][0]), int(ROWS[y][1]) + 1):
-				img.set_pixel(x, y, BASE)
-		for pt in [Vector2i(3, 1), Vector2i(2, 2), Vector2i(3, 2), Vector2i(2, 3)]:
-			img.set_pixel(pt.x, pt.y, LIGHT)
 		var spr := Sprite2D.new()
-		spr.texture = ImageTexture.create_from_image(img)
+		spr.texture = TEXTURE
 		spr.centered = true
 		_visual.add_child(spr)
 
