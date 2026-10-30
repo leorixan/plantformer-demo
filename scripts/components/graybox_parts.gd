@@ -22,18 +22,19 @@ class Hazard extends Area2D:
 
 
 class Crystal extends Area2D:
-	## 冲刺水晶：16x16 单张贴图 + 呼吸缩放（历史 dash_refill 方案），2.5 秒后重新出现
+	## 冲刺水晶：单张 8x8 贴图，无任何动画；拾取后留下白色虚线勾边，2.5 秒后恢复
 	const RESPAWN_TIME := 2.5
-	const BURST_COLOR := Color(0.6, 0.95, 0.95, 1.0)
+	const BURST_COLOR := Color(0.6, 0.95, 0.95, 0.9)
 	const DUST := preload("res://scripts/fx/jump_dust.gd")
-	const TEXTURE := preload("res://assets/art/objects/refill.png")
+	const TEXTURE := preload("res://assets/graybox/crystal_diamond.png")
+	const DASH_COLOR := Color(1.0, 1.0, 1.0, 0.8)
+	const ROWS := [[3, 4], [2, 5], [1, 6], [0, 7], [0, 7], [1, 6], [2, 5], [3, 4]]
 
 	var size := Vector2(8, 8)
-	var level: Node
 	var _sprite: Sprite2D
+	var _outline: Node2D
 	var _monitor: CollisionShape2D
 	var _cooldown := false
-	var _idle: Tween
 
 
 	func _ready() -> void:
@@ -48,17 +49,37 @@ class Crystal extends Area2D:
 		_sprite.texture = TEXTURE
 		_sprite.centered = true
 		add_child(_sprite)
-		_start_idle()
+		_outline = Node2D.new()
+		_outline.name = "DashedOutline"
+		add_child(_outline)
+		_build_outline()
+		_outline.visible = false
 
 
-	func _start_idle() -> void:
-		if _idle and _idle.is_valid():
-			_idle.kill()
-		_sprite.scale = Vector2.ONE
-		_idle = create_tween()
-		_idle.set_loops()
-		_idle.tween_property(_sprite, "scale", Vector2(1.12, 1.12), 0.6)
-		_idle.tween_property(_sprite, "scale", Vector2.ONE, 0.6)
+	func _build_outline() -> void:
+		var edge_cells: Array = []
+		for y in 8:
+			for x in range(int(ROWS[y][0]), int(ROWS[y][1]) + 1):
+				var is_edge := false
+				for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+					var np: Vector2i = Vector2i(x, y) + d
+					var in_rows := np.y >= 0 and np.y < 8 and np.x >= int(ROWS[np.y][0]) and np.x <= int(ROWS[np.y][1])
+					if not in_rows:
+						is_edge = true
+						break
+				if is_edge:
+					edge_cells.append(Vector2i(x, y))
+		edge_cells.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+			return atan2(float(a.y) - 3.5, float(a.x) - 3.5) < atan2(float(b.y) - 3.5, float(b.x) - 3.5))
+		for i in edge_cells.size():
+			if i % 2 == 0:
+				var pt: Vector2i = edge_cells[i]
+				var r := ColorRect.new()
+				r.color = DASH_COLOR
+				r.position = Vector2(pt.x - 4, pt.y - 4)
+				r.size = Vector2(1, 1)
+				r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				_outline.add_child(r)
 
 
 	func _on_body(body: Node2D) -> void:
@@ -71,14 +92,15 @@ class Crystal extends Area2D:
 		_cooldown = true
 		_monitor.set_deferred("disabled", true)
 		_sprite.visible = false
+		_outline.visible = true
 		_spawn_burst()
 		await get_tree().create_timer(RESPAWN_TIME).timeout
 		if not is_instance_valid(self):
 			return
 		_cooldown = false
 		_sprite.visible = true
+		_outline.visible = false
 		_monitor.set_deferred("disabled", false)
-		_start_idle()
 
 
 	func _spawn_burst() -> void:
