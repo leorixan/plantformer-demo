@@ -14,10 +14,10 @@ func setup(pos: Vector2, dir: float, amount: int, color: Color = Color(0.92, 0.9
 	rng.randomize()
 	for i in amount:
 		var rect := ColorRect.new()
-		rect.size = Vector2(2, 2)
+		rect.size = Vector2(1, 1)
 		rect.color = color
 		rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		rect.position = Vector2(-1, -1) + Vector2(rng.randf_range(-2.0, 2.0), rng.randf_range(-1.0, 1.0))
+		rect.position = Vector2(0, 0) + Vector2(rng.randf_range(-2.0, 2.0), rng.randf_range(-1.0, 1.0))
 		add_child(rect)
 		var vx := rng.randf_range(-22.0, 22.0) + dir * 26.0
 		var vy := rng.randf_range(-34.0, -8.0)
