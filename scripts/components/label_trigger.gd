@@ -5,13 +5,14 @@ extends Area2D
 ## 脚本只负责：玩家进入区域时显示 WorldLabel，离开/超时后隐藏
 
 @export var once := false
-@export var hide_delay := 0.0   # 0 = 玩家离开区域才消失
+@export var hide_delay := 0  # 0 = 玩家离开区域才消失
 @export var label_path: NodePath = NodePath("") : set = _set_label_path   # 留空=用子节点 WorldLabel
 
 var _holder: Node2D
 var _shown := false
 var _used := false
 var _timer := 0.0
+var _tween: Tween
 
 
 func _ready() -> void:
@@ -23,7 +24,7 @@ func _ready() -> void:
 	monitorable = false
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
-	_apply_visible(false)
+	_init_hidden()
 
 
 func _refs() -> void:
@@ -40,7 +41,7 @@ func _process(delta: float) -> void:
 	if _shown and hide_delay > 0.0:
 		_timer -= delta
 		if _timer <= 0.0:
-			_apply_visible(false)
+			_init_hidden()
 
 
 func _on_body_entered(body: Node2D) -> void:
@@ -58,13 +59,38 @@ func _on_body_exited(body: Node2D) -> void:
 	if not body.is_in_group("player") and body.name != "Player":
 		return
 	if hide_delay <= 0.0:
-		_apply_visible(false)
+		_init_hidden()
+
+
+func _init_hidden() -> void:
+	_shown = false
+	if _holder == null:
+		return
+	_holder.visible = false
+	_holder.modulate.a = 0.0
 
 
 func _apply_visible(on: bool) -> void:
 	_shown = on
-	if _holder != null:
-		_holder.visible = on
+	if _holder == null:
+		return
+	if _tween != null and _tween.is_valid():
+		_tween.kill()
+	if on:
+		_holder.visible = true
+		if fade_time <= 0.0:
+			_holder.modulate.a = 1.0
+		else:
+			_tween = create_tween()
+			_tween.tween_property(_holder, "modulate:a", 1.0, fade_time)
+	else:
+		if fade_time <= 0.0 or not _holder.visible:
+			_holder.modulate.a = 0.0
+			_holder.visible = false
+		else:
+			_tween = create_tween()
+			_tween.tween_property(_holder, "modulate:a", 0.0, fade_time)
+			_tween.tween_callback(func() -> void: _holder.visible = false)
 
 
 
