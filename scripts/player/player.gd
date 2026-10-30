@@ -81,7 +81,8 @@ const CRYSTAL_COLOR := Color(0.28, 0.78, 0.82, 1.0)
 @export var climb_still_stamina_cost := 10.0 # ClimbStillCost 100/10
 @export var climb_jump_stamina_cost := 27.5 # ClimbJumpCost 110/4
 @export var climb_check_distance := 2.0 # ClimbCheckDist；抓墙检测 + 贴墙吸附距离
-@export var wall_check_distance := 0.5 # WallJumpCheckDist（墙跳检测距离，越小越严格）
+@export var wall_check_distance := 0.5 # WallJumpCheckDist（普通墙跳检测距离，越小越严格）
+@export var dash_wall_check_distance := 3.0 # 冲刺中墙跳检测距离（比普通墙跳宽松）
 @export var slip_check_depth := 4.0 # SlipCheck 的探针深度
 @export var wall_jump_speed := 130.0 # WallJumpHSpeed = MaxRun + JumpHBoost
 @export var climb_hop_x := 100.0 # ClimbHopX
@@ -432,13 +433,19 @@ func _dash_update() -> void:
 # 参考 DashUpdate 的墙跳分支：先右后左检测；纯上 Dash 撞墙走 SuperWallJump。
 func _try_dash_wall_jump() -> bool:
 	var super_wall := dash_dir.x == 0.0 and dash_dir.y < 0.0
-	if _wall_jump_check(1):
+	if _wall_jump_check_dash(1):
 		_wall_jump(-1, super_wall)
 		return true
-	if _wall_jump_check(-1):
+	if _wall_jump_check_dash(-1):
 		_wall_jump(1, super_wall)
 		return true
 	return false
+
+
+func _wall_jump_check_dash(direction: int) -> bool:
+	if velocity.x * float(direction) < -20.0:
+		return false
+	return test_move(global_transform, Vector2(direction, 0.0) * dash_wall_check_distance)
 
 # 参考 ClimbUpdate：target 默认 0（抓住不动），只有 SlipCheck 命中（手高过墙沿）才下滑。
 func _climb_update(delta: float) -> void:
