@@ -22,110 +22,43 @@ class Hazard extends Area2D:
 
 
 class Crystal extends Area2D:
-	## 冲刺水晶：8x8 45°菱形（备选 #1），呼吸缩放；拾取后消失并留下白色虚线勾边，2.5s 恢复
-	const SIZE := Vector2(8, 8)
+	## 冲刺水晶：16x16 单张贴图 + 呼吸缩放（历史 dash_refill 方案），2.5 秒后重新出现
 	const RESPAWN_TIME := 2.5
-	const BASE := Color(0.28, 0.78, 0.82, 1.0)
-	const LIGHT := Color(0.65, 0.95, 0.98, 1.0)
-	const WHITE := Color(0.90, 0.99, 1.0, 1.0)
-	const DARK := Color(0.12, 0.45, 0.55, 1.0)
-	const OUTLINE := Color(0.05, 0.22, 0.30, 1.0)
-	const DASH_COLOR := Color(1.0, 1.0, 1.0, 0.8)
-	const BURST_COLOR := Color(0.60, 0.95, 0.95, 0.9)
+	const BURST_COLOR := Color(0.6, 0.95, 0.95, 1.0)
 	const DUST := preload("res://scripts/fx/jump_dust.gd")
-	const TEXTURE := preload("res://assets/graybox/crystal_diamond.png")
-	const ROWS := [[3, 4], [2, 5], [1, 6], [0, 7], [0, 7], [1, 6], [2, 5], [3, 4]]
+	const TEXTURE := preload("res://assets/art/objects/refill.png")
 
-	var size := SIZE
+	var size := Vector2(8, 8)
+	var level: Node
+	var _sprite: Sprite2D
 	var _monitor: CollisionShape2D
-	var _visual: Node2D
-	var _outline: Node2D
 	var _cooldown := false
-	var _breath: Tween
+	var _idle: Tween
 
 
 	func _ready() -> void:
 		collision_mask = 2
 		_monitor = CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
-		rect.size = SIZE
+		rect.size = size
 		_monitor.shape = rect
 		add_child(_monitor)
 		body_entered.connect(_on_body)
-		_visual = Node2D.new()
-		_visual.name = "Visual"
-		add_child(_visual)
-		_build_visual()
-		_outline = Node2D.new()
-		_outline.name = "DashedOutline"
-		add_child(_outline)
-		_build_outline()
-		_outline.visible = false
-		_play_appear()
+		_sprite = Sprite2D.new()
+		_sprite.texture = TEXTURE
+		_sprite.centered = true
+		add_child(_sprite)
+		_start_idle()
 
 
-	func _play_appear() -> void:
-		if _breath and _breath.is_valid():
-			_breath.kill()
-		_visual.scale = Vector2(0.01, 0.01)
-		_visual.modulate.a = 0.0
-		var t := create_tween()
-		t.set_parallel(true)
-		t.tween_property(_visual, "scale", Vector2(1.12, 1.12), 0.15)
-		t.tween_property(_visual, "modulate:a", 1.0, 0.15)
-		t.set_parallel(false)
-		t.tween_property(_visual, "scale", Vector2(1.0, 1.0), 0.10)
-		t.finished.connect(_start_breath)
-
-
-	func _start_breath() -> void:
-		if _breath and _breath.is_valid():
-			_breath.kill()
-		_breath = create_tween()
-		_breath.set_loops()
-		_breath.tween_interval(1.2)
-		_breath.tween_property(_visual, "scale", Vector2(1.10, 1.10), 0.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		_breath.tween_property(_visual, "scale", Vector2(1.0, 1.0), 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-
-
-	func _cell(gx: int, gy: int, color: Color, parent: Node2D) -> void:
-		var r := ColorRect.new()
-		r.color = color
-		r.position = Vector2(gx - 4, gy - 4)
-		r.size = Vector2(1, 1)
-		r.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		parent.add_child(r)
-
-
-	func _build_visual() -> void:
-		var spr := Sprite2D.new()
-		spr.texture = TEXTURE
-		spr.centered = true
-		_visual.add_child(spr)
-
-
-	func _build_outline() -> void:
-		# 菱形边缘格子，每隔一格画一个白点形成虚线勾边
-		var edge_cells: Array = []
-		for y in 8:
-			for x in range(int(ROWS[y][0]), int(ROWS[y][1]) + 1):
-				var is_edge := false
-				for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-					var np: Vector2i = Vector2i(x, y) + d
-					var cx := np.x
-					var cy := np.y
-					var in_rows := cy >= 0 and cy < 8 and cx >= int(ROWS[cy][0]) and cx <= int(ROWS[cy][1])
-					if not in_rows:
-						is_edge = true
-						break
-				if is_edge:
-					edge_cells.append(Vector2i(x, y))
-		edge_cells.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
-			return atan2(float(a.y) - 3.5, float(a.x) - 3.5) < atan2(float(b.y) - 3.5, float(b.x) - 3.5))
-		for i in edge_cells.size():
-			if i % 2 == 0:
-				var pt: Vector2i = edge_cells[i]
-				_cell(pt.x, pt.y, DASH_COLOR, _outline)
+	func _start_idle() -> void:
+		if _idle and _idle.is_valid():
+			_idle.kill()
+		_sprite.scale = Vector2.ONE
+		_idle = create_tween()
+		_idle.set_loops()
+		_idle.tween_property(_sprite, "scale", Vector2(1.12, 1.12), 0.6)
+		_idle.tween_property(_sprite, "scale", Vector2.ONE, 0.6)
 
 
 	func _on_body(body: Node2D) -> void:
@@ -137,17 +70,15 @@ class Crystal extends Area2D:
 			body.call("hitstop_frames", 2)
 		_cooldown = true
 		_monitor.set_deferred("disabled", true)
-		_visual.visible = false
-		_outline.visible = true
+		_sprite.visible = false
 		_spawn_burst()
 		await get_tree().create_timer(RESPAWN_TIME).timeout
 		if not is_instance_valid(self):
 			return
 		_cooldown = false
-		_visual.visible = true
-		_outline.visible = false
-		_play_appear()
+		_sprite.visible = true
 		_monitor.set_deferred("disabled", false)
+		_start_idle()
 
 
 	func _spawn_burst() -> void:

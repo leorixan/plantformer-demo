@@ -51,7 +51,7 @@ res://
 | `Game` | 检查点记录、即时复活、死亡次数/坐标统计、关卡切换 | `set_checkpoint(pos)` / `respawn()` / `record_death(pos)` / 信号 `player_died(pos)` |
 | `Assist` | 辅助模式设置（全局生效） | `speed_scale: float` / `infinite_dash: bool` / `apply()`（写 Engine.time_scale） |
 
-> 不引入全局 EventBus。跨节点通信优先用 Godot 信号直连；`Game.player_died` 是唯一需要的全局信号（供死亡统计、特效、音效订阅）。
+> 目前没有全局 EventBus。跨节点通信优先用 Godot 信号直连，唯一需要的全局信号是 `Game.player_died`（供死亡统计、特效、音效订阅）。
 
 ---
 
@@ -67,10 +67,10 @@ Player (CharacterBody2D, player.gd)          # 唯一写 velocity 的地方
 └── ControllerDebug (Label)                  # show_controller_debug 打开
 ```
 
-对齐 CelestePlayerReference.txt `Player.cs`：参考实现的 `StateMachine` 只是 Player 内部的 `int State` + 回调表，
-**不是独立节点树**。原先的 `states/*.gd` 子节点方案会让多个节点在同一帧各写一次 `velocity`，
-并读到上一帧的 `is_on_floor()`，Super/Hyper/Ultra 因此永远无法稳定触发。故已删除
-`scripts/player/states/`，改为 Player 内 `enum Mode { NORMAL, DASH, CLIMB }`：
+对齐 CelestePlayerReference.txt `Player.cs`：参考实现的 `StateMachine` 只是 Player 内部的一个 `int State` 加回调表，
+没有独立的节点树。我早期按 `states/*.gd` 拆过子节点，结果多个节点在同一帧各写一次 `velocity`，
+还读到上一帧的 `is_on_floor()`，Super/Hyper/Ultra 一直无法稳定触发。后来删掉
+`scripts/player/states/`，改成 Player 内的 `enum Mode { NORMAL, DASH, CLIMB }`：
 
 - `_normal_update` / `_dash_update` / `_climb_update` 一一对应参考的 `NormalUpdate` / `DashUpdate` / `ClimbUpdate`。
 - 固定帧序（`_physics_process`）：采样输入 → 计时器 → 状态更新 → **一次** `move_and_slide()` → `_resolve_collisions()`。
@@ -86,7 +86,7 @@ Player (CharacterBody2D, player.gd)          # 唯一写 velocity 的地方
 - 游戏中按 **F5** 即可重新加载 CSV 并应用，无需重启 Godot。
 - **数值基准**：与参考实现完全同规格 —— **1 砖 = 8px**，视口 **320×180**，
   站立碰撞箱 **8×11**、下蹲 **8×6**（原点在脚底，参考 `normalHitbox = Hitbox(8, 11, -4, -11)` / `duckHitbox = Hitbox(8, 6, -4, -6)`）。
-  **所有参数直接来自 CelestePlayerReference.txt 常量区，不做任何缩放**，因此表里没有小数尾巴。
+  **所有参数直接来自 CelestePlayerReference.txt 常量区，不做任何缩放**，表里的数没有小数尾巴。
   按住跳实测跳高 **28.6px ≈ 3.6 砖**，与参考一致。
 - **Godot 适配的两个 epsilon**（`player.gd` 顶部常量，非玩法参数）：
   `CONTACT_MARGIN = 0.001` 用于贴墙吸附（默认 0.08 安全边距会把"刚好贴上"判成命中，差 1px 会让 `SlipCheck` 误判成手已过墙沿而下滑）；
@@ -120,9 +120,9 @@ CSV 列：`category, name, value, type, description`。当前包含：
 - **Dash 起手冻结**：参考 `DashBegin` 的 `Freeze(.05)`（见 CelestePlayerReference.txt:3442-3467） + `DashCoroutine` 开头的 `yield return null` ——
   按下 K 立刻清零速度与 `dash_dir` 并冻结 `dash_freeze_time`（0.05s ≈ 3 帧），**方向留到冻结结束才采样**。
   这是"八向方向判定没有延迟"的关键：K 与方向键同帧甚至晚一两帧按下都能吃到正确方向。
-- **可变跳高**：来自 CelestePlayerReference.txt 的 `varJumpTimer` —— 按住跳时 `velocity.y = min(velocity.y, varJumpSpeed)` 维持 `var_jump_time`，松手立即清零。这是跳高的主要来源，不是 `jump_cut_mult`。
+- **可变跳高**：来自 CelestePlayerReference.txt 的 `varJumpTimer` —— 按住跳时 `velocity.y = min(velocity.y, varJumpSpeed)` 维持 `var_jump_time`，松手立即清零。跳高主要靠这一条，`jump_cut_mult` 管的是松手时的截断。
 - **角落修正**：参考 `Player.cs` 的 `OnCollideV`。上升撞顶时用**移动前**的 `vy` 判定，逐像素探测 **(±i, -1)** 处整箱是否放得下并整体平移；修正失败才按 `ceiling_var_jump_grace` 掐掉可变跳。另有 `DashCornerCorrection`：空中起手的 Dash 撞地角时横移让位（`dash_started_on_ground` 为 false 才生效）。
-  探测照参考用 **整箱重叠检测**（`CollideCheck<Solid>`）而不是扫掠 `test_move` —— 8px 宽的身体钻 8px 宽的缝，扫掠会被两侧墙擦到而永远失败。
+  探测照参考用 **整箱重叠检测**（`CollideCheck<Solid>`）。8px 宽的身体钻 8px 宽的缝，扫掠 `test_move` 会被两侧墙擦到，永远失败。
 - **下蹲（Ducking）**：参考 `NormalUpdate` 的 Ducking 段。地面按下方向即蹲（碰撞箱 8×11 → 8×6，**底边固定在脚下**，所以切换不会挪动角色）；
   蹲下时地面用 `duck_friction` 500 压住水平速度；松开下方向后先 `CanUnDuck` 判定头顶空间，站不起来就保持蹲伏，
   完全静止时按 `duck_correct_check` 4px 内左右探测，找到能站起来的一侧就以 `duck_correct_slide` 50px/s 横向让位。
@@ -176,7 +176,7 @@ CSV 列：`category, name, value, type, description`。当前包含：
 ### 4.5 高级技巧复现（Super / Hyper / Ultra / SuperWallJump / 兔子跳）
 
 > 参考：`docs/CelestePlayerReference.txt` 的 `DashCoroutine`(3548) / `DashUpdate`(3474) / `SuperJump`(1695) / `OnCollideV`(2504)。
-> **已实现**。这些技巧不是独立动作，而是从 `Dash Slide + SuperJump + Ducking` 三条规则里**涌现**出来的。
+> **已实现**。这些技巧都是从 `Dash Slide + SuperJump + Ducking` 三条规则里**涌现**出来的，代码里没有独立的技巧动作。
 
 关键发现：Hyper 与 Ultra 在参考里**是同一段代码**。区别只在 Dash 起手位置：
 
@@ -222,7 +222,7 @@ CSV 列：`category, name, value, type, description`。当前包含：
    还会关掉只对空中起手生效的 Dash 撞地角落修正。
 12. **dash 补充冷却写在起手处**（参考 `DashBegin` 3451 `dashRefillCooldownTimer = DashRefillCooldown` 0.1s），
    补充条件是"冷却结束 且 `onGround` 且脚下 1px 有实体"（718-739）。
-   所以 **Wavedash 起飞那一刻 dash 必然还是 0**（冷却没走完就已离地），落地后才补满 —— 这与参考一致，不是 bug。
+   所以 **Wavedash 起飞那一刻 dash 必然还是 0**（冷却没走完就已离地），落地后才补满 —— 这一点和参考实现一致。
 
 **自动化验收**：`scripts/debug/player_regression.gd`（真实物理回归，**82 条断言**）+
 `scripts/debug/room_regression.gd`（测试房几何回归：坑宽把关 / 死亡复活 / 存档点与门洞）
@@ -237,7 +237,7 @@ godot --headless --path . --script res://scripts/debug/room_regression.gd
 斜下 Dash 触地不清零水平速度、Dash 自然结束保速、按住跳 vs 点按跳高（含空中墙跳 / 攀爬墙跳 / 垂直爬墙跳三条路径）、
 上升角落修正穿 1 砖缝、抓墙贴合无空隙、抓墙静止不下滑、爬墙跳扣体力、墙跳弹开不扣体力、
 冻结期补按方向仍被采纳、墙沿持续按上只 hop 一次且不抽体力、纯上 Dash 蹭平台侧面触发 SuperWallJump、
-`NormalUpdate` 贴墙按住抓取起跳走 ClimbJump 而非被弹开、Wallboost 退还体力且不锁输入、
+`NormalUpdate` 贴墙按住抓取起跳走 ClimbJump、不被水平弹开、Wallboost 退还体力且不锁输入、
 贴墙下滑被压到 WallSlideStartMax、按住下方向 Fastfall 到 240 不超、`dash_refill_cooldown` 期间不补 dash、
 撞墙速度保留窗口、下蹲（碰撞箱变矮 / 底边不动 / 摩擦 / 自动站起 / 低通道内站不起来）、
 **Super / Hyper 起飞后仍持有 dash（水平 Dash 与 Dash Slide 期间 `_on_ground()` 为真）**、
@@ -262,7 +262,7 @@ godot --headless --path . --script res://scripts/debug/room_regression.gd
 
 - **网格基准**：`8×8 px = 1 砖`，视口 `320×180`（1砖8px规格）。关卡几何全部按 8 的倍数摆放；
   角色碰撞箱站立 8×11（1×1.375 砖）、下蹲 8×6。窗口默认 1280×720（4 倍整数放大，
-  `stretch/mode = canvas_items` + `scale_mode = integer`）。用 `canvas_items` 而不是 `viewport`：
+  `stretch/mode = canvas_items` + `scale_mode = integer`）。选 `canvas_items` 是因为文字：
   `viewport` 会把文字先渲进 320×180 缓冲再整体放大，5~6px 的调试字必然糊成一团；
   `canvas_items` 下 Godot 的动态字体 oversampling 会按最终设备分辨率重新光栅化，字才清晰。
   另外 `textures/canvas_textures/default_texture_filter = Nearest`，保证像素图不被插值。
@@ -281,7 +281,7 @@ godot --headless --path . --script res://scripts/debug/room_regression.gd
      所以每区的右端两列不能压台子，否则门洞被堵死（区 1 的悬空台因此缩到第 21 列）。
   3. **坑底有死亡带**（第 17/18 行，红色）：`player.kill_plane_y` 由 test_room 设为 `DEATH_ROW * 8`，
      掉下去即触发玩家自带的 `_respawn()`，回到 `last_checkpoint`（跨区时 test_room 调 `set_checkpoint()` 更新到分区入口）
-     并补满 dash / 体力 —— 掉坑约 17 帧就重来，不是无底洞。
+     并补满 dash / 体力 —— 掉坑约 17 帧就重来。
 
 - **关卡场景**：`Node2D` 根 + 素材库组件（`scenes/components/*.tscn`）+ `player.tscn` + `Camera2D`。详见 `AssetLibrary.md`。
 - **检查点**：`checkpoint.tscn`（Area2D），进入时调 `player.set_checkpoint()`。

@@ -1,5 +1,8 @@
 # 灰盒方块颜色/图集顺序
 
+> 这是 GDD 第三节那张颜色表的落地版，写的是图集索引和具体颜色值。
+> 代码里还叫 graybox，对外说 **functional minimal pixel art**。
+
 实体图集（Entities 层，4px 网格）顺序：
 
 | 索引 | 颜色 | kind | 组件 | 行为 |

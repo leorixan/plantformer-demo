@@ -1,6 +1,6 @@
 # 素材库使用指南
 
-场景搭建组件库。所有组件都是独立 `.tscn`，拖进场景即可用；也支持 ASCII 地图代码生成。
+场景搭建用的组件库。组件都是独立 `.tscn`，拖进场景就能用，也可以交给 ASCII 地图生成。
 
 ## 组件一览
 
@@ -47,7 +47,7 @@ var rows := [
 var result := SceneBuilder.build(rows, load("res://scenes/player/player.tscn"))
 add_child(result["container"])          # 全部组件容器
 result["player"].global_position = result["spawn"]
-result["player"].kill_plane_y = result["kill_plane_y"] 按地图行数自动算
+result["player"].kill_plane_y = result["kill_plane_y"]  # 按地图行数自动算
 add_child(result["player"])
 ```
 
@@ -64,7 +64,7 @@ add_child(result["player"])
 
 ## 死亡系统
 
-统一由 `player.gd` 处理，不再依赖关卡脚本：
+死亡由 `player.gd` 统一处理，关卡脚本不参与：
 - `kill_plane_y` 以下 → 自动重生到 `last_checkpoint`
 - 尖刺等伤害源 → `take_damage()` → 重生
 - 存盘点 Area2D → 进入时更新 `last_checkpoint`
