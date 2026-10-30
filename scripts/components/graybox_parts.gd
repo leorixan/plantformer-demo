@@ -82,8 +82,9 @@ class Crystal extends Area2D:
 			_breath.kill()
 		_breath = create_tween()
 		_breath.set_loops()
-		_breath.tween_property(_visual, "scale", Vector2(1.10, 1.10), 1.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		_breath.tween_property(_visual, "scale", Vector2(1.0, 1.0), 1.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		_breath.tween_interval(1.2)
+		_breath.tween_property(_visual, "scale", Vector2(1.10, 1.10), 0.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		_breath.tween_property(_visual, "scale", Vector2(1.0, 1.0), 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
 	func _cell(gx: int, gy: int, color: Color, parent: Node2D) -> void:
