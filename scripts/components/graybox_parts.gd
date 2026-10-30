@@ -118,8 +118,11 @@ class Crystal extends Area2D:
 						break
 				if is_edge:
 					edge_cells.append(Vector2i(x, y))
-		for pt in edge_cells:
-			if (pt.x + pt.y) % 2 == 0:
+		edge_cells.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+			return atan2(float(a.y) - 3.5, float(a.x) - 3.5) < atan2(float(b.y) - 3.5, float(b.x) - 3.5))
+		for i in edge_cells.size():
+			if i % 2 == 0:
+				var pt: Vector2i = edge_cells[i]
 				_cell(pt.x, pt.y, DASH_COLOR, _outline)
 
 
