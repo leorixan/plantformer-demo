@@ -258,12 +258,24 @@ class Breakable extends StaticBody2D:
 		dirs.shuffle()
 		for i in 3:
 			var d: Vector2i = dirs[i]
-			var length := rng.randi_range(2, maxi(2, mini(w, h) / 2))
+			var length := rng.randi_range(3, maxi(3, mini(w, h) * 2 / 3))
+			var pt := center
 			for step in range(length):
-				var pt: Vector2i = center + d * step
+				pt += d
 				if pt.x < 1 or pt.y < 1 or pt.x >= w - 1 or pt.y >= h - 1:
 					break
 				img.set_pixel(pt.x, pt.y, CRACK)
+				# 抖动：让裂纹呈折线而不是直线
+				if rng.randf() < 0.65:
+					var jitter := Vector2i(rng.randi_range(-1, 1), rng.randi_range(-1, 1))
+					if jitter != Vector2i.ZERO:
+						var jt := pt + jitter
+						if jt.x >= 1 and jt.y >= 1 and jt.x < w - 1 and jt.y < h - 1:
+							img.set_pixel(jt.x, jt.y, CRACK)
+				if rng.randf() < 0.3:
+					d += Vector2i(rng.randi_range(-1, 1), rng.randi_range(-1, 1))
+					if d == Vector2i.ZERO:
+						d = dirs[i]
 		for off in [Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 1)]:
 			img.set_pixel(center.x + off.x, center.y + off.y, CRACK)
 		# 更多随机 1px 边缘缺损
