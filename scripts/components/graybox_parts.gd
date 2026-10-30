@@ -60,7 +60,7 @@ class Crystal extends Area2D:
 		add_child(_outline)
 		_build_outline()
 		_outline.visible = false
-		_start_breathing()
+		_play_appear()
 
 
 	func _play_appear() -> void:
@@ -70,8 +70,8 @@ class Crystal extends Area2D:
 		_visual.modulate.a = 0.0
 		var t := create_tween()
 		t.set_parallel(true)
-		t.tween_property(_visual, "scale", Vector2(1.06, 1.06), 0.12)
-		t.tween_property(_visual, "modulate:a", 1.0, 0.12)
+		t.tween_property(_visual, "scale", Vector2(1.12, 1.12), 0.15)
+		t.tween_property(_visual, "modulate:a", 1.0, 0.15)
 		t.set_parallel(false)
 		t.tween_property(_visual, "scale", Vector2(1.0, 1.0), 0.10)
 		t.finished.connect(_start_breathing)
@@ -150,7 +150,7 @@ class Crystal extends Area2D:
 		_cooldown = false
 		_visual.visible = true
 		_outline.visible = false
-		_start_breathing()
+		_play_appear()
 		_monitor.set_deferred("disabled", false)
 
 
