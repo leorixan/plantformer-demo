@@ -238,48 +238,52 @@ class Breakable extends StaticBody2D:
 		_build_visual()
 
 	func _build_visual() -> void:
-		var w := maxi(1, int(round(size.x)))
-		var h := maxi(1, int(round(size.y)))
+		var w := maxi(2, int(round(size.x)))
+		var h := maxi(2, int(round(size.y)))
 		_visual = Node2D.new()
 		_visual.name = "Visual"
 		add_child(_visual)
-		var cells: Dictionary = {}
+		var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
 		for y in h:
 			for x in w:
-				cells[Vector2i(x, y)] = BASE
+				img.set_pixel(x, y, BASE)
 		for x in w:
-			cells[Vector2i(x, 0)] = LIGHT
-			cells[Vector2i(x, h - 1)] = DARK
-		var center := Vector2i(w / 2, h / 2)
-		for d in [Vector2i(-1, -1), Vector2i(1, -1), Vector2i(0, 1)]:
-			var step := 1
-			while true:
-				var pt: Vector2i = center + d * step
-				if pt.x < 0 or pt.y < 0 or pt.x >= w or pt.y >= h:
-					break
-				cells[pt] = CRACK
-				step += 1
+			img.set_pixel(x, 0, LIGHT)
+			img.set_pixel(x, h - 1, DARK)
 		var rng := RandomNumberGenerator.new()
 		rng.randomize()
-		for i in rng.randi_range(2, 6):
+		# 中心三分叉短裂纹（备选方案 2）
+		var center := Vector2i(w / 2, h / 2)
+		var dirs: Array = [Vector2i(-1, -1), Vector2i(1, 1), Vector2i(-1, 1)]
+		dirs.shuffle()
+		for i in 3:
+			var d: Vector2i = dirs[i]
+			var length := rng.randi_range(2, maxi(2, mini(w, h) / 2))
+			for step in range(length):
+				var pt: Vector2i = center + d * step
+				if pt.x < 1 or pt.y < 1 or pt.x >= w - 1 or pt.y >= h - 1:
+					break
+				img.set_pixel(pt.x, pt.y, CRACK)
+		for off in [Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 1)]:
+			img.set_pixel(center.x + off.x, center.y + off.y, CRACK)
+		# 更多随机 1px 边缘缺损
+		var chips := maxi(6, int(w * 0.6) + 4)
+		for i in chips:
 			var side := rng.randi_range(0, 3)
-			var edge_pt := Vector2i.ZERO
+			var pt2 := Vector2i.ZERO
 			if side == 0:
-				edge_pt = Vector2i(rng.randi_range(0, w - 1), 0)
+				pt2 = Vector2i(rng.randi_range(0, w - 1), 0)
 			elif side == 1:
-				edge_pt = Vector2i(rng.randi_range(0, w - 1), h - 1)
+				pt2 = Vector2i(rng.randi_range(0, w - 1), h - 1)
 			elif side == 2:
-				edge_pt = Vector2i(0, rng.randi_range(0, h - 1))
+				pt2 = Vector2i(0, rng.randi_range(0, h - 1))
 			else:
-				edge_pt = Vector2i(w - 1, rng.randi_range(0, h - 1))
-			cells.erase(edge_pt)
-		for pt in cells:
-			var r := ColorRect.new()
-			r.color = cells[pt]
-			r.position = Vector2(float(pt.x) - float(w) * 0.5, float(pt.y) - float(h) * 0.5)
-			r.size = Vector2(1, 1)
-			r.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			_visual.add_child(r)
+				pt2 = Vector2i(w - 1, rng.randi_range(0, h - 1))
+			img.set_pixel(pt2.x, pt2.y, Color(0, 0, 0, 0))
+		var spr := Sprite2D.new()
+		spr.texture = ImageTexture.create_from_image(img)
+		spr.centered = true
+		_visual.add_child(spr)
 
 	func _physics_process(_delta: float) -> void:
 		for child in get_children():
