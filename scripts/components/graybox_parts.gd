@@ -60,7 +60,7 @@ class Crystal extends Area2D:
 		add_child(_outline)
 		_build_outline()
 		_outline.visible = false
-		_play_appear()
+		_start_breathing()
 
 
 	func _play_appear() -> void:
@@ -82,8 +82,8 @@ class Crystal extends Area2D:
 			_breath.kill()
 		_breath = create_tween()
 		_breath.set_loops()
-		_breath.tween_property(_visual, "scale", Vector2(1.03, 1.03), 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		_breath.tween_property(_visual, "scale", Vector2(1.0, 1.0), 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		_breath.tween_property(_visual, "scale", Vector2(1.12, 1.12), 0.6).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		_breath.tween_property(_visual, "scale", Vector2(1.0, 1.0), 0.6).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
 	func _cell(gx: int, gy: int, color: Color, parent: Node2D) -> void:
@@ -96,11 +96,16 @@ class Crystal extends Area2D:
 
 
 	func _build_visual() -> void:
+		var img := Image.create(8, 8, false, Image.FORMAT_RGBA8)
 		for y in 8:
 			for x in range(int(ROWS[y][0]), int(ROWS[y][1]) + 1):
-				_cell(x, y, BASE, _visual)
+				img.set_pixel(x, y, BASE)
 		for pt in [Vector2i(3, 1), Vector2i(2, 2), Vector2i(3, 2), Vector2i(2, 3)]:
-			_cell(pt.x, pt.y, LIGHT, _visual)
+			img.set_pixel(pt.x, pt.y, LIGHT)
+		var spr := Sprite2D.new()
+		spr.texture = ImageTexture.create_from_image(img)
+		spr.centered = true
+		_visual.add_child(spr)
 
 
 	func _build_outline() -> void:
@@ -145,7 +150,7 @@ class Crystal extends Area2D:
 		_cooldown = false
 		_visual.visible = true
 		_outline.visible = false
-		_play_appear()
+		_start_breathing()
 		_monitor.set_deferred("disabled", false)
 
 
