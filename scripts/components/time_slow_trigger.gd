@@ -22,6 +22,7 @@ func _ready() -> void:
 	monitorable = false
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
+	add_to_group("resettable_triggers")
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -68,6 +69,13 @@ func _exit_tree() -> void:
 	if _active:
 		Engine.time_scale = 1.0
 		_active = false
+
+
+func reset_state() -> void:
+	if _active:
+		Engine.time_scale = 1.0
+	_active = false
+	_used = false
 
 
 func _is_player(body: Node2D) -> bool:

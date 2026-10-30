@@ -284,6 +284,7 @@ class Trophy extends Area2D:
 	const BOB_AMPLITUDE := 2.0
 	const BOB_PERIOD := 1.6
 
+	var cells: Array = []
 	var _base_y := 0.0
 	var _t := 0.0
 	var _visual: Node2D
@@ -354,5 +355,5 @@ class Trophy extends Area2D:
 
 	func _on_body(body: Node2D) -> void:
 		if body is CharacterBody2D and level:
-			level.call("collect_trophy")
+			level.call("collect_trophy", cells)
 		queue_free()

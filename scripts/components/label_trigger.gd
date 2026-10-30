@@ -25,6 +25,7 @@ func _ready() -> void:
 	monitorable = false
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
+	add_to_group("resettable_triggers")
 	_init_hidden()
 
 
@@ -43,6 +44,11 @@ func _process(delta: float) -> void:
 		_timer -= delta
 		if _timer <= 0.0:
 			_apply_visible(false)
+
+
+func reset_state() -> void:
+	_used = false
+	_apply_visible(false)
 
 
 func _on_body_entered(body: Node2D) -> void:

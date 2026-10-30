@@ -9,6 +9,10 @@ const HALF := 4.0
 const PLAYER_SCENE := "res://scenes/player/player.tscn"
 
 signal trophy_collected(total: int)
+
+var _initial_entity_data: PackedByteArray = PackedByteArray()
+var _initial_terrain_data: PackedByteArray = PackedByteArray()
+var _collected_trophy_cells: Dictionary = {}
 var trophies_collected := 0
 const KIND_ORDER := ["terrain", "hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
 const ENTITY_KINDS := ["hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
@@ -21,6 +25,13 @@ var _terrain_cells: Dictionary = {}
 
 
 func _ready() -> void:
+	# 复活重置用：初始 tile 快照
+	var _el := _entity_layer()
+	var _tl := _terrain_layer()
+	if _el:
+		_initial_entity_data = _el.tile_map_data
+	if _tl:
+		_initial_terrain_data = _tl.tile_map_data
 	var legend := get_node_or_null("Legend")
 	if legend:
 		legend.visible = false
@@ -239,9 +250,13 @@ func _build_entity_rects() -> void:
 				elif kind == "trophy":
 					var tro := _make_part(kind, Vector2(8, 8), pos)
 					if tro:
+						var tcell_list: Array = []
 						for yy in range(y0, y1 + 1):
 							for xx in range(x0, x1 + 1):
-								_entity_layer().erase_cell(Vector2i(xx, yy))
+								var tc := Vector2i(xx, yy)
+								tcell_list.append(tc)
+								_entity_layer().erase_cell(tc)
+						tro.set("cells", tcell_list)
 				elif kind == "crystal":
 					var cnode := _make_part(kind, size, pos)
 					if cnode:
@@ -323,6 +338,7 @@ func _make_part(kind: String, size: Vector2, pos: Vector2) -> Node2D:
 			return
 	node.set("size", size)
 	node.position = pos
+	node.add_to_group("graybox_parts")
 	add_child(node)
 	return node
 
@@ -358,11 +374,15 @@ func respawn_player() -> void:
 	player.velocity = Vector2.ZERO
 	player.reset_physics_interpolation()
 	player.visible = true
+	await _reset_level_entities()
+	player.visible = true
 	player.set_physics_process(true)
 	_dying = false
 
 
-func collect_trophy() -> void:
+func collect_trophy(cells: Array = []) -> void:
+	for c in cells:
+		_collected_trophy_cells[c] = true
 	trophies_collected += 1
 	trophy_collected.emit(trophies_collected)
 	print("[graybox] 奖杯计数: ", trophies_collected)
@@ -465,6 +485,39 @@ func _hide_invisible_hazards() -> void:
 				count += 1
 	if count > 0:
 		print("[graybox] 隐藏死亡区: ", count, " cells")
+
+
+func _reset_level_entities() -> void:
+	# 复活重置：删除运行时生成的机关节点 + 恢复初始 tile，再重建（奖杯已收集的格子不再出现）
+	for n in get_tree().get_nodes_in_group("graybox_parts"):
+		if is_ancestor_of(n):
+			n.queue_free()
+	var dv := get_node_or_null("DreamVisual")
+	if dv:
+		dv.queue_free()
+	var cd := get_node_or_null("CrystalCooldown")
+	if cd:
+		cd.queue_free()
+	await get_tree().process_frame
+	var ents := _entity_layer()
+	var terr := _terrain_layer()
+	if ents:
+		ents.tile_map_data = _initial_entity_data
+	if terr:
+		terr.tile_map_data = _initial_terrain_data
+	if ents:
+		for c in _collected_trophy_cells:
+			ents.erase_cell(c)
+	_build_tile_parts()
+	_build_entity_rects()
+	_hide_invisible_hazards()
+	_setup_dream_visuals()
+	_build_node_entities()
+	# 区域状态重置（时间缓速、标签的一次性等）
+	for trig in get_tree().get_nodes_in_group("resettable_triggers"):
+		if is_ancestor_of(trig) and trig.has_method("reset_state"):
+			trig.call("reset_state")
+	Engine.time_scale = 1.0
 
 
 func _ensure_cooldown_layer() -> TileMapLayer:
