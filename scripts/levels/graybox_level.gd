@@ -489,7 +489,8 @@ func _setup_room_camera() -> void:
 
 func _build_dream_jelly_image(comp: Array, cells: Dictionary) -> Image:
 	# C 方案：果冻核心 + 自动边缘光/阴影（角落不加黑）
-	var core := Color8(141, 90, 207, 255)
+	var base := Color8(158, 106, 230, 255)
+	var core := Color8(130, 80, 198, 255)
 	var hi := Color8(196, 131, 255, 255)
 	var hi_soft := Color8(170, 110, 238, 255)
 	var sh := Color8(116, 77, 171, 255)
@@ -512,7 +513,9 @@ func _build_dream_jelly_image(comp: Array, cells: Dictionary) -> Image:
 		var right := cells.has(Vector2i(cv.x + 1, cv.y))
 		var px: int = (cv.x - minc.x) * 4
 		var py: int = (cv.y - minc.y) * 4
-		img.fill_rect(Rect2i(px, py, 4, 4), core)
+		img.fill_rect(Rect2i(px, py, 4, 4), base)
+		if up and down and left and right:
+			img.fill_rect(Rect2i(px, py, 4, 4), core)
 		if not up:
 			img.fill_rect(Rect2i(px, py, 4, 1), hi)
 		elif not left:
