@@ -7,4 +7,5 @@
 texture = ExtResource("1_tex")
 offset = Vector2(0, -10)
 hframes = 8
+z_index = -1
 script = ExtResource("2_scr")

@@ -27,7 +27,7 @@ func _ready() -> void:
 	vframes = 1
 	centered = true
 	offset = Vector2(0, -10)
-	z_index = 0
+	z_index = -1
 	frame = int(direction)
 
 
