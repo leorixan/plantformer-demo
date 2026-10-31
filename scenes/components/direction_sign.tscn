@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/art/objects/direction_sign.png" id="1_tex"]
+[ext_resource type="Script" path="res://scripts/components/direction_sign.gd" id="2_scr"]
+
+[node name="DirectionSign" type="Sprite2D"]
+texture = ExtResource("1_tex")
+centered = true
+offset = Vector2(0, -12)
+hframes = 8
+script = ExtResource("2_scr")
