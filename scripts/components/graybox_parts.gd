@@ -118,10 +118,9 @@ class Spring extends StaticBody2D:
 	## 从背面朝木色方向移动时可以穿过；只在弹射侧接触时施加向上/对应方向的初速度
 	var size := Vector2(8, 8)
 	var dir := Vector2.UP
-	# 蔚蓝数值：地面弹簧 SuperBounce(-185)；侧弹簧 SideBounce(X=±240, Y=-140)
-	var bounce_up_speed := 185.0
-	var side_speed := 240.0
-	var side_up_speed := 140.0
+	var launch := 300.0
+	var up_boost := 200.0   # 水平弹簧额外给的向上速度
+	var horizontal_speed := 240.0   # 水平弹簧的水平速度
 	var _area: Area2D
 	var _player: CharacterBody2D = null
 	var _exception := false
@@ -216,31 +215,14 @@ class Spring extends StaticBody2D:
 			return
 		if not _from_valid_side(body) and not _is_climbing(body):
 			return
-		# 蔚蓝 SideBounce：同向且已经超过 240 时侧弹簧不生效
-		if dir.x != 0.0 and absf(body.velocity.x) > side_speed and signf(body.velocity.x) == signf(dir.x):
-			return
 		_cooldown = 0.25
 		_launched_body = body as CharacterBody2D
 		_exception = false
 		_player = null
-		# 从弹射表面中心发射：把玩家对应的一侧边缘对齐到弹簧木色表面中心
-		var half := size * 0.5
-		if dir.y < 0.0:
-			# 朝上：脚底对齐弹簧顶面中心
-			body.global_position = global_position + Vector2(0.0, -half.y)
-		elif dir.y > 0.0:
-			# 朝下：头顶对齐弹簧底面中心（玩家碰撞盒高 11）
-			body.global_position = global_position + Vector2(0.0, half.y + 11.0)
-		elif dir.x < 0.0:
-			# 朝左：身体右边缘对齐弹簧左面中心
-			body.global_position = global_position + Vector2(-half.x - 4.0, 5.5)
-		else:
-			# 朝右：身体左边缘对齐弹簧右面中心
-			body.global_position = global_position + Vector2(half.x + 4.0, 5.5)
 		if body.has_method("refill_dash"):
 			body.call("refill_dash")
 		if body.has_method("apply_spring_boost"):
-			body.call("apply_spring_boost", 0.3)
+			body.call("apply_spring_boost", 0.25)
 		if body is CharacterBody2D:
 			var cb := body as CharacterBody2D
 			if _launch_player != null and is_instance_valid(_launch_player) and _launch_player != cb:
@@ -248,16 +230,17 @@ class Spring extends StaticBody2D:
 			cb.add_collision_exception_with(self)
 			_launch_player = cb
 			_launch_grace = 0.2
+		var v: Vector2 = body.velocity
 		if dir.y < 0.0:
-			body.velocity = Vector2(0.0, -bounce_up_speed)
+			body.velocity = Vector2(v.x, -launch)
 		elif dir.y > 0.0:
-			body.velocity = Vector2(0.0, bounce_up_speed)
+			body.velocity = Vector2(v.x, launch)
 		elif dir.x < 0.0:
-			body.velocity = Vector2(-side_speed, -side_up_speed)
+			body.velocity = Vector2(-horizontal_speed, minf(v.y, -up_boost))
 			if body.has_method("set_facing"):
 				body.call("set_facing", -1.0)
 		else:
-			body.velocity = Vector2(side_speed, -side_up_speed)
+			body.velocity = Vector2(horizontal_speed, minf(v.y, -up_boost))
 			if body.has_method("set_facing"):
 				body.call("set_facing", 1.0)
 
