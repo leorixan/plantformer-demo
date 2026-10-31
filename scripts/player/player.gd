@@ -237,7 +237,7 @@ func _physics_process(delta: float) -> void:
 				continue
 			var hn: Vector2 = hit.get("normal", Vector2.ZERO)
 			if hn.dot(dream_dir) < -0.2:
-				if not _dream_try_corner_correction():
+				if not _dream_try_corner_correction(hc):
 					_dream_hit_solid()
 				return
 			break
@@ -253,7 +253,7 @@ func _physics_process(delta: float) -> void:
 					continue
 				if _is_passable_oneway(rc):
 					continue
-				if _dream_try_corner_correction():
+				if _dream_try_corner_correction(rc):
 					return
 				_dream_dash_die()
 				break
@@ -1148,9 +1148,12 @@ func _dream_body_fits(at: Vector2) -> bool:
 	return true
 
 
-func _dream_try_corner_correction() -> bool:
+func _dream_try_corner_correction(blocking: Node = null) -> bool:
 	# 参考蔚蓝 DreamDashCheck：在紫块内撞到角落时，垂直方向最多让 4px 对齐通道。
 	# 只在身体仍与紫块重叠时生效，避免在普通墙壁前"滑"过去。
+	if blocking != null and (blocking.is_in_group("dream_blocks") or _is_passable_oneway(blocking)):
+		# 紫块/可穿过单向墙不作为角落修正对象
+		return false
 	if not _dream_inside_block():
 		return false
 	var perp := Vector2(absf(dream_dir.y), absf(dream_dir.x))
