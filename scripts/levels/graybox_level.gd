@@ -51,6 +51,7 @@ func _ready() -> void:
 	_build_entity_rects()
 	_hide_invisible_hazards()
 	_setup_dream_visuals()
+	_build_fake_terrain_masks()
 	_build_node_entities()
 	var marker := get_node_or_null("Spawn") as Node2D
 	spawn_pos = marker.global_position if marker else Vector2(16, 0)
@@ -512,6 +513,88 @@ func _setup_dream_visuals() -> void:
 		print("[graybox] DreamBlock 高层半透明视觉: ", moved, " cells")
 
 
+func _fake_terrain_design() -> TileMapLayer:
+	return get_node_or_null("FakeTerrain") as TileMapLayer
+
+
+func _build_fake_terrain_masks() -> void:
+	# 伪装地形：FakeTerrain 设计层里的 tile 看起来和地形一样，
+	# 运行时拆成连通块的独立视觉层 + 触发区域；玩家穿过时整块淡出消失。
+	var design := _fake_terrain_design()
+	if design == null:
+		return
+	design.visible = false
+	design.collision_enabled = false
+	var old := get_node_or_null("FakeTerrainRuntime")
+	if old:
+		old.queue_free()
+	var root := Node2D.new()
+	root.name = "FakeTerrainRuntime"
+	add_child(root)
+	var cells: Dictionary = {}
+	for c in design.get_used_cells():
+		cells[c] = true
+	if cells.is_empty():
+		return
+	# 4 邻接连通块
+	var visited: Dictionary = {}
+	var comps: Array = []
+	for c in cells:
+		if visited.has(c):
+			continue
+		var comp: Array = []
+		var stack: Array = [c]
+		visited[c] = true
+		while not stack.is_empty():
+			var cur: Vector2i = stack.pop_back()
+			comp.append(cur)
+			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				var n: Vector2i = cur + d
+				if cells.has(n) and not visited.has(n):
+					visited[n] = true
+					stack.append(n)
+		comps.append(comp)
+	for comp in comps:
+		var patch := TileMapLayer.new()
+		patch.name = "Patch"
+		patch.tile_set = design.tile_set
+		patch.z_index = 20
+		patch.collision_enabled = false
+		root.add_child(patch)
+		var minc := Vector2i(1 << 30, 1 << 30)
+		var maxc := Vector2i(-(1 << 30), -(1 << 30))
+		for cell in comp:
+			patch.set_cell(cell, design.get_cell_source_id(cell), design.get_cell_atlas_coords(cell), design.get_cell_alternative_tile(cell))
+			minc = Vector2i(mini(minc.x, cell.x), mini(minc.y, cell.y))
+			maxc = Vector2i(maxi(maxc.x, cell.x), maxi(maxc.y, cell.y))
+		var px := Vector2(float(minc.x) * TILE, float(minc.y) * TILE)
+		var size_px := Vector2(float(maxc.x - minc.x + 1) * TILE, float(maxc.y - minc.y + 1) * TILE)
+		var area := Area2D.new()
+		area.name = "Trigger"
+		area.collision_layer = 0
+		area.collision_mask = 2
+		var cs := CollisionShape2D.new()
+		var rect := RectangleShape2D.new()
+		rect.size = size_px
+		cs.shape = rect
+		area.add_child(cs)
+		area.position = px + size_px * 0.5
+		area.body_entered.connect(_on_fake_terrain_entered.bind(patch))
+		patch.add_child(area)
+
+
+func _on_fake_terrain_entered(body: Node2D, patch: Node) -> void:
+	if not (body is CharacterBody2D) or not is_instance_valid(patch):
+		return
+	if patch.has_meta("triggered"):
+		return
+	patch.set_meta("triggered", true)
+	# 整片淡出后移除
+	var tw := create_tween()
+	tw.tween_property(patch, "modulate:a", 0.0, 0.25)
+	tw.tween_callback(patch.queue_free)
+
+
 func _hide_invisible_hazards() -> void:
 	# 浅红死亡区：功能同红块，但运行时把 tile 从可见层擦掉（游戏中不可见）
 	var ents := _entity_layer()
@@ -542,6 +625,9 @@ func _reset_level_entities() -> void:
 	var cd := get_node_or_null("CrystalCooldown")
 	if cd:
 		cd.queue_free()
+	var fake := get_node_or_null("FakeTerrainRuntime")
+	if fake:
+		fake.queue_free()
 	await get_tree().process_frame
 	var ents := _entity_layer()
 	var terr := _terrain_layer()
@@ -556,6 +642,7 @@ func _reset_level_entities() -> void:
 	_build_entity_rects()
 	_hide_invisible_hazards()
 	_setup_dream_visuals()
+	_build_fake_terrain_masks()
 	_build_node_entities()
 	# 区域状态重置（时间缓速、标签的一次性等）
 	for trig in get_tree().get_nodes_in_group("resettable_triggers"):
