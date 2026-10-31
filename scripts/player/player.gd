@@ -1018,6 +1018,9 @@ func end_dream_dash(block: Node = null) -> void:
 			remove_collision_exception_with(db)
 	_dream_exceptions.clear()
 	_dream_block = null
+	# 若结束时身体已经和实体地形重叠（冲刺方向撞进墙），直接死亡
+	if is_inside_tree() and _body_overlaps_solid():
+		_dream_dash_die()
 
 
 func _dream_dash_die() -> void:
@@ -1075,6 +1078,11 @@ func _wall_is_dream_block() -> bool:
 	return false
 
 
+func _body_overlaps_solid() -> bool:
+	var h := _body_height()
+	return _box_is_solid(global_position + Vector2(0.0, -h * 0.5), Vector2(body_width, h))
+
+
 func _dream_hit_solid() -> void:
 	# 身体中心在紫块内 → 撞墙死亡；否则只是身体一部分擦到地形，应被挡住
 	var c := global_position - Vector2(0, 5.5)
@@ -1083,6 +1091,9 @@ func _dream_hit_solid() -> void:
 			_dream_dash_die()
 			return
 	end_dream_dash()
+	# 撞出紫块时已经嵌进地形：直接死亡，避免卡在墙里
+	if _body_overlaps_solid():
+		_dream_dash_die()
 
 
 func _process(_delta: float) -> void:
