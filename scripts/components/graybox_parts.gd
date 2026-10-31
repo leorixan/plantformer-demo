@@ -89,7 +89,7 @@ class Crystal extends Area2D:
 		if body.has_method("refill_dash"):
 			body.call("refill_dash")
 		if body.has_method("hitstop_frames"):
-			body.call("hitstop_frames", 3)
+			body.call("hitstop_frames", 6)
 		_cooldown = true
 		_monitor.set_deferred("disabled", true)
 		_sprite.visible = false
