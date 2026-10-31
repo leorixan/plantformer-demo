@@ -514,19 +514,19 @@ func _build_dream_jelly_image(comp: Array, cells: Dictionary) -> Image:
 		var px: int = (cv.x - minc.x) * 4
 		var py: int = (cv.y - minc.y) * 4
 		img.fill_rect(Rect2i(px, py, 4, 4), core)
-		# 暴露边：2px 渐变高光/阴影，内部不加任何条纹
+		# 先画左右竖边，再画上下横边：横边覆盖角上像素，避免角落出现"缺口"色
+		if not left:
+			img.fill_rect(Rect2i(px, py, 1, 4), hi_soft)
+			img.fill_rect(Rect2i(px + 1, py, 1, 4), hi_mid)
+		if not right:
+			img.fill_rect(Rect2i(px + 2, py, 1, 4), sh_soft)
+			img.fill_rect(Rect2i(px + 3, py, 1, 4), sh)
 		if not up:
 			img.fill_rect(Rect2i(px, py, 4, 1), hi)
 			img.fill_rect(Rect2i(px, py + 1, 4, 1), hi_soft)
 		if not down:
 			img.fill_rect(Rect2i(px, py + 2, 4, 1), sh_soft)
 			img.fill_rect(Rect2i(px, py + 3, 4, 1), sh)
-		if not left:
-			img.fill_rect(Rect2i(px, py, 1, 4), hi_soft)
-			img.fill_rect(Rect2i(px + 1, py, 1, 4), hi_mid)
-		if not right:
-			img.fill_rect(Rect2i(px + 2, py, 1, 4), sh_mid)
-			img.fill_rect(Rect2i(px + 3, py, 1, 4), sh_soft)
 		# 底角柔化，不用背景黑
 		if not down and not left:
 			img.fill_rect(Rect2i(px, py + 3, 1, 1), sh_soft)
