@@ -33,6 +33,7 @@ var player: CharacterBody2D
 var spawn_pos := Vector2.ZERO
 var checkpoint_pos := Vector2.ZERO
 var _terrain_cells: Dictionary = {}
+var _dream_patches: Array = []
 
 
 func _ready() -> void:
@@ -544,6 +545,7 @@ func _setup_dream_visuals() -> void:
 	container.modulate = Color(1, 1, 1, 0.65)
 	for ch in container.get_children():
 		ch.free()
+	_dream_patches.clear()
 	var cells: Dictionary = {}
 	for cell in ents.get_used_cells():
 		var kind := _kind_of(ents, cell)
@@ -579,16 +581,30 @@ func _setup_dream_visuals() -> void:
 			minc = Vector2i(mini(minc.x, cv.x), mini(minc.y, cv.y))
 	for comp in comps:
 		var comp_min := Vector2i(1 << 30, 1 << 30)
+		var comp_max := Vector2i(-(1 << 30), -(1 << 30))
 		for cell in comp:
 			var cv2: Vector2i = cell
 			comp_min = Vector2i(mini(comp_min.x, cv2.x), mini(comp_min.y, cv2.y))
+			comp_max = Vector2i(maxi(comp_max.x, cv2.x), maxi(comp_max.y, cv2.y))
 		var img := _build_dream_jelly_image(comp, cells)
+		# 每个连通块一个 patch：锚点在底部中心，缩放时像果冻从底部被压
+		var patch := Node2D.new()
+		patch.name = "Jelly"
+		var w := float(img.get_width())
+		var h := float(img.get_height())
+		patch.position = Vector2(float(comp_min.x) * 4.0 + w * 0.5, float(comp_min.y) * 4.0 + h)
 		var spr := Sprite2D.new()
 		spr.texture = ImageTexture.create_from_image(img)
 		spr.centered = false
 		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		spr.position = Vector2(float(comp_min.x) * 4.0, float(comp_min.y) * 4.0)
-		container.add_child(spr)
+		spr.position = Vector2(-w * 0.5, -h)
+		patch.add_child(spr)
+		container.add_child(patch)
+		_dream_patches.append({
+			"node": patch,
+			"rect": Rect2(Vector2(comp_min) * 4.0, Vector2(comp_max - comp_min + Vector2i.ONE) * 4.0),
+			"inside": false,
+		})
 	# 实体层里的 dream 标记 tile 不再直接渲染（视觉由 DreamVisual 接管）
 	for cell in cells:
 		ents.erase_cell(cell)
@@ -697,6 +713,34 @@ func _on_fake_terrain_entered(body: Node2D, patch: Node) -> void:
 	var tw := create_tween()
 	tw.tween_property(patch, "modulate:a", 0.0, 0.25)
 	tw.tween_callback(patch.queue_free)
+
+
+func _process(_delta: float) -> void:
+	# 玩家进入紫块区域时整块压一下再弹回（果冻受压回弹）
+	if _dream_patches.is_empty() or not is_instance_valid(player):
+		return
+	var center: Vector2 = player.global_position + Vector2(0.0, -5.5)
+	var body_rect := Rect2(center - Vector2(4.0, 5.5), Vector2(8.0, 11.0))
+	for info in _dream_patches:
+		var patch: Node2D = info["node"]
+		if not is_instance_valid(patch):
+			continue
+		var hit: bool = (info["rect"] as Rect2).intersects(body_rect)
+		if hit and not bool(info["inside"]):
+			_squash_dream_patch(patch)
+		info["inside"] = hit
+
+
+func _squash_dream_patch(patch: Node2D) -> void:
+	var old_tw = patch.get_meta("squash_tween", null)
+	if old_tw is Tween and is_instance_valid(old_tw):
+		(old_tw as Tween).kill()
+	patch.scale = Vector2.ONE
+	var tw := create_tween()
+	tw.tween_property(patch, "scale", Vector2(1.08, 0.90), 0.06)
+	tw.tween_property(patch, "scale", Vector2(0.97, 1.04), 0.08)
+	tw.tween_property(patch, "scale", Vector2.ONE, 0.08)
+	patch.set_meta("squash_tween", tw)
 
 
 func _hide_invisible_hazards() -> void:
