@@ -281,11 +281,16 @@ func _physics_process(delta: float) -> void:
 # 物理帧补采样：与 _unhandled_input 写同一个缓存计时器，两条路径任一命中都算按下，
 # 这样 headless 回归的 Input.action_press（不产生 InputEvent）也能驱动。
 func _is_passable_oneway(collider) -> bool:
-	# Dream Dash 期间单向墙一律视为可穿过：
-	# 斜向冲刺时"同向"判定会受角度/贴边影响，导致偶发撞死；直接忽略所有单向墙最稳定
+	# Dream Dash 期间：单向墙的"可通过方向"在冲刺方向上的投影为正 -> 可穿过
+	# （即 dot(dream_dir, pass_dir) > 0；垂直方向的单向墙投影为 0 -> 不可穿）
 	if collider == null or not (collider is Node):
 		return false
-	return (collider as Node).is_in_group("oneway_platforms")
+	if not (collider as Node).is_in_group("oneway_platforms"):
+		return false
+	var pd = collider.get("pass_dir")
+	if pd is Vector2:
+		return (pd as Vector2).dot(dream_dir) > 0.0
+	return false
 
 
 func _dream_dash_would_hit_solid(delta: float) -> bool:
