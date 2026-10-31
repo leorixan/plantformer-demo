@@ -113,32 +113,51 @@ class Crystal extends Area2D:
 			dust.call("setup", global_position, 0.0, 10, BURST_COLOR)
 
 
-class Spring extends Area2D:
-	## 四向单向弹簧：只从弹射方向一侧接触才触发；木色半边朝向弹射方向
+class Spring extends StaticBody2D:
+	## 四向单向弹簧：木色边是实体挡板（类似单向墙），从木色一侧靠近会被挡住/弹起，
+	## 从背面朝木色方向移动时可以穿过；只在弹射侧接触时施加向上/对应方向的初速度
 	var size := Vector2(8, 8)
 	var dir := Vector2.UP
 	var launch := 300.0
+	var _area: Area2D
+	var _player: CharacterBody2D = null
+	var _exception := false
 	var _cooldown := 0.0
 
 
 	func _ready() -> void:
-		collision_mask = 2
+		var vertical := absf(dir.y) > 0.5
+		var thick := maxf(2.0, (size.y if vertical else size.x) * 0.5)
 		var cs := CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
-		rect.size = size
+		rect.size = Vector2(size.x, thick) if vertical else Vector2(thick, size.y)
 		cs.shape = rect
+		cs.position = dir * ((size.y if vertical else size.x) * 0.5 - thick * 0.5)
 		add_child(cs)
-		body_entered.connect(_on_body)
+		_area = Area2D.new()
+		_area.collision_mask = 2
+		var acs := CollisionShape2D.new()
+		var arect := RectangleShape2D.new()
+		arect.size = size + Vector2(8, 8)
+		acs.shape = arect
+		_area.add_child(acs)
+		add_child(_area)
+		_area.body_entered.connect(_on_body_entered)
 
 
-	func _physics_process(delta: float) -> void:
-		if _cooldown > 0.0:
-			_cooldown = maxf(0.0, _cooldown - delta)
-			return
-		for body in get_overlapping_bodies():
-			if body is CharacterBody2D and _from_valid_side(body):
-				_launch(body)
-				break
+	func _want_pass(body: CharacterBody2D) -> bool:
+		if body.velocity.dot(dir) > 0.1:
+			return true
+		if body.has_method("get_move_input"):
+			return (body.call("get_move_input") as Vector2).dot(dir) > 0.3
+		return false
+
+
+	func _overlap_player() -> CharacterBody2D:
+		for b in _area.get_overlapping_bodies():
+			if b is CharacterBody2D:
+				return b
+		return null
 
 
 	func _from_valid_side(body: Node2D) -> bool:
@@ -146,14 +165,34 @@ class Spring extends Area2D:
 		return (body_center - global_position).dot(dir) >= 0.0
 
 
-	func _on_body(body: Node2D) -> void:
+	func _physics_process(delta: float) -> void:
+		if _cooldown > 0.0:
+			_cooldown = maxf(0.0, _cooldown - delta)
+		var p := _overlap_player()
+		if p == null:
+			if _exception and is_instance_valid(_player):
+				_player.remove_collision_exception_with(self)
+			_exception = false
+			_player = null
+			return
+		if _exception:
+			if not _want_pass(p):
+				p.remove_collision_exception_with(self)
+				_exception = false
+				_player = null
+			return
+		if _want_pass(p):
+			p.add_collision_exception_with(self)
+			_exception = true
+			_player = p
+
+
+	func _on_body_entered(body: Node2D) -> void:
 		if _cooldown > 0.0 or not (body is CharacterBody2D):
 			return
-		if _from_valid_side(body):
-			_launch(body)
-
-
-	func _launch(body: Node2D) -> void:
+		if not _from_valid_side(body):
+			return
+		_cooldown = 0.25
 		var v: Vector2 = body.velocity
 		if dir.y < 0.0:
 			body.velocity = Vector2(v.x, -launch)
@@ -163,7 +202,6 @@ class Spring extends Area2D:
 			body.velocity = Vector2(-launch, v.y)
 		else:
 			body.velocity = Vector2(launch, v.y)
-		_cooldown = 0.25
 
 
 class Breakable extends StaticBody2D:
