@@ -548,7 +548,7 @@ func _build_fake_terrain_masks() -> void:
 		while not stack.is_empty():
 			var cur: Vector2i = stack.pop_back()
 			comp.append(cur)
-			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1)]:
 				var n: Vector2i = cur + d
 				if cells.has(n) and not visited.has(n):
 					visited[n] = true
@@ -625,9 +625,6 @@ func _reset_level_entities() -> void:
 	var cd := get_node_or_null("CrystalCooldown")
 	if cd:
 		cd.queue_free()
-	var fake := get_node_or_null("FakeTerrainRuntime")
-	if fake:
-		fake.queue_free()
 	await get_tree().process_frame
 	var ents := _entity_layer()
 	var terr := _terrain_layer()
@@ -642,7 +639,6 @@ func _reset_level_entities() -> void:
 	_build_entity_rects()
 	_hide_invisible_hazards()
 	_setup_dream_visuals()
-	_build_fake_terrain_masks()
 	_build_node_entities()
 	# 区域状态重置（时间缓速、标签的一次性等）
 	for trig in get_tree().get_nodes_in_group("resettable_triggers"):
