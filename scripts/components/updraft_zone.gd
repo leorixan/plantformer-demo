@@ -1,4 +1,3 @@
-@tool
 extends Area2D
 ## 上升区域：玩家进入时获得一个向上的速度（可当作上升气流 / 弹射区）
 
@@ -16,7 +15,6 @@ var _used := false
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
-		queue_redraw()
 		return
 	collision_layer = 0
 	collision_mask = 2
@@ -57,13 +55,3 @@ func _on_body_exited(_body: Node2D) -> void:
 
 func reset_state() -> void:
 	_used = false
-
-
-func _draw() -> void:
-	if not Engine.is_editor_hint():
-		return
-	var shape_node := get_node_or_null("CollisionShape2D") as CollisionShape2D
-	if shape_node == null or shape_node.shape == null:
-		return
-	var size := (shape_node.shape as RectangleShape2D).size
-	draw_rect(Rect2(-size * 0.5, size), Color(0.55, 1.0, 0.85, 0.9), false, 1.0)
