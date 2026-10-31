@@ -486,16 +486,20 @@ func _setup_room_camera() -> void:
 
 
 func _setup_dream_visuals() -> void:
-	# 紫色 Dream Block 的显示层要高于玩家，且半透明
+	# 紫色 Dream Block 的显示层要高于玩家，且半透明。
+	# 复活重置时复用同一个视觉层（不销毁重建），避免紫块闪烁/消失一帧。
 	var ents := _entity_layer()
 	if ents == null:
 		return
-	var visual := TileMapLayer.new()
-	visual.name = "DreamVisual"
+	var visual := get_node_or_null("DreamVisual") as TileMapLayer
+	if visual == null:
+		visual = TileMapLayer.new()
+		visual.name = "DreamVisual"
+		add_child(visual)
 	visual.tile_set = ents.tile_set
 	visual.z_index = 10
 	visual.modulate = Color(1, 1, 1, 0.65)
-	add_child(visual)
+	visual.clear()
 	var moved := 0
 	for cell in ents.get_used_cells():
 		var kind := _kind_of(ents, cell)
@@ -503,9 +507,8 @@ func _setup_dream_visuals() -> void:
 			visual.set_cell(cell, ents.get_cell_source_id(cell), ents.get_cell_atlas_coords(cell))
 			ents.erase_cell(cell)
 			moved += 1
-	if moved == 0:
-		visual.queue_free()
-	else:
+	visual.visible = moved > 0
+	if moved > 0:
 		print("[graybox] DreamBlock 高层半透明视觉: ", moved, " cells")
 
 
@@ -536,9 +539,6 @@ func _reset_level_entities() -> void:
 	for n in get_tree().get_nodes_in_group("graybox_parts"):
 		if is_ancestor_of(n):
 			n.queue_free()
-	var dv := get_node_or_null("DreamVisual")
-	if dv:
-		dv.queue_free()
 	var cd := get_node_or_null("CrystalCooldown")
 	if cd:
 		cd.queue_free()
