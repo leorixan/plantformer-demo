@@ -486,32 +486,114 @@ func _setup_room_camera() -> void:
 	rc.call("attach", cam, player, rects)
 
 
+func _build_dream_jelly_image(comp: Array, cells: Dictionary) -> Image:
+	# C 方案：果冻核心 + 自动边缘光/阴影（角落不加黑）
+	var core := Color8(141, 90, 207, 255)
+	var hi := Color8(196, 131, 255, 255)
+	var hi_soft := Color8(170, 110, 238, 255)
+	var sh := Color8(116, 77, 171, 255)
+	var sh_soft := Color8(133, 88, 196, 255)
+	var minc := Vector2i(1 << 30, 1 << 30)
+	var maxc := Vector2i(-(1 << 30), -(1 << 30))
+	for cell in comp:
+		var cv: Vector2i = cell
+		minc = Vector2i(mini(minc.x, cv.x), mini(minc.y, cv.y))
+		maxc = Vector2i(maxi(maxc.x, cv.x), maxi(maxc.y, cv.y))
+	var w: int = (maxc.x - minc.x + 1) * 4
+	var h: int = (maxc.y - minc.y + 1) * 4
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	for cell in comp:
+		var cv: Vector2i = cell
+		var up := cells.has(Vector2i(cv.x, cv.y - 1))
+		var down := cells.has(Vector2i(cv.x, cv.y + 1))
+		var left := cells.has(Vector2i(cv.x - 1, cv.y))
+		var right := cells.has(Vector2i(cv.x + 1, cv.y))
+		var px: int = (cv.x - minc.x) * 4
+		var py: int = (cv.y - minc.y) * 4
+		img.fill_rect(Rect2i(px, py, 4, 4), core)
+		if not up:
+			img.fill_rect(Rect2i(px, py, 4, 1), hi)
+		elif not left:
+			img.fill_rect(Rect2i(px, py, 1, 4), hi_soft)
+		if not down:
+			img.fill_rect(Rect2i(px, py + 2, 4, 1), sh_soft)
+			img.fill_rect(Rect2i(px, py + 3, 4, 1), sh)
+		elif not right:
+			img.fill_rect(Rect2i(px + 3, py, 1, 4), sh_soft)
+		# 底角柔化：不要出现很黑的角
+		if not down and not left:
+			img.fill_rect(Rect2i(px, py + 3, 1, 1), sh_soft)
+		if not down and not right:
+			img.fill_rect(Rect2i(px + 3, py + 3, 1, 1), sh_soft)
+	return img
+
+
 func _setup_dream_visuals() -> void:
-	# 紫色 Dream Block 的显示层要高于玩家，且半透明。
-	# 复活重置时复用同一个视觉层（不销毁重建），避免紫块闪烁/消失一帧。
+	# 紫色 Dream Block：所有 8 邻接连通的格子算作一个整体，
+	# 每个连通块生成一张带自动高光/阴影的贴图（果冻核心风格）。
 	var ents := _entity_layer()
 	if ents == null:
 		return
-	var visual := get_node_or_null("DreamVisual") as TileMapLayer
-	if visual == null:
-		visual = TileMapLayer.new()
-		visual.name = "DreamVisual"
-		add_child(visual)
-	visual.tile_set = ents.tile_set
-	visual.z_index = 10
-	visual.modulate = Color(1, 1, 1, 0.65)
-	visual.clear()
-	var moved := 0
+	var container := get_node_or_null("DreamVisual")
+	if container == null:
+		container = Node2D.new()
+		container.name = "DreamVisual"
+		add_child(container)
+	container.z_index = 10
+	container.modulate = Color(1, 1, 1, 0.65)
+	for ch in container.get_children():
+		ch.free()
+	var cells: Dictionary = {}
 	for cell in ents.get_used_cells():
 		var kind := _kind_of(ents, cell)
 		if kind == "dream" or kind == "jelly":
-			visual.set_cell(cell, ents.get_cell_source_id(cell), ents.get_cell_atlas_coords(cell))
-			ents.erase_cell(cell)
-			moved += 1
-	visual.visible = moved > 0
-	if moved > 0:
-		print("[graybox] DreamBlock 高层半透明视觉: ", moved, " cells")
-
+			cells[cell] = true
+	if cells.is_empty():
+		container.visible = false
+		return
+	container.visible = true
+	# 8 邻接连通块
+	var visited: Dictionary = {}
+	var comps: Array = []
+	for c in cells:
+		if visited.has(c):
+			continue
+		var comp: Array = []
+		var stack: Array = [c]
+		visited[c] = true
+		while not stack.is_empty():
+			var cur: Vector2i = stack.pop_back()
+			comp.append(cur)
+			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1),
+					Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1)]:
+				var n: Vector2i = cur + d
+				if cells.has(n) and not visited.has(n):
+					visited[n] = true
+					stack.append(n)
+		comps.append(comp)
+	var minc := Vector2i(1 << 30, 1 << 30)
+	for comp in comps:
+		for cell in comp:
+			var cv: Vector2i = cell
+			minc = Vector2i(mini(minc.x, cv.x), mini(minc.y, cv.y))
+	for comp in comps:
+		var comp_min := Vector2i(1 << 30, 1 << 30)
+		for cell in comp:
+			var cv2: Vector2i = cell
+			comp_min = Vector2i(mini(comp_min.x, cv2.x), mini(comp_min.y, cv2.y))
+		var img := _build_dream_jelly_image(comp, cells)
+		var spr := Sprite2D.new()
+		spr.texture = ImageTexture.create_from_image(img)
+		spr.centered = false
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		spr.position = Vector2(float(comp_min.x) * 4.0, float(comp_min.y) * 4.0)
+		container.add_child(spr)
+	# 实体层里的 dream 标记 tile 不再直接渲染（视觉由 DreamVisual 接管）
+	for cell in cells:
+		ents.erase_cell(cell)
+	if not comps.is_empty():
+		print("[graybox] DreamBlock 果冻块: ", comps.size(), " 块, ", cells.size(), " 格")
 
 func _fake_terrain_cells() -> Array:
 	var terr := _terrain_layer()
