@@ -135,7 +135,8 @@ var _grab_pressed := false
 var _raw_move_x := 0.0
 var _force_move_x := 0.0
 var _force_move_x_timer := 0.0
-var _dash_freeze := 0.0
+var _freeze_end_msec := 0
+var _freeze_restore_scale := 1.0
 var _hop_wait_x := 0
 var _hop_wait_x_speed := 0.0
 var _coyote := 0.0
@@ -196,20 +197,37 @@ func _unhandled_input(event: InputEvent) -> void:
 			config.reload_and_apply(self)
 			_apply_hitbox()
 
-func hitstop_frames(frames: int) -> void:
-	# 参考蔚蓝 Celeste.Freeze(time)：全局冻结，按真实时间计时（不受帧率影响）
+func _request_freeze(frames: int) -> void:
+	# 参考蔚蓝 Celeste.Freeze(time)：全局冻结（TimeRate=0），按真实时间计时
+	if _freeze_end_msec <= 0:
+		_freeze_restore_scale = Engine.time_scale if Engine.time_scale > 0.0 else 1.0
 	Engine.time_scale = 0.0
 	var until := Time.get_ticks_msec() + int(round(float(frames) * 1000.0 / 60.0))
-	_hitstop_end_msec = maxi(_hitstop_end_msec, until)
+	_freeze_end_msec = maxi(_freeze_end_msec, until)
+
+
+func _is_frozen() -> bool:
+	return _freeze_end_msec > 0 and Time.get_ticks_msec() < _freeze_end_msec
+
+
+func cancel_freeze() -> void:
+	if _freeze_end_msec > 0:
+		_freeze_end_msec = 0
+		Engine.time_scale = _freeze_restore_scale
+
+
+func hitstop_frames(frames: int) -> void:
+	_request_freeze(frames)
 
 
 func freeze_frames(frames: int) -> void:
-	_dash_freeze = maxf(_dash_freeze, float(frames) / 60.0)
+	_request_freeze(frames)
 
 
 func _physics_process(delta: float) -> void:
-	# 全局冻结期间玩家物理也停住（避免 time_scale=0 生效前多走一帧重力）
-	if _hitstop_end_msec > 0 and Time.get_ticks_msec() < _hitstop_end_msec:
+	# 全局冻结（Celeste.Freeze）：保留输入采样，其余逻辑全部停住
+	if _is_frozen():
+		_poll_input(delta)
 		return
 	_dream_dash_lifecycle()
 	if is_dashing():
@@ -342,10 +360,6 @@ func _tick_timers(delta: float) -> void:
 	_jump_buffer = maxf(0.0, _jump_buffer - delta)
 	_dash_buffer = maxf(0.0, _dash_buffer - delta)
 	_spring_boost_timer = maxf(0.0, _spring_boost_timer - delta)
-	# 参考 Celeste.Freeze：冻结期只有输入继续走，游戏内计时器全部停住。
-	if _dash_freeze > 0.0:
-		_dash_freeze = maxf(0.0, _dash_freeze - delta)
-		return
 	_coyote = maxf(0.0, _coyote - delta)
 	_var_jump_timer = maxf(0.0, _var_jump_timer - delta)
 	if _var_jump_timer <= 0.0:
@@ -493,8 +507,8 @@ func _box_is_solid(center: Vector2, size: Vector2) -> bool:
 
 # 参考 DashUpdate：Dash 期间速度只在起手写一次，本函数只做冻结、起速与跳跃派生技巧。
 func _dash_update() -> void:
-	# 参考 DashBegin 的 Celeste.Freeze(.05)：冻结期原地不动，方向键还能继续补按。
-	if _dash_freeze > 0.0 and not dream_dashing:
+	# 冻结期间速度保持不动（物理本身已被冻结跳过，这里只是保险）
+	if _is_frozen():
 		velocity = Vector2.ZERO
 		return
 	# 参考 DashCoroutine 开头的 yield return null：方向留到冻结结束才采样，
@@ -759,7 +773,7 @@ func _try_start_dash() -> bool:
 	dash_timer = dash_duration
 	dash_cooldown_timer = dash_cooldown
 	dash_attack_timer = dash_attack_time
-	_dash_freeze = 5.0 / 60.0   # 冲刺起手冻结 5 帧
+	_request_freeze(5)   # 冲刺起手冻结 5 帧
 	_dash_refill_cooldown_timer = dash_refill_cooldown
 	_wall_slide_timer = wall_slide_time
 	mode = Mode.DASH
@@ -989,7 +1003,7 @@ func apply_spring_boost(duration: float = 0.25) -> void:
 	_spring_boost_timer = maxf(_spring_boost_timer, duration)
 	# 弹簧发射时打断冲刺/爬墙：否则冲刺结束会重置速度、爬墙每帧覆写竖直速度
 	mode = Mode.NORMAL
-	_dash_freeze = 0.0
+	cancel_freeze()
 	_force_move_x_timer = 0.0
 	_wall_slide_timer = wall_slide_time
 
@@ -1016,7 +1030,6 @@ var _dream_entered := false
 var _dream_saved_mask := 1
 var _dream_exit_timer := 0.0
 var _dream_correct_timer := 0.0
-var _hitstop_end_msec := 0
 var _stamina_flash_timer := 0.0
 var _afterimage_tick := 0
 var _stamina_flash_red := false
@@ -1049,7 +1062,7 @@ func start_dream_dash(dir: Vector2, block: Node = null) -> void:
 	dash_timer = 999.0
 	_dash_buffer = 0.0
 	_jump_buffer = 0.0   # 清掉进入紫块前残留的跳跃缓冲，避免不按跳也自动跳出
-	_dash_freeze = 0.0   # 进紫块不保留冲刺冻结帧
+	cancel_freeze()   # 进紫块不保留冲刺冻结帧
 	_dream_saved_mask = collision_mask
 	# 冲刺穿过期间无视碰撞（紫块由例外处理）；实体地形用每帧前向形状探测挡住，
 	# 保证身体不会进入墙里（见 _dream_dash_would_hit_solid）。
@@ -1285,9 +1298,9 @@ func _dream_hit_solid() -> void:
 
 func _process(_delta: float) -> void:
 	_update_stamina_flash(_delta)
-	if _hitstop_end_msec > 0 and Time.get_ticks_msec() >= _hitstop_end_msec:
-		_hitstop_end_msec = 0
-		Engine.time_scale = 1.0
+	if _freeze_end_msec > 0 and Time.get_ticks_msec() >= _freeze_end_msec:
+		_freeze_end_msec = 0
+		Engine.time_scale = _freeze_restore_scale
 
 
 func _exit_tree() -> void:

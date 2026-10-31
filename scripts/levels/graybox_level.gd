@@ -400,7 +400,8 @@ func respawn_player() -> void:
 	_dying = true
 	if player.has_method("end_dream_dash") and bool(player.get("dream_dashing")):
 		player.call("end_dream_dash")
-	player.set("_hitstop_frames", 0)
+	if player.has_method("cancel_freeze"):
+		player.call("cancel_freeze")
 	player.set_physics_process(false)
 	if player.has_method("set_input_locked"):
 		player.call("set_input_locked", true)
