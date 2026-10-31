@@ -36,7 +36,6 @@ var _terrain_cells: Dictionary = {}
 
 
 func _ready() -> void:
-	_migrate_entity_tiles()
 	# 复活重置用：初始 tile 快照
 	var _el := _entity_layer()
 	var _tl := _terrain_layer()
