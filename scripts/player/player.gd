@@ -1187,7 +1187,7 @@ func _dream_try_corner_correction(blocking: Node = null) -> bool:
 			continue
 		global_position = cand
 		_dream_last_pos = cand
-		_dream_correct_timer = 0.25
+		_dream_correct_timer = 3.0 / 60.0   # 修正后 3 帧内不再尝试，避免对角微修正死循环
 		_event("DreamCorner")
 		return true
 	return false
