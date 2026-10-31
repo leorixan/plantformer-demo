@@ -10,7 +10,14 @@ var _syncing := false
 
 
 func _ready() -> void:
-	_apply()
+	# 优先保留场景里实际保存的 size（可能是在 2D 视图拖出来的）；
+	# 如果和 room_size 不一致，说明是拖拽后的新尺寸，反过来同步 room_size
+	if size.x > 0.0 and size.y > 0.0 and size != room_size:
+		_syncing = true
+		room_size = size
+		_syncing = false
+	else:
+		_apply()
 	resized.connect(_on_resized)
 
 
