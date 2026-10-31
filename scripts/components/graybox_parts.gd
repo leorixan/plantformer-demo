@@ -392,7 +392,7 @@ class DreamBlock extends StaticBody2D:
 			var aim: Vector2 = Vector2.ZERO
 			if b.has_method("dash_input_dir"):
 				aim = b.call("dash_input_dir")
-			var aim_ok: bool = aim.length() < 0.01 or aim.normalized().dot(toward) > 0.25
+			var aim_ok: bool = aim.length() > 0.01 and aim.normalized().dot(toward) > 0.25
 			if dashing or just_dashed or (pressed and aim_ok):
 				var dir: Vector2 = b.velocity
 				if dashing or just_dashed:
@@ -403,13 +403,21 @@ class DreamBlock extends StaticBody2D:
 						# 冲刺冻结期 dash_dir 还未写入：用当前输入方向，避免变成水平滑行
 						dir = aim
 					else:
-						dir = toward
+						# 方向还没采样到（同帧按下方向+冲刺）：等下一帧再判定
+						continue
 				elif pressed:
 					# 关键：按住冲刺触发时优先用当前输入方向，避免读到上一次冲刺的 dash_dir（导致向上冲却向下走）
 					if aim.length() > 0.01:
 						dir = aim
 					else:
 						dir = toward
+				# 冲刺方向必须指向紫块内部（或身体中心已经在紫块内）才触发；
+				# 否则"站在紫块顶面水平冲刺"也会被误触发成 Dream Dash 掉进块里。
+				var center: Vector2 = b.global_position + Vector2(0.0, -5.5)
+				var inside_center: bool = contains_center(center)
+				var into := dir.normalized().dot(toward) if dir.length() > 0.01 else 0.0
+				if into < 0.25 and not inside_center:
+					continue
 				if b.has_method("start_dream_dash"):
 					print("[dream] trigger pressed=", pressed, " dir=", dir, " player=", b.global_position)
 					b.call("start_dream_dash", dir, self)
