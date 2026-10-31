@@ -401,6 +401,8 @@ func respawn_player() -> void:
 		player.call("end_dream_dash")
 	player.set("_hitstop_frames", 0)
 	player.set_physics_process(false)
+	if player.has_method("set_input_locked"):
+		player.call("set_input_locked", true)
 	Engine.time_scale = 0.0
 	# 死亡闪烁：周期 0.2s（灭 0.1s / 亮 0.1s），共闪 3 次 = 0.6s
 	for i in 3:
@@ -416,6 +418,8 @@ func respawn_player() -> void:
 	player.visible = true
 	await _reset_level_entities()
 	player.visible = true
+	if player.has_method("set_input_locked"):
+		player.call("set_input_locked", false)
 	player.set_physics_process(true)
 	_dying = false
 

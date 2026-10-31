@@ -127,6 +127,7 @@ var climb_hops := 0
 
 var _jump_buffer := 0.0
 var _dash_buffer := 0.0
+var _input_locked := false
 var _grab_pressed := false
 var _raw_move_x := 0.0
 var _force_move_x := 0.0
@@ -179,10 +180,11 @@ func _ready() -> void:
 # 按下事件在这里捕获：InputEvent 不受物理帧节奏影响，
 # 一次两帧之间按下又松开的快速点按也不会被 is_action_just_pressed 漏掉。
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("jump"): _jump_buffer = jump_buffer_time
-	elif event.is_action_pressed("dash"): _dash_buffer = dash_buffer_time
-	elif event.is_action_pressed("grab"): _grab_pressed = true
-	elif event.is_action_pressed("reload_config"):
+	if not _input_locked:
+		if event.is_action_pressed("jump"): _jump_buffer = jump_buffer_time
+		elif event.is_action_pressed("dash"): _dash_buffer = dash_buffer_time
+		elif event.is_action_pressed("grab"): _grab_pressed = true
+	if event.is_action_pressed("reload_config"):
 		var config := get_node_or_null("/root/Config")
 		if config:
 			config.reload_and_apply(self)
@@ -257,9 +259,10 @@ func _physics_process(delta: float) -> void:
 # 物理帧补采样：与 _unhandled_input 写同一个缓存计时器，两条路径任一命中都算按下，
 # 这样 headless 回归的 Input.action_press（不产生 InputEvent）也能驱动。
 func _poll_input(delta: float) -> void:
-	if Input.is_action_just_pressed("jump"): _jump_buffer = jump_buffer_time
-	if Input.is_action_just_pressed("dash"): _dash_buffer = dash_buffer_time
-	if Input.is_action_just_pressed("grab"): _grab_pressed = true
+	if not _input_locked:
+		if Input.is_action_just_pressed("jump"): _jump_buffer = jump_buffer_time
+		if Input.is_action_just_pressed("dash"): _dash_buffer = dash_buffer_time
+		if Input.is_action_just_pressed("grab"): _grab_pressed = true
 	_raw_move_x = signf(Input.get_axis("move_left", "move_right"))
 	move_y = signf(Input.get_axis("move_up", "move_down"))
 	# 参考 Update 的 forceMoveX 段：墙跳 / 翻墙 hop 后短时间内接管水平输入。
@@ -884,6 +887,14 @@ func _update_indicators() -> void:
 func is_attacking() -> bool:
 	# 可破坏方块判定：冲刺攻击窗口内 或 速度超过阈值
 	return dash_attack_timer > 0.0 or velocity.length() >= attack_speed_threshold
+
+
+func set_input_locked(value: bool) -> void:
+	_input_locked = value
+	if value:
+		_jump_buffer = 0.0
+		_dash_buffer = 0.0
+		_grab_pressed = false
 
 
 func refill_dash() -> void:
