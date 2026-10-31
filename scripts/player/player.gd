@@ -423,7 +423,7 @@ func _box_is_solid(center: Vector2, size: Vector2) -> bool:
 # 参考 DashUpdate：Dash 期间速度只在起手写一次，本函数只做冻结、起速与跳跃派生技巧。
 func _dash_update() -> void:
 	# 参考 DashBegin 的 Celeste.Freeze(.05)：冻结期原地不动，方向键还能继续补按。
-	if _dash_freeze > 0.0:
+	if _dash_freeze > 0.0 and not dream_dashing:
 		velocity = Vector2.ZERO
 		return
 	# 参考 DashCoroutine 开头的 yield return null：方向留到冻结结束才采样，
@@ -975,6 +975,7 @@ func start_dream_dash(dir: Vector2, block: Node = null) -> void:
 	dash_timer = 999.0
 	_dash_buffer = 0.0
 	_jump_buffer = 0.0   # 清掉进入紫块前残留的跳跃缓冲，避免不按跳也自动跳出
+	_dash_freeze = 0.0   # 进紫块不保留冲刺冻结帧
 	_dream_saved_mask = collision_mask
 	collision_mask = 0
 	_dream_time = 0.0

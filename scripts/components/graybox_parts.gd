@@ -399,6 +399,11 @@ class DreamBlock extends StaticBody2D:
 					var dd = b.get("dash_dir")
 					if dd is Vector2 and (dd as Vector2).length() > 0.01:
 						dir = dd
+					elif aim.length() > 0.01:
+						# 冲刺冻结期 dash_dir 还未写入：用当前输入方向，避免变成水平滑行
+						dir = aim
+					else:
+						dir = toward
 				elif pressed:
 					# 关键：按住冲刺触发时优先用当前输入方向，避免读到上一次冲刺的 dash_dir（导致向上冲却向下走）
 					if aim.length() > 0.01:
