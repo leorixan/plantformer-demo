@@ -393,6 +393,16 @@ func _slide_h(amount: float) -> void:
 	var motion := Vector2(amount, 0.0)
 	if not test_move(global_transform, motion): global_position += motion
 
+func _try_unduck() -> bool:
+	# 只有在头顶有空间时才站起来：一格高的通道里强行站起来会把碰撞盒撑进天花板/墙里卡住
+	if not is_ducking:
+		return true
+	if _can_unduck():
+		_set_duck(false)
+		return true
+	return false
+
+
 func _set_duck(value: bool) -> void:
 	if is_ducking == value: return
 	is_ducking = value
@@ -608,7 +618,7 @@ func _jump_off_wall(wall: int) -> void:
 
 func _jump() -> void:
 	_consume_jump()
-	_set_duck(false)
+	_try_unduck()
 	velocity.y = -jump_speed
 	velocity.x += jump_speed_boost * move_x
 	_var_jump_speed = velocity.y
@@ -621,7 +631,7 @@ func _super_jump() -> void:
 	velocity.x = super_jump_speed * facing
 	velocity.y = -jump_speed
 	if is_ducking:
-		_set_duck(false)
+		_try_unduck()
 		velocity.x *= duck_super_jump_x_mult
 		velocity.y *= duck_super_jump_y_mult
 		_event("Hyper" if dash_started_on_ground else "Ultra")
@@ -633,7 +643,7 @@ func _super_jump() -> void:
 
 func _wall_jump(direction: int, super_wall: bool) -> void:
 	_consume_jump()
-	_set_duck(false)
+	_try_unduck()
 	if super_wall:
 		velocity.x = super_wall_jump_horizontal * direction
 		velocity.y = -super_wall_jump_speed
