@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/components/updraft_zone.gd" id="1_up"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_up"]
+size = Vector2(64, 64)
+
+[node name="UpdraftZone" type="Area2D"]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_up")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_up")
