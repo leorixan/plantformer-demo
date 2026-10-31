@@ -506,7 +506,7 @@ class OneWay extends StaticBody2D:
 
 
 class Trophy extends Area2D:
-	## 奖杯（备选图案 #2 双耳杯）：固定大小 10x8 视觉，碰到计数 +1 并消失
+	## 奖杯：碰到后跟随玩家；站在地面累计 0.5 秒后结算（计数 +1）并消失
 	var level: Node
 	var size := Vector2(8, 8)
 	const GOLD := Color(0.949, 0.698, 0.188, 1.0)
@@ -514,11 +514,17 @@ class Trophy extends Area2D:
 	const DARK := Color(0.659, 0.392, 0.063, 1.0)
 	const BOB_AMPLITUDE := 2.0
 	const BOB_PERIOD := 1.6
+	const GROUND_SETTLE_TIME := 0.5
+	const FOLLOW_OFFSET := Vector2(0, -22)
+	const FOLLOW_LERP := 10.0
 
 	var cells: Array = []
 	var _base_y := 0.0
 	var _t := 0.0
 	var _visual: Node2D
+	var _following := false
+	var _follow_player: Node2D = null
+	var _ground_timer := 0.0
 
 
 	func _ready() -> void:
@@ -535,33 +541,27 @@ class Trophy extends Area2D:
 		add_child(_visual)
 		_build_cup()
 		body_entered.connect(_on_body)
+		z_index = 1
 
 
 	func _build_cup() -> void:
 		# 12x12 设计图，居中到 10x8（x -5..+4, y -3..+4）
-		# 杯口
 		for x in range(2, 10):
 			_cell(x, 2, GOLD)
-		# 杯身
 		for y in range(3, 6):
 			for x in range(3, 9):
 				_cell(x, y, GOLD)
-		# 杯身收底
 		for x in range(4, 8):
 			_cell(x, 6, GOLD)
-		# 高光
 		_cell(3, 3, LIGHT)
 		_cell(4, 3, LIGHT)
 		_cell(3, 4, LIGHT)
-		# 杯柄
 		_cell(5, 7, DARK)
 		_cell(6, 7, DARK)
-		# 底座
 		for x in range(4, 8):
 			_cell(x, 8, GOLD)
 		for x in range(2, 10):
 			_cell(x, 9, DARK)
-		# 双耳
 		_cell(1, 3, GOLD)
 		_cell(1, 4, GOLD)
 		_cell(2, 5, GOLD)
@@ -581,10 +581,37 @@ class Trophy extends Area2D:
 
 	func _process(delta: float) -> void:
 		_t += delta
-		position.y = _base_y + sin(_t * TAU / BOB_PERIOD) * BOB_AMPLITUDE
+		if _following and is_instance_valid(_follow_player):
+			var bob := sin(_t * TAU / BOB_PERIOD) * BOB_AMPLITUDE
+			var target: Vector2 = _follow_player.global_position + FOLLOW_OFFSET + Vector2(0, bob)
+			global_position = global_position.lerp(target, clampf(delta * FOLLOW_LERP, 0.0, 1.0))
+			# 站地累计 0.5s 才结算
+			var grounded := false
+			if _follow_player.has_method("_on_ground"):
+				grounded = bool(_follow_player.call("_on_ground"))
+			if grounded:
+				_ground_timer += delta
+				if _ground_timer >= GROUND_SETTLE_TIME:
+					_settle()
+			else:
+				_ground_timer = 0.0
+		else:
+			position.y = _base_y + sin(_t * TAU / BOB_PERIOD) * BOB_AMPLITUDE
 
 
 	func _on_body(body: Node2D) -> void:
-		if body is CharacterBody2D and level:
+		if _following or not (body is CharacterBody2D):
+			return
+		_following = true
+		_follow_player = body
+		_ground_timer = 0.0
+		set_deferred("monitoring", false)
+		global_position = body.global_position + FOLLOW_OFFSET
+
+
+	func _settle() -> void:
+		_following = false
+		_follow_player = null
+		if level:
 			level.call("collect_trophy", cells)
 		queue_free()
