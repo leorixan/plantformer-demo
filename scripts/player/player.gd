@@ -785,7 +785,11 @@ func _try_start_climb() -> bool:
 # Godot 的 test_move 默认 safe_margin 0.08 会把"刚好贴上"也算命中，所以这里用 move_and_collide
 # 直接推到接触为止；差一像素会让 SlipCheck 的探针落在墙面边界上，判成手已过墙沿而下滑。
 func _snap_to_wall(direction: int) -> void:
-	move_and_collide(Vector2(direction, 0.0) * climb_check_distance, false, CONTACT_MARGIN)
+	var col := move_and_collide(Vector2(direction, 0.0) * climb_check_distance, false, CONTACT_MARGIN)
+	if col:
+		# 物理碰撞盒比视觉窄 SHAPE_INSET（每侧 0.5px），直接贴墙会让角色视觉插进墙 1px
+		# （刚好是地形描边宽度）。贴墙后按半个 inset 往回让一点，让视觉边缘正好贴住墙面。
+		global_position.x -= float(direction) * SHAPE_INSET * 0.5
 
 func _resolve_collisions(pre_move_velocity: Vector2) -> void:
 	# landed 用 onGround 的前后沿：水平 Dash 期间 onGround 一直为真，所以不会被误判成刚落地。
