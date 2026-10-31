@@ -2,8 +2,13 @@
 extends Area2D
 ## 上升区域：玩家进入时获得一个向上的速度（可当作上升气流 / 弹射区）
 
+enum Mode {
+	ONE_SHOT,    ## 进入时施加一次
+	CONTINUOUS,  ## 在区域内持续施加
+}
+
+@export var mode: Mode = Mode.ONE_SHOT
 @export_range(0.0, 2000.0, 10.0) var launch_speed := 300.0
-@export var one_shot := false
 
 var _used := false
 
@@ -20,15 +25,24 @@ func _ready() -> void:
 	add_to_group("resettable_triggers")
 
 
+func _physics_process(_delta: float) -> void:
+	if Engine.is_editor_hint() or mode != Mode.CONTINUOUS:
+		return
+	for body in get_overlapping_bodies():
+		if body is CharacterBody2D:
+			var v: Vector2 = body.velocity
+			body.velocity = Vector2(v.x, -launch_speed)
+
+
 func _on_body_entered(body: Node2D) -> void:
+	if mode != Mode.ONE_SHOT:
+		return
 	if not (body is CharacterBody2D):
 		return
-	if one_shot and _used:
-		return
-	_used = true
 	var v: Vector2 = body.velocity
 	body.velocity = Vector2(v.x, -launch_speed)
-	print("[updraft] 向上速度 ", -launch_speed)
+	_used = true
+	print("[updraft] 一次性向上速度 ", -launch_speed)
 
 
 func reset_state() -> void:
