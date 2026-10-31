@@ -326,7 +326,8 @@ func _tick_timers(delta: float) -> void:
 		_wall_slide_timer = maxf(0.0, _wall_slide_timer - delta)
 		_wall_slide_dir = 0
 	# 参考 Update 顶部：空中下落时只要头顶有空间就自动站起来。
-	if is_ducking and velocity.y > 0.0 and not _on_ground() and _can_unduck():
+	# 离开低矮区域（头顶有空间）时立刻站起：不等到下落，上升中也会马上解除蹲姿
+	if is_ducking and not _on_ground() and _can_unduck():
 		_set_duck(false)
 	# 参考 Update 的 Wall Boost 段：中立爬墙跳后短时间内推离墙面 = 补回体力并转成墙跳。
 	# 这就是 Wallboost（无体力连续上墙）的来源；不设 forceMoveX，所以还能马上再推回墙面。
