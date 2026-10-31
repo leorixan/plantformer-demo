@@ -487,20 +487,52 @@ func _setup_room_camera() -> void:
 
 
 func _build_dream_jelly_image(comp: Array, cells: Dictionary) -> Image:
-	# C 方案：整体暗果冻芯，暴露边 2px 高光/阴影，无内部条纹
+	# C 方案：暗果冻芯；暴露边用高光/阴影，厚度按整条边自适应：
+	# 2px 用于厚实的边，1 格厚的窄条自动降为 1px，避免整格被两条边填满。
 	var core := Color8(135, 88, 196, 255)
 	var hi := Color8(198, 134, 255, 255)
 	var hi_soft := Color8(172, 112, 240, 255)
 	var hi_mid := Color8(155, 100, 222, 255)
 	var sh := Color8(100, 62, 152, 255)
 	var sh_soft := Color8(118, 76, 178, 255)
-	var sh_mid := Color8(112, 70, 168, 255)
+	var sh_mid := Color8(108, 67, 162, 255)
 	var minc := Vector2i(1 << 30, 1 << 30)
 	var maxc := Vector2i(-(1 << 30), -(1 << 30))
 	for cell in comp:
 		var cv: Vector2i = cell
 		minc = Vector2i(mini(minc.x, cv.x), mini(minc.y, cv.y))
 		maxc = Vector2i(maxi(maxc.x, cv.x), maxi(maxc.y, cv.y))
+	# 每个格到四方向边界的连续格数，用于判断"这条边是否只有 1 格厚"
+	var depth_down := {}
+	var depth_up := {}
+	var depth_right := {}
+	var depth_left := {}
+	for cell in comp:
+		var cv: Vector2i = cell
+		var n := 0
+		var cur := cv
+		while cells.has(cur):
+			n += 1
+			cur = Vector2i(cur.x, cur.y + 1)
+		depth_down[cv] = n
+		n = 0
+		cur = cv
+		while cells.has(cur):
+			n += 1
+			cur = Vector2i(cur.x, cur.y - 1)
+		depth_up[cv] = n
+		n = 0
+		cur = cv
+		while cells.has(cur):
+			n += 1
+			cur = Vector2i(cur.x + 1, cur.y)
+		depth_right[cv] = n
+		n = 0
+		cur = cv
+		while cells.has(cur):
+			n += 1
+			cur = Vector2i(cur.x - 1, cur.y)
+		depth_left[cv] = n
 	var w: int = (maxc.x - minc.x + 1) * 4
 	var h: int = (maxc.y - minc.y + 1) * 4
 	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
@@ -511,27 +543,98 @@ func _build_dream_jelly_image(comp: Array, cells: Dictionary) -> Image:
 		var down := cells.has(Vector2i(cv.x, cv.y + 1))
 		var left := cells.has(Vector2i(cv.x - 1, cv.y))
 		var right := cells.has(Vector2i(cv.x + 1, cv.y))
+		var ul := cells.has(Vector2i(cv.x - 1, cv.y - 1))
+		var ur := cells.has(Vector2i(cv.x + 1, cv.y - 1))
+		var dl := cells.has(Vector2i(cv.x - 1, cv.y + 1))
+		var dr := cells.has(Vector2i(cv.x + 1, cv.y + 1))
 		var px: int = (cv.x - minc.x) * 4
 		var py: int = (cv.y - minc.y) * 4
 		img.fill_rect(Rect2i(px, py, 4, 4), core)
-		# 先画左右竖边，再画上下横边：横边覆盖角上像素，避免角落出现"缺口"色
-		if not left:
-			img.fill_rect(Rect2i(px, py, 1, 4), hi_soft)
-			img.fill_rect(Rect2i(px + 1, py, 1, 4), hi_mid)
-		if not right:
-			img.fill_rect(Rect2i(px + 2, py, 1, 4), sh_soft)
-			img.fill_rect(Rect2i(px + 3, py, 1, 4), sh)
+		# 边所在整条 run 的最小厚度 -> 决定 2px 还是 1px
+		var top_t := 0
 		if not up:
-			img.fill_rect(Rect2i(px, py, 4, 1), hi)
-			img.fill_rect(Rect2i(px, py + 1, 4, 1), hi_soft)
+			var mn := 1 << 30
+			var cx := cv.x
+			while cells.has(Vector2i(cx - 1, cv.y)) and not cells.has(Vector2i(cx - 1, cv.y - 1)):
+				cx -= 1
+			while cells.has(Vector2i(cx, cv.y)) and not cells.has(Vector2i(cx, cv.y - 1)):
+				mn = mini(mn, int(depth_down[Vector2i(cx, cv.y)]))
+				cx += 1
+			top_t = 2 if mn >= 2 else 1
+		var bottom_t := 0
 		if not down:
-			img.fill_rect(Rect2i(px, py + 2, 4, 1), sh_soft)
+			var mn2 := 1 << 30
+			var cx2 := cv.x
+			while cells.has(Vector2i(cx2 - 1, cv.y)) and not cells.has(Vector2i(cx2 - 1, cv.y + 1)):
+				cx2 -= 1
+			while cells.has(Vector2i(cx2, cv.y)) and not cells.has(Vector2i(cx2, cv.y + 1)):
+				mn2 = mini(mn2, int(depth_up[Vector2i(cx2, cv.y)]))
+				cx2 += 1
+			bottom_t = 2 if mn2 >= 2 else 1
+		var left_t := 0
+		if not left:
+			var mn3 := 1 << 30
+			var cy := cv.y
+			while cells.has(Vector2i(cv.x, cy - 1)) and not cells.has(Vector2i(cv.x - 1, cy - 1)):
+				cy -= 1
+			while cells.has(Vector2i(cv.x, cy)) and not cells.has(Vector2i(cv.x - 1, cy)):
+				mn3 = mini(mn3, int(depth_right[Vector2i(cv.x, cy)]))
+				cy += 1
+			left_t = 2 if mn3 >= 2 else 1
+		var right_t := 0
+		if not right:
+			var mn4 := 1 << 30
+			var cy2 := cv.y
+			while cells.has(Vector2i(cv.x, cy2 - 1)) and not cells.has(Vector2i(cv.x + 1, cy2 - 1)):
+				cy2 -= 1
+			while cells.has(Vector2i(cv.x, cy2)) and not cells.has(Vector2i(cv.x + 1, cy2)):
+				mn4 = mini(mn4, int(depth_left[Vector2i(cv.x, cy2)]))
+				cy2 += 1
+			right_t = 2 if mn4 >= 2 else 1
+		# 竖边
+		if left_t > 0:
+			img.fill_rect(Rect2i(px, py, 1, 4), hi_soft)
+			if left_t > 1:
+				img.fill_rect(Rect2i(px + 1, py, 1, 4), hi_mid)
+		if right_t > 0:
+			if right_t > 1:
+				img.fill_rect(Rect2i(px + 2, py, 1, 4), sh_soft)
+			img.fill_rect(Rect2i(px + 3, py, 1, 4), sh)
+		# 横边（后画，覆盖角像素）
+		if top_t > 0:
+			img.fill_rect(Rect2i(px, py, 4, 1), hi)
+			if top_t > 1:
+				img.fill_rect(Rect2i(px, py + 1, 4, 1), hi_soft)
+		if bottom_t > 0:
+			if bottom_t > 1:
+				img.fill_rect(Rect2i(px, py + 2, 4, 1), sh_soft)
 			img.fill_rect(Rect2i(px, py + 3, 4, 1), sh)
-		# 底角柔化，不用背景黑
+		# 外角 1px 过渡（圆角感，不用背景黑）
+		if not up and not left:
+			img.set_pixel(px, py, hi)
+		if not up and not right:
+			img.set_pixel(px + 3, py, hi_soft)
+			if top_t > 1:
+				img.set_pixel(px + 3, py + 1, sh_soft)
 		if not down and not left:
-			img.fill_rect(Rect2i(px, py + 3, 1, 1), sh_soft)
+			img.set_pixel(px, py + 3, sh_soft)
+			if bottom_t > 1:
+				img.set_pixel(px, py + 2, hi_mid)
 		if not down and not right:
-			img.fill_rect(Rect2i(px + 3, py + 3, 1, 1), sh_soft)
+			img.set_pixel(px + 3, py + 3, sh)
+		# 内折角：顶点周围 3 个相邻格恰好缺 1 个 -> 凹角补阴影像素
+		var miss_tl := (0 if up else 1) + (0 if left else 1) + (0 if ul else 1)
+		var miss_tr := (0 if up else 1) + (0 if right else 1) + (0 if ur else 1)
+		var miss_bl := (0 if down else 1) + (0 if left else 1) + (0 if dl else 1)
+		var miss_br := (0 if down else 1) + (0 if right else 1) + (0 if dr else 1)
+		if miss_tl == 1:
+			img.set_pixel(px, py, sh_mid)
+		if miss_tr == 1:
+			img.set_pixel(px + 3, py, sh_mid)
+		if miss_bl == 1:
+			img.set_pixel(px, py + 3, sh_mid)
+		if miss_br == 1:
+			img.set_pixel(px + 3, py + 3, sh_mid)
 	return img
 
 
