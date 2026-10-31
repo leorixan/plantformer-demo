@@ -579,7 +579,9 @@ func _build_fake_terrain_masks() -> void:
 		var minc := Vector2i(1 << 30, 1 << 30)
 		var maxc := Vector2i(-(1 << 30), -(1 << 30))
 		for cell in comp:
-			patch.set_cell(cell, terr.get_cell_source_id(cell), terr.get_cell_atlas_coords(cell), terr.get_cell_alternative_tile(cell))
+			# 用基础 tile（alt=0）绘制：编辑器里假方块是半透明的，
+			# 游戏内视觉块必须是完全不透明、和真实地形一模一样的 tile。
+			patch.set_cell(cell, terr.get_cell_source_id(cell), terr.get_cell_atlas_coords(cell), 0)
 			minc = Vector2i(mini(minc.x, cell.x), mini(minc.y, cell.y))
 			maxc = Vector2i(maxi(maxc.x, cell.x), maxi(maxc.y, cell.y))
 		var px := Vector2(float(minc.x) * TILE, float(minc.y) * TILE)
