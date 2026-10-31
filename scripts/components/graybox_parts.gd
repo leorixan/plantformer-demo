@@ -411,17 +411,31 @@ class DreamBlock extends StaticBody2D:
 						dir = aim
 					else:
 						dir = toward
-				# 冲刺方向必须指向紫块内部（或身体中心已经在紫块内）才触发；
-				# 否则"站在紫块顶面水平冲刺"也会被误触发成 Dream Dash 掉进块里。
-				var center: Vector2 = b.global_position + Vector2(0.0, -5.5)
-				var inside_center: bool = contains_center(center)
-				var into := dir.normalized().dot(toward) if dir.length() > 0.01 else 0.0
-				if into < 0.25 and not inside_center:
+				# 冲刺必须真的会把身体扫进紫块才触发；
+				# 紧贴紫块、沿着表面/旁边冲刺不应触发（否则会误触发 Dream Dash 效果）。
+				if not dash_enters_block(b, dir):
 					continue
 				if b.has_method("start_dream_dash"):
 					print("[dream] trigger pressed=", pressed, " dir=", dir, " player=", b.global_position)
 					b.call("start_dream_dash", dir, self)
 				return
+
+	func dash_enters_block(body: Node2D, dir: Vector2) -> bool:
+		# 玩家身体（8x11，中心在脚底上方 5.5）沿冲刺方向扫掠，看是否真的会进入方块。
+		# 只是"朝方块中心方向"还不够：站在顶面朝方块中心水平冲时也会满足该条件，
+		# 但扫掠框一直在顶面上方，不会进入方块。
+		if dir.length() < 0.01:
+			return false
+		var d := dir.normalized()
+		var center: Vector2 = body.global_position + Vector2(0.0, -5.5)
+		var block_rect := Rect2(global_position - size * 0.5, size)
+		for i in range(1, 17):
+			var c := center + d * (float(i) * 1.5)
+			var body_rect := Rect2(c - Vector2(3.5, 5.0), Vector2(7.0, 10.0))
+			if block_rect.intersects(body_rect):
+				return true
+		return false
+
 
 	func contains_center(c: Vector2) -> bool:
 		return Rect2(global_position - size * 0.5, size).has_point(c)
