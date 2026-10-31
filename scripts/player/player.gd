@@ -157,12 +157,15 @@ var _event_timer := 0.0
 @onready var collider: CollisionShape2D = $CollisionShape2D
 @onready var carry_anchor: Marker2D = $CarryAnchor
 @onready var grab_detector: Area2D = $GrabDetector
+@onready var hurtbox: Area2D = $Hurtbox
 @onready var dash_pips: Array[ColorRect] = [$UI/DashPip1, $UI/DashPip2, $UI/DashPip3]
 @onready var stamina_fill: ColorRect = $UI/StaminaBar/Fill
 @onready var debug_label: Label = get_node_or_null("DebugLayer/ControllerDebug")
 var carried_item: CarryItem
 
 func _ready() -> void:
+	# 圆形碰撞箱 = 玩家的伤害判定 hurtbox（关卡组件用 area 检测它）
+	hurtbox.add_to_group("player_hurtbox")
 	var ui_node := get_node_or_null("UI")
 	if ui_node:
 		ui_node.visible = false

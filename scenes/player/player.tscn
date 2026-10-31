@@ -5,8 +5,12 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_p47bc"]
 size = Vector2(8, 11)
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_75vfm"]
-radius = 5.0249376
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_8afob"]
+radius = 4.0
+height = 11.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hurt"]
+radius = 4.0
 
 [node name="Player" type="CharacterBody2D" unique_id=1956478963]
 collision_layer = 2
@@ -27,7 +31,6 @@ offset_left = 2.0
 offset_top = -8.0
 offset_right = 4.0
 offset_bottom = -6.0
-color = Color(1, 1, 1, 1)
 
 [node name="UI" type="Node2D" parent="." unique_id=285777650]
 visible = false
@@ -80,7 +83,16 @@ collision_mask = 4
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="GrabDetector" unique_id=684444366]
 position = Vector2(0, -5.5)
-shape = SubResource("CircleShape2D_75vfm")
+shape = SubResource("CapsuleShape2D_8afob")
+
+[node name="Hurtbox" type="Area2D" parent="."]
+collision_layer = 8
+collision_mask = 0
+monitoring = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, -5.5)
+shape = SubResource("CircleShape2D_hurt")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=2064523003]
 position = Vector2(0, -24)

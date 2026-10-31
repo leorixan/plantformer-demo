@@ -8,16 +8,17 @@ class Hazard extends Area2D:
 	var size := Vector2(8, 8)
 
 	func _ready() -> void:
-		collision_mask = 2
+		# 伤害判定用玩家 player.tscn 里的圆形 hurtbox（不再用身体矩形）
+		collision_mask = 8
 		var cs := CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
 		rect.size = size
 		cs.shape = rect
 		add_child(cs)
-		body_entered.connect(_on_body)
+		area_entered.connect(_on_area)
 
-	func _on_body(body: Node2D) -> void:
-		if level and body is CharacterBody2D:
+	func _on_area(area: Area2D) -> void:
+		if level and area.is_in_group("player_hurtbox"):
 			level.call("respawn_player")
 
 
