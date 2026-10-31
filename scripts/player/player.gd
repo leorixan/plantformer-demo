@@ -1009,6 +1009,7 @@ var _dream_time := 0.0
 var _dream_entered := false
 var _dream_saved_mask := 1
 var _dream_exit_timer := 0.0
+var _dream_correct_timer := 0.0
 var _hitstop_frames := 0
 var _stamina_flash_timer := 0.0
 var _afterimage_tick := 0
@@ -1049,6 +1050,7 @@ func start_dream_dash(dir: Vector2, block: Node = null) -> void:
 	collision_mask = 0
 	_dream_time = 0.0
 	_dream_entered = false
+	_dream_correct_timer = 0.0
 	# 清理攀爬/贴墙/外力残留，避免先回弹再冲进去
 	_grab_pressed = false
 	_wall_slide_dir = 0
@@ -1157,6 +1159,9 @@ func _dream_try_corner_correction(blocking: Node = null) -> bool:
 	if blocking != null and (blocking.is_in_group("dream_blocks") or _is_passable_oneway(blocking)):
 		# 紫块/可穿过单向墙不作为角落修正对象
 		return false
+	if _dream_correct_timer > 0.0:
+		# 刚修正完又被挡住：说明这不是"错位"而是真撞墙，交给撞墙判定
+		return false
 	if not _dream_inside_block():
 		return false
 	var perp := Vector2(absf(dream_dir.y), absf(dream_dir.x))
@@ -1182,6 +1187,7 @@ func _dream_try_corner_correction(blocking: Node = null) -> bool:
 			continue
 		global_position = cand
 		_dream_last_pos = cand
+		_dream_correct_timer = 0.25
 		_event("DreamCorner")
 		return true
 	return false
@@ -1191,6 +1197,7 @@ func _dream_dash_lifecycle() -> void:
 	# Dream Dash 只有在完全离开所有紫块后才结束（对厚墙/贴脸/斜向都适用）
 	if not dream_dashing:
 		return
+	_dream_correct_timer = maxf(0.0, _dream_correct_timer - get_physics_process_delta_time())
 	velocity = dream_dir * dream_dash_speed
 	_dream_time += get_physics_process_delta_time()
 	var moved := global_position.distance_to(_dream_last_pos)
