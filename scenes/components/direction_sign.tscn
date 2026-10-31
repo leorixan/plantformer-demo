@@ -1,11 +1,10 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://dyprnshowg8yq"]
 
-[ext_resource type="Texture2D" path="res://assets/art/objects/direction_sign.png" id="1_tex"]
-[ext_resource type="Script" path="res://scripts/components/direction_sign.gd" id="2_scr"]
+[ext_resource type="Texture2D" uid="uid://dhjxtf8drknlb" path="res://assets/art/objects/direction_sign.png" id="1_tex"]
+[ext_resource type="Script" uid="uid://cwviiolsgowvo" path="res://scripts/components/direction_sign.gd" id="2_scr"]
 
-[node name="DirectionSign" type="Sprite2D"]
+[node name="DirectionSign" type="Sprite2D" unique_id=1233965985]
 texture = ExtResource("1_tex")
-centered = true
-offset = Vector2(0, -12)
+offset = Vector2(0, -10)
 hframes = 8
 script = ExtResource("2_scr")
