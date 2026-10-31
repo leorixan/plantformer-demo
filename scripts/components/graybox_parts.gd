@@ -236,8 +236,12 @@ class Spring extends StaticBody2D:
 			body.velocity = Vector2(v.x, launch)
 		elif dir.x < 0.0:
 			body.velocity = Vector2(-launch, minf(v.y, -up_boost))
+			if body.has_method("set_facing"):
+				body.call("set_facing", -1.0)
 		else:
 			body.velocity = Vector2(launch, minf(v.y, -up_boost))
+			if body.has_method("set_facing"):
+				body.call("set_facing", 1.0)
 
 
 class Breakable extends StaticBody2D:

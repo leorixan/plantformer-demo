@@ -894,6 +894,12 @@ func is_attacking() -> bool:
 	return dash_attack_timer > 0.0 or velocity.length() >= attack_speed_threshold
 
 
+func set_facing(direction: float) -> void:
+	facing = signf(direction)
+	if visuals:
+		visuals.scale.x = facing
+
+
 func apply_spring_boost(duration: float = 0.25) -> void:
 	_spring_boost_timer = maxf(_spring_boost_timer, duration)
 	# 弹簧发射时打断冲刺/爬墙：否则冲刺结束会重置速度、爬墙每帧覆写竖直速度
