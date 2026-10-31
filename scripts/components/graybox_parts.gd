@@ -126,6 +126,7 @@ class Spring extends StaticBody2D:
 	var _cooldown := 0.0
 	var _launch_player: CharacterBody2D = null
 	var _launch_grace := 0.0
+	var _launched_body: CharacterBody2D = null
 
 
 	func _ready() -> void:
@@ -186,7 +187,11 @@ class Spring extends StaticBody2D:
 		if _cooldown > 0.0:
 			_cooldown = maxf(0.0, _cooldown - delta)
 		var p := _overlap_player()
+		if p != null and _cooldown <= 0.0 and _is_climbing(p) and p != _launched_body:
+			_on_body_entered(p)
+			return
 		if p == null:
+			_launched_body = null
 			if _exception and is_instance_valid(_player):
 				_player.remove_collision_exception_with(self)
 			_exception = false
@@ -210,6 +215,7 @@ class Spring extends StaticBody2D:
 		if not _from_valid_side(body) and not _is_climbing(body):
 			return
 		_cooldown = 0.25
+		_launched_body = body as CharacterBody2D
 		_exception = false
 		_player = null
 		if body.has_method("refill_dash"):

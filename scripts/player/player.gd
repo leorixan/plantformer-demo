@@ -896,6 +896,11 @@ func is_attacking() -> bool:
 
 func apply_spring_boost(duration: float = 0.25) -> void:
 	_spring_boost_timer = maxf(_spring_boost_timer, duration)
+	# 弹簧发射时打断冲刺/爬墙：否则冲刺结束会重置速度、爬墙每帧覆写竖直速度
+	mode = Mode.NORMAL
+	_dash_freeze = 0.0
+	_force_move_x_timer = 0.0
+	_wall_slide_timer = wall_slide_time
 
 
 func set_input_locked(value: bool) -> void:
