@@ -487,13 +487,13 @@ func _setup_room_camera() -> void:
 
 
 func _build_dream_jelly_image(comp: Array, cells: Dictionary) -> Image:
-	# C 方案：果冻核心 + 自动边缘光/阴影（角落不加黑）
-	var base := Color8(158, 106, 230, 255)
-	var core := Color8(130, 80, 198, 255)
-	var hi := Color8(196, 131, 255, 255)
-	var hi_soft := Color8(170, 110, 238, 255)
-	var sh := Color8(116, 77, 171, 255)
-	var sh_soft := Color8(133, 88, 196, 255)
+	# C 方案：整体压暗的果冻芯 + 1px 细边缘高光/阴影（不是整格宽的粗壳）
+	var core := Color8(135, 88, 196, 255)
+	var inner := Color8(146, 96, 212, 255)
+	var hi := Color8(198, 134, 255, 255)
+	var hi_soft := Color8(172, 112, 240, 255)
+	var sh := Color8(100, 62, 152, 255)
+	var sh_soft := Color8(118, 76, 178, 255)
 	var minc := Vector2i(1 << 30, 1 << 30)
 	var maxc := Vector2i(-(1 << 30), -(1 << 30))
 	for cell in comp:
@@ -512,9 +512,11 @@ func _build_dream_jelly_image(comp: Array, cells: Dictionary) -> Image:
 		var right := cells.has(Vector2i(cv.x + 1, cv.y))
 		var px: int = (cv.x - minc.x) * 4
 		var py: int = (cv.y - minc.y) * 4
-		img.fill_rect(Rect2i(px, py, 4, 4), base)
+		img.fill_rect(Rect2i(px, py, 4, 4), core)
+		# 内部：每个 4px 格顶部一条很淡的亮线，形成分层果冻感
 		if up and down and left and right:
-			img.fill_rect(Rect2i(px, py, 4, 4), core)
+			img.fill_rect(Rect2i(px, py, 4, 1), inner)
+		# 1px 细高光 / 阴影
 		if not up:
 			img.fill_rect(Rect2i(px, py, 4, 1), hi)
 		elif not left:
@@ -524,7 +526,7 @@ func _build_dream_jelly_image(comp: Array, cells: Dictionary) -> Image:
 			img.fill_rect(Rect2i(px, py + 3, 4, 1), sh)
 		elif not right:
 			img.fill_rect(Rect2i(px + 3, py, 1, 4), sh_soft)
-		# 底角柔化：不要出现很黑的角
+		# 底角柔化，不用背景黑
 		if not down and not left:
 			img.fill_rect(Rect2i(px, py + 3, 1, 1), sh_soft)
 		if not down and not right:
