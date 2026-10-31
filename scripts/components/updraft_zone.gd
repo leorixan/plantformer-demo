@@ -2,7 +2,7 @@
 extends Area2D
 ## 上升区域：玩家进入时获得一个向上的速度（可当作上升气流 / 弹射区）
 
-@export var launch_speed := 300.0
+@export_range(0.0, 2000.0, 10.0) var launch_speed := 300.0
 @export var one_shot := false
 
 var _used := false
