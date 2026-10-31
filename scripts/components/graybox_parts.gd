@@ -174,6 +174,7 @@ class Spring extends StaticBody2D:
 			if _launch_grace <= 0.0 and is_instance_valid(_launch_player):
 				_launch_player.remove_collision_exception_with(self)
 				_launch_player = null
+			return
 		if _cooldown > 0.0:
 			_cooldown = maxf(0.0, _cooldown - delta)
 		var p := _overlap_player()
@@ -201,6 +202,8 @@ class Spring extends StaticBody2D:
 		if not _from_valid_side(body):
 			return
 		_cooldown = 0.25
+		_exception = false
+		_player = null
 		if body.has_method("refill_dash"):
 			body.call("refill_dash")
 		if body.has_method("apply_spring_boost"):
