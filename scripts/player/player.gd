@@ -209,14 +209,6 @@ func _physics_process(delta: float) -> void:
 		_spawn_afterimage_tick()
 	if _dream_exit_timer > 0.0:
 		_dream_exit_timer = maxf(0.0, _dream_exit_timer - delta)
-		if Input.is_action_pressed("jump") and Input.is_action_just_pressed("jump"):
-			_jump_buffer = 0.0
-			_dream_exit_timer = 0.0
-			velocity = Vector2(signf(_dream_exit_dir.x) * float(wall_jump_speed), -jump_speed)
-			_var_jump_speed = -jump_speed
-			_var_jump_timer = var_jump_time
-			_dream_jump_full = true
-			dash_count = max_dashes
 	if dream_dashing and _dream_time > 0.05:
 		var space := get_world_2d().direct_space_state
 		var from := global_position - Vector2(0, 5.5)   # 身体中心
@@ -314,8 +306,7 @@ func _tick_timers(delta: float) -> void:
 	_coyote = maxf(0.0, _coyote - delta)
 	_var_jump_timer = maxf(0.0, _var_jump_timer - delta)
 	if _var_jump_timer <= 0.0:
-		_dream_jump_full = false
-	_climb_lock = maxf(0.0, _climb_lock - delta)
+		_climb_lock = maxf(0.0, _climb_lock - delta)
 	dash_attack_timer = maxf(0.0, dash_attack_timer - delta)
 	dash_cooldown_timer = maxf(0.0, dash_cooldown_timer - delta)
 	_event_timer = maxf(0.0, _event_timer - delta)
@@ -593,7 +584,7 @@ func _apply_gravity(delta: float) -> void:
 			mult = 0.5
 		velocity.y = move_toward(velocity.y, limit, gravity * mult * delta)
 	if _var_jump_timer > 0.0:
-		if Input.is_action_pressed("jump") or _dream_jump_full: velocity.y = minf(velocity.y, _var_jump_speed)
+		if Input.is_action_pressed("jump"): velocity.y = minf(velocity.y, _var_jump_speed)
 		else: _var_jump_timer = 0.0
 
 func _try_jump() -> void:
@@ -980,9 +971,7 @@ var _dream_stall := 0.0
 var _dream_time := 0.0
 var _dream_entered := false
 var _dream_saved_mask := 1
-var _dream_exit_dir := Vector2.ZERO
 var _dream_exit_timer := 0.0
-var _dream_jump_full := false
 var _hitstop_frames := 0
 var _stamina_flash_timer := 0.0
 var _afterimage_tick := 0
@@ -1047,12 +1036,11 @@ func end_dream_dash(block: Node = null) -> void:
 	if not dream_dashing:
 		return
 	dream_dashing = false
-	_dream_exit_dir = Vector2(dream_dir.x, 0.0)
 	_dream_exit_timer = 0.12
 	collision_mask = _dream_saved_mask if _dream_saved_mask != 0 else 1
 	dash_timer = 0.0
 	mode = Mode.NORMAL
-		# 出块保持原速；主动按跳的墙跳式跳出由 0.12s 窗口处理
+		# 出块保持原速；跳跃按普通跳跃规则处理（不再有特殊的超级跳）
 	velocity = dream_dir * dash_speed   # 离开方块保持原速
 	dash_count = max_dashes
 	stamina = max_stamina
