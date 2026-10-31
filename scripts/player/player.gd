@@ -128,6 +128,7 @@ var climb_hops := 0
 var _jump_buffer := 0.0
 var _dash_buffer := 0.0
 var _input_locked := false
+var _spring_boost_timer := 0.0
 var _grab_pressed := false
 var _raw_move_x := 0.0
 var _force_move_x := 0.0
@@ -279,6 +280,7 @@ func _poll_input(delta: float) -> void:
 func _tick_timers(delta: float) -> void:
 	_jump_buffer = maxf(0.0, _jump_buffer - delta)
 	_dash_buffer = maxf(0.0, _dash_buffer - delta)
+	_spring_boost_timer = maxf(0.0, _spring_boost_timer - delta)
 	# 参考 Celeste.Freeze：冻结期只有输入继续走，游戏内计时器全部停住。
 	if _dash_freeze > 0.0:
 		_dash_freeze = maxf(0.0, _dash_freeze - delta)
@@ -519,6 +521,9 @@ func _point_is_solid(point: Vector2) -> bool:
 	return not get_world_2d().direct_space_state.intersect_point(params, 1).is_empty()
 
 func _apply_horizontal(delta: float) -> void:
+	# 弹簧弹出后的短时间内不被空中加速度/摩擦力吃掉水平速度
+	if _spring_boost_timer > 0.0:
+		return
 	var grounded := _on_ground()
 	if is_ducking and grounded:
 		velocity.x = move_toward(velocity.x, 0.0, duck_friction * delta)
@@ -887,6 +892,10 @@ func _update_indicators() -> void:
 func is_attacking() -> bool:
 	# 可破坏方块判定：冲刺攻击窗口内 或 速度超过阈值
 	return dash_attack_timer > 0.0 or velocity.length() >= attack_speed_threshold
+
+
+func apply_spring_boost(duration: float = 0.25) -> void:
+	_spring_boost_timer = maxf(_spring_boost_timer, duration)
 
 
 func set_input_locked(value: bool) -> void:

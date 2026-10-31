@@ -123,6 +123,8 @@ class Spring extends StaticBody2D:
 	var _player: CharacterBody2D = null
 	var _exception := false
 	var _cooldown := 0.0
+	var _launch_player: CharacterBody2D = null
+	var _launch_grace := 0.0
 
 
 	func _ready() -> void:
@@ -166,6 +168,11 @@ class Spring extends StaticBody2D:
 
 
 	func _physics_process(delta: float) -> void:
+		if _launch_grace > 0.0:
+			_launch_grace = maxf(0.0, _launch_grace - delta)
+			if _launch_grace <= 0.0 and is_instance_valid(_launch_player):
+				_launch_player.remove_collision_exception_with(self)
+				_launch_player = null
 		if _cooldown > 0.0:
 			_cooldown = maxf(0.0, _cooldown - delta)
 		var p := _overlap_player()
@@ -193,6 +200,17 @@ class Spring extends StaticBody2D:
 		if not _from_valid_side(body):
 			return
 		_cooldown = 0.25
+		if body.has_method("refill_dash"):
+			body.call("refill_dash")
+		if body.has_method("apply_spring_boost"):
+			body.call("apply_spring_boost", 0.25)
+		if body is CharacterBody2D:
+			var cb := body as CharacterBody2D
+			if _launch_player != null and is_instance_valid(_launch_player) and _launch_player != cb:
+				_launch_player.remove_collision_exception_with(self)
+			cb.add_collision_exception_with(self)
+			_launch_player = cb
+			_launch_grace = 0.2
 		var v: Vector2 = body.velocity
 		if dir.y < 0.0:
 			body.velocity = Vector2(v.x, -launch)
