@@ -1077,6 +1077,27 @@ func _dream_dash_die() -> void:
 		lvl.call("respawn_player")
 
 
+func _try_dream_reverse_grab() -> bool:
+	# 紫块冲刺结束瞬间：反方向 + 抓 → 取消冲刺并反向抓在紫块侧面上
+	if absf(dream_dir.x) < 0.01:
+		return false
+	if not Input.is_action_pressed("grab"):
+		return false
+	var back := -signf(dream_dir.x)
+	var raw := Input.get_axis("move_left", "move_right")
+	if signf(raw) != back:
+		return false
+	end_dream_dash()
+	_dream_exit_timer = 0.0
+	velocity = Vector2.ZERO
+	facing = back
+	visuals.scale.x = facing
+	if _try_start_climb():
+		_event("DreamReverseGrab")
+		return true
+	return false
+
+
 func _dream_dash_lifecycle() -> void:
 	# Dream Dash 只有在完全离开所有紫块后才结束（对厚墙/贴脸/斜向都适用）
 	if not dream_dashing:
@@ -1105,6 +1126,9 @@ func _dream_dash_lifecycle() -> void:
 		_dream_entered = true
 	if _dream_entered:
 		if not inside:
+			# 出块瞬间：按住反方向 + 抓 → 反向抓住紫块，而不是保持原速冲出去
+			if _try_dream_reverse_grab():
+				return
 			end_dream_dash()
 	else:
 		if not near:
