@@ -251,6 +251,9 @@ func _physics_process(delta: float) -> void:
 		Mode.DASH: _dash_update()
 		Mode.CLIMB: _climb_update(delta)
 		_: _normal_update(delta)
+	if dream_dashing and _dream_dash_would_hit_solid(delta):
+		_dream_hit_solid()
+		velocity = Vector2.ZERO
 	var pre_move_velocity := velocity
 	move_and_slide()
 	_resolve_collisions(pre_move_velocity)
@@ -259,6 +262,26 @@ func _physics_process(delta: float) -> void:
 
 # 物理帧补采样：与 _unhandled_input 写同一个缓存计时器，两条路径任一命中都算按下，
 # 这样 headless 回归的 Input.action_press（不产生 InputEvent）也能驱动。
+func _dream_dash_would_hit_solid(delta: float) -> bool:
+	# 前向形状探测：下一帧身体会碰到的非紫块实体地形
+	var h := _body_height()
+	var center := global_position + Vector2(0.0, -h * 0.5)
+	var next_center := center + dream_dir * (dash_speed * delta + 0.5)
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(body_width, h) - Vector2(SHAPE_INSET, SHAPE_INSET)
+	var params := PhysicsShapeQueryParameters2D.new()
+	params.shape = rect
+	params.transform = Transform2D(0.0, next_center)
+	params.collision_mask = 1
+	params.exclude = [get_rid()]
+	for r in get_world_2d().direct_space_state.intersect_shape(params, 8):
+		var c = r.get("collider")
+		if c is Node and (c as Node).is_in_group("dream_blocks"):
+			continue
+		return true
+	return false
+
+
 func _poll_input(delta: float) -> void:
 	if not _input_locked:
 		if Input.is_action_just_pressed("jump"): _jump_buffer = jump_buffer_time
@@ -977,6 +1000,8 @@ func start_dream_dash(dir: Vector2, block: Node = null) -> void:
 	_jump_buffer = 0.0   # 清掉进入紫块前残留的跳跃缓冲，避免不按跳也自动跳出
 	_dash_freeze = 0.0   # 进紫块不保留冲刺冻结帧
 	_dream_saved_mask = collision_mask
+	# 冲刺穿过期间无视碰撞（紫块由例外处理）；实体地形用每帧前向形状探测挡住，
+	# 保证身体不会进入墙里（见 _dream_dash_would_hit_solid）。
 	collision_mask = 0
 	_dream_time = 0.0
 	_dream_entered = false
