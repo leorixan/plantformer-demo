@@ -209,6 +209,18 @@ func _physics_process(delta: float) -> void:
 		_spawn_afterimage_tick()
 	if _dream_exit_timer > 0.0:
 		_dream_exit_timer = maxf(0.0, _dream_exit_timer - delta)
+		# 紫块冲刺出来后的短窗口内按跳 = 蔚蓝的 Dream Jump（Super）：
+		# 保留冲刺水平速度，只给普通跳跃的向上速度 + JumpHBoost。
+		if _jump_buffer > 0.0 and absf(dream_dir.x) > 0.01:
+			_jump_buffer = 0.0
+			_dream_exit_timer = 0.0
+			velocity.y = -jump_speed
+			velocity.x += jump_speed_boost * move_x
+			_var_jump_speed = velocity.y
+			_var_jump_timer = var_jump_time
+			_var_jump_timer = maxf(_var_jump_timer, 0.1)
+			dash_count = max_dashes
+			_event("DreamJump")
 	if dream_dashing and _dream_time > 0.05:
 		var space := get_world_2d().direct_space_state
 		var from := global_position - Vector2(0, 5.5)   # 身体中心
@@ -251,6 +263,7 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 	var pre_move_velocity := velocity
 	move_and_slide()
+	_resolve_collisions(pre_move_velocity)
 	_resolve_collisions(pre_move_velocity)
 	_update_indicators()
 	_update_debug()
