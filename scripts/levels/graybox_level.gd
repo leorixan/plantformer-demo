@@ -513,30 +513,46 @@ func _setup_dream_visuals() -> void:
 		print("[graybox] DreamBlock 高层半透明视觉: ", moved, " cells")
 
 
-func _fake_terrain_design() -> TileMapLayer:
-	return get_node_or_null("FakeTerrain") as TileMapLayer
+func _fake_terrain_cells() -> Array:
+	var terr := _terrain_layer()
+	if terr == null:
+		return []
+	var out: Array = []
+	for cell in terr.get_used_cells():
+		if _kind_of(terr, cell) == "fake_terrain":
+			out.append(cell)
+	return out
+
+
+func _erase_fake_terrain_tiles() -> void:
+	# 假地形的视觉由运行时 patch 接管，Terrain 层里不再保留原始 tile
+	var terr := _terrain_layer()
+	if terr == null:
+		return
+	for cell in terr.get_used_cells():
+		if _kind_of(terr, cell) == "fake_terrain":
+			terr.erase_cell(cell)
 
 
 func _build_fake_terrain_masks() -> void:
-	# 伪装地形：FakeTerrain 设计层里的 tile 看起来和地形一样，
-	# 运行时拆成连通块的独立视觉层 + 触发区域；玩家穿过时整块淡出消失。
-	var design := _fake_terrain_design()
-	if design == null:
+	# 伪装地形：Terrain 层里 kind=fake_terrain 的 tile 看起来和真地形一样，
+	# 运行时按连通块拆成独立视觉层 + 触发区域；玩家穿过时整块淡出消失（死亡不恢复）。
+	var terr := _terrain_layer()
+	if terr == null:
 		return
-	design.visible = false
-	design.collision_enabled = false
+	var cells: Dictionary = {}
+	for c in terr.get_used_cells():
+		if _kind_of(terr, c) == "fake_terrain":
+			cells[c] = true
+	if cells.is_empty():
+		return
 	var old := get_node_or_null("FakeTerrainRuntime")
 	if old:
 		old.queue_free()
 	var root := Node2D.new()
 	root.name = "FakeTerrainRuntime"
 	add_child(root)
-	var cells: Dictionary = {}
-	for c in design.get_used_cells():
-		cells[c] = true
-	if cells.is_empty():
-		return
-	# 4 邻接连通块
+	# 8 邻接连通块（斜向相接也算同一块）
 	var visited: Dictionary = {}
 	var comps: Array = []
 	for c in cells:
@@ -557,14 +573,13 @@ func _build_fake_terrain_masks() -> void:
 	for comp in comps:
 		var patch := TileMapLayer.new()
 		patch.name = "Patch"
-		patch.tile_set = design.tile_set
-		patch.z_index = 20
+		patch.tile_set = terr.tile_set
 		patch.collision_enabled = false
 		root.add_child(patch)
 		var minc := Vector2i(1 << 30, 1 << 30)
 		var maxc := Vector2i(-(1 << 30), -(1 << 30))
 		for cell in comp:
-			patch.set_cell(cell, design.get_cell_source_id(cell), design.get_cell_atlas_coords(cell), design.get_cell_alternative_tile(cell))
+			patch.set_cell(cell, terr.get_cell_source_id(cell), terr.get_cell_atlas_coords(cell), terr.get_cell_alternative_tile(cell))
 			minc = Vector2i(mini(minc.x, cell.x), mini(minc.y, cell.y))
 			maxc = Vector2i(maxi(maxc.x, cell.x), maxi(maxc.y, cell.y))
 		var px := Vector2(float(minc.x) * TILE, float(minc.y) * TILE)
@@ -581,6 +596,9 @@ func _build_fake_terrain_masks() -> void:
 		area.position = px + size_px * 0.5
 		area.body_entered.connect(_on_fake_terrain_entered.bind(patch))
 		patch.add_child(area)
+	# 原始假 tile 从 Terrain 层擦除（视觉由 patch 接管）
+	for c in cells:
+		terr.erase_cell(c)
 
 
 func _on_fake_terrain_entered(body: Node2D, patch: Node) -> void:
@@ -632,6 +650,7 @@ func _reset_level_entities() -> void:
 		ents.tile_map_data = _initial_entity_data
 	if terr:
 		terr.tile_map_data = _initial_terrain_data
+	_erase_fake_terrain_tiles()
 	if ents:
 		for c in _collected_trophy_cells:
 			ents.erase_cell(c)
