@@ -119,6 +119,7 @@ class Spring extends StaticBody2D:
 	var size := Vector2(8, 8)
 	var dir := Vector2.UP
 	var launch := 300.0
+	var up_boost := 160.0   # 水平弹簧额外给的向上速度
 	var _area: Area2D
 	var _player: CharacterBody2D = null
 	var _exception := false
@@ -217,9 +218,9 @@ class Spring extends StaticBody2D:
 		elif dir.y > 0.0:
 			body.velocity = Vector2(v.x, launch)
 		elif dir.x < 0.0:
-			body.velocity = Vector2(-launch, v.y)
+			body.velocity = Vector2(-launch, minf(v.y, -up_boost))
 		else:
-			body.velocity = Vector2(launch, v.y)
+			body.velocity = Vector2(launch, minf(v.y, -up_boost))
 
 
 class Breakable extends StaticBody2D:
