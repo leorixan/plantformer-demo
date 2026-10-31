@@ -129,6 +129,7 @@ class Spring extends StaticBody2D:
 	var _launch_player: CharacterBody2D = null
 	var _launch_grace := 0.0
 	var _launched_body: CharacterBody2D = null
+	var _pending_body: CharacterBody2D = null
 
 
 	func _ready() -> void:
@@ -188,12 +189,23 @@ class Spring extends StaticBody2D:
 			return
 		if _cooldown > 0.0:
 			_cooldown = maxf(0.0, _cooldown - delta)
+		if _pending_body != null and _cooldown <= 0.0:
+			var pb := _pending_body
+			_pending_body = null
+			if is_instance_valid(pb) and _area.overlaps_body(pb) and (_is_climbing(pb) or _from_valid_side(pb)):
+				_on_body_entered(pb)
+				return
 		var p := _overlap_player()
-		if p != null and _cooldown <= 0.0 and _is_climbing(p) and p != _launched_body:
-			_on_body_entered(p)
-			return
+		# 持续判定：冷却结束后只要玩家还在弹簧上/正压向弹簧就再次弹射。
+		# 只靠 body_entered 会漏掉"低矮天花板下弹一次又落回弹簧"的情况（没有再次进出区域）。
+		if p != null and _cooldown <= 0.0:
+			var approaching: bool = p.velocity.dot(dir) < -1.0
+			if _is_climbing(p) or (_from_valid_side(p) and approaching):
+				_on_body_entered(p)
+				return
 		if p == null:
 			_launched_body = null
+			_pending_body = null
 			if _exception and is_instance_valid(_player):
 				_player.remove_collision_exception_with(self)
 			_exception = false
@@ -212,7 +224,11 @@ class Spring extends StaticBody2D:
 
 
 	func _on_body_entered(body: Node2D) -> void:
-		if _cooldown > 0.0 or not (body is CharacterBody2D):
+		if not (body is CharacterBody2D):
+			return
+		if _cooldown > 0.0:
+			# 冷却中落地：记下来，等冷却结束若还贴着弹簧就补一次弹射
+			_pending_body = body as CharacterBody2D
 			return
 		if not _from_valid_side(body) and not _is_climbing(body):
 			return
