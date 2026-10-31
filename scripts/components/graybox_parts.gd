@@ -148,7 +148,15 @@ class Spring extends StaticBody2D:
 		_area.body_entered.connect(_on_body_entered)
 
 
+	func _is_climbing(body: Node2D) -> bool:
+		if body.get("mode") != null and int(body.get("mode")) == 2:
+			return true
+		return Input.is_action_pressed("grab")
+
+
 	func _want_pass(body: CharacterBody2D) -> bool:
+		if _is_climbing(body):
+			return true
 		if body.velocity.dot(dir) > 0.1:
 			return true
 		if body.has_method("get_move_input"):
@@ -199,7 +207,7 @@ class Spring extends StaticBody2D:
 	func _on_body_entered(body: Node2D) -> void:
 		if _cooldown > 0.0 or not (body is CharacterBody2D):
 			return
-		if not _from_valid_side(body):
+		if not _from_valid_side(body) and not _is_climbing(body):
 			return
 		_cooldown = 0.25
 		_exception = false
