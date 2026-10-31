@@ -10,8 +10,8 @@ func _ready() -> void:
 		"dream": Color(0.59, 0.39, 0.86), "checkpoint": Color(0.95, 0.80, 0.25),
 		"hazard_hidden": Color(1.0, 0.55, 0.55), "trophy": Color(0.96, 0.66, 0.16),
 	}
-	var oak := Color(0.49, 0.36, 0.22)
-	var steel := Color(0.25, 0.36, 0.41)
+	var oak := Color(0.62, 0.47, 0.30)
+	var steel := Color(0.34, 0.47, 0.53)
 	var oneway_base := Color(0.42, 0.42, 0.45)
 	var oneway_edge := Color(0.24, 0.26, 0.31)
 	var img := Image.create(16 * cell, 2 * cell, false, Image.FORMAT_RGBA8)
