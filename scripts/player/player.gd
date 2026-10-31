@@ -237,7 +237,9 @@ func _physics_process(delta: float) -> void:
 				continue
 			var hn: Vector2 = hit.get("normal", Vector2.ZERO)
 			if hn.dot(dream_dir) < -0.2:
-				_dream_hit_solid()
+				if not _dream_try_corner_correction():
+					_dream_hit_solid()
+				return
 			break
 		# 防隧穿：前方 4px 处做点查询，已经嵌进墙体也算撞墙
 		if dream_dashing:
@@ -251,6 +253,8 @@ func _physics_process(delta: float) -> void:
 					continue
 				if _is_passable_oneway(rc):
 					continue
+				if _dream_try_corner_correction():
+					return
 				_dream_dash_die()
 				break
 	_poll_input(delta)
@@ -261,8 +265,9 @@ func _physics_process(delta: float) -> void:
 		Mode.CLIMB: _climb_update(delta)
 		_: _normal_update(delta)
 	if dream_dashing and _dream_dash_would_hit_solid(delta):
-		_dream_hit_solid()
-		velocity = Vector2.ZERO
+		if not _dream_try_corner_correction():
+			_dream_hit_solid()
+			velocity = Vector2.ZERO
 	var pre_move_velocity := velocity
 	move_and_slide()
 	_resolve_collisions(pre_move_velocity)
@@ -1110,6 +1115,68 @@ func _try_dream_reverse_grab() -> bool:
 	visuals.scale.x = facing
 	if _try_start_climb():
 		_event("DreamReverseGrab")
+		return true
+	return false
+
+
+func _dream_inside_block() -> bool:
+	for db in get_tree().get_nodes_in_group("dream_blocks"):
+		if db.has_method("player_inside") and bool(db.call("player_inside", self)):
+			return true
+	return false
+
+
+func _dream_body_fits(at: Vector2) -> bool:
+	# 用 saved mask（dream dash 期间 collision_mask 为 0，不能直接用它查询）
+	var mask := _dream_saved_mask if _dream_saved_mask != 0 else 1
+	var h := _body_height()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(body_width, h) - Vector2(SHAPE_INSET, SHAPE_INSET)
+	var params := PhysicsShapeQueryParameters2D.new()
+	params.shape = rect
+	params.transform = Transform2D(0.0, at + Vector2(0.0, -h * 0.5))
+	params.collision_mask = mask
+	params.collide_with_areas = false
+	params.exclude = [get_rid()]
+	for r in get_world_2d().direct_space_state.intersect_shape(params, 8):
+		var c = r.get("collider")
+		if c is Node and (c as Node).is_in_group("dream_blocks"):
+			continue
+		if _is_passable_oneway(c):
+			continue
+		return false
+	return true
+
+
+func _dream_try_corner_correction() -> bool:
+	# 参考蔚蓝 DreamDashCheck：在紫块内撞到角落时，垂直方向最多让 4px 对齐通道。
+	# 只在身体仍与紫块重叠时生效，避免在普通墙壁前"滑"过去。
+	if not _dream_inside_block():
+		return false
+	var perp := Vector2(absf(dream_dir.y), absf(dream_dir.x))
+	if perp.length() < 0.01:
+		return false
+	var pref := 0.0
+	if perp.y > 0.5:
+		pref = signf(move_y)
+	else:
+		pref = signf(move_x)
+	var offsets: Array = []
+	if pref < 0.0:
+		offsets = [-1, -2, -3, -4, 1, 2, 3, 4]
+	elif pref > 0.0:
+		offsets = [1, 2, 3, 4, -1, -2, -3, -4]
+	else:
+		offsets = [-1, 1, -2, 2, -3, 3, -4, 4]
+	for step in offsets:
+		var cand: Vector2 = global_position + perp * float(step)
+		if not _dream_body_fits(cand):
+			continue
+		if not _dream_body_fits(cand + dream_dir * 2.0):
+			continue
+		global_position = cand
+		_dream_last_pos = cand
+		_event("DreamCorner")
 		return true
 	return false
 
