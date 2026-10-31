@@ -515,7 +515,8 @@ class Trophy extends Area2D:
 	const BOB_AMPLITUDE := 2.0
 	const BOB_PERIOD := 1.6
 	const GROUND_SETTLE_TIME := 0.5
-	const FOLLOW_OFFSET := Vector2(0, -22)
+	const FOLLOW_BACK := 10.0   # 跟在身后的水平距离
+	const FOLLOW_HEIGHT := -6.0  # 相对脚底的竖直偏移
 	const FOLLOW_LERP := 10.0
 
 	var cells: Array = []
@@ -583,7 +584,11 @@ class Trophy extends Area2D:
 		_t += delta
 		if _following and is_instance_valid(_follow_player):
 			var bob := sin(_t * TAU / BOB_PERIOD) * BOB_AMPLITUDE
-			var target: Vector2 = _follow_player.global_position + FOLLOW_OFFSET + Vector2(0, bob)
+			var facing := 1.0
+			var f = _follow_player.get("facing")
+			if f != null and absf(float(f)) > 0.01:
+				facing = signf(float(f))
+			var target: Vector2 = _follow_player.global_position + Vector2(-facing * FOLLOW_BACK, FOLLOW_HEIGHT + bob)
 			global_position = global_position.lerp(target, clampf(delta * FOLLOW_LERP, 0.0, 1.0))
 			# 站地累计 0.5s 才结算
 			var grounded := false
@@ -606,7 +611,11 @@ class Trophy extends Area2D:
 		_follow_player = body
 		_ground_timer = 0.0
 		set_deferred("monitoring", false)
-		global_position = body.global_position + FOLLOW_OFFSET
+		var facing := 1.0
+		var f = body.get("facing")
+		if f != null and absf(float(f)) > 0.01:
+			facing = signf(float(f))
+		global_position = body.global_position + Vector2(-facing * FOLLOW_BACK, FOLLOW_HEIGHT)
 
 
 	func _settle() -> void:
