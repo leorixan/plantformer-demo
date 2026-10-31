@@ -2,9 +2,8 @@
 
 [ext_resource type="TileSet" path="res://assets/graybox/entity_tileset_v7.tres" id="3_1dmtg"]
 [ext_resource type="TileSet" path="res://assets/graybox/graybox_tileset_v2.tres" id="2_abxfv"]
+[ext_resource type="FontFile" path="res://assets/fonts/Silkscreen-Regular.ttf" id="font_silk"]
 
-[sub_resource type="SystemFont" id="SystemFont_u6ky3"]
-font_names = PackedStringArray("Microsoft YaHei", "SimHei", "Arial")
 
 [node name="Showcase" type="Node2D" unique_id=526865105]
 
@@ -21,134 +20,134 @@ offset_left = 64.0
 offset_top = 16.0
 offset_right = 404.0
 offset_bottom = 39.0
-theme_override_fonts/font = SubResource("SystemFont_u6ky3")
+theme_override_fonts/font = ExtResource("font_silk")
 theme_override_font_sizes/font_size = 7
 theme_override_colors/font_color = Color(0.78, 0.24, 0.28, 1)
-text = "红：伤害区 —— 碰到即死亡，回最近存档点"
+text = "Red: Hazard - touch to die, respawn at checkpoint"
 
 [node name="@Label@3" type="Label" parent="." unique_id=1298858539]
 offset_left = 64.0
 offset_top = 48.0
 offset_right = 480.0
 offset_bottom = 71.0
-theme_override_fonts/font = SubResource("SystemFont_u6ky3")
+theme_override_fonts/font = ExtResource("font_silk")
 theme_override_font_sizes/font_size = 7
 theme_override_colors/font_color = Color(0.28, 0.78, 0.82, 1)
-text = "青：冲刺水晶 —— 回满冲刺次数与体力（冷却 2.5s 变灰）"
+text = "Cyan: Dash Crystal - refill dash & stamina (2.5s cooldown)"
 
 [node name="@Label@4" type="Label" parent="." unique_id=1866399691]
 offset_left = 64.0
 offset_top = 80.0
 offset_right = 404.0
 offset_bottom = 103.0
-theme_override_fonts/font = SubResource("SystemFont_u6ky3")
+theme_override_fonts/font = ExtResource("font_silk")
 theme_override_font_sizes/font_size = 7
 theme_override_colors/font_color = Color(0.35, 0.75, 0.35, 1)
-text = "绿：弹簧 —— 自动判朝向，向上弹起"
+text = "Green: Spring - launches you in its facing direction"
 
 [node name="@Label@5" type="Label" parent="." unique_id=1111316968]
 offset_left = 64.0
 offset_top = 112.0
 offset_right = 404.0
 offset_bottom = 135.0
-theme_override_fonts/font = SubResource("SystemFont_u6ky3")
+theme_override_fonts/font = ExtResource("font_silk")
 theme_override_font_sizes/font_size = 7
 theme_override_colors/font_color = Color(0.67, 0.51, 0.35, 1)
-text = "棕：可破坏块 —— 冲刺撞碎（8×8 一块）"
+text = "Brown: Breakable - dash to break (8x8 unit)"
 
 [node name="@Label@6" type="Label" parent="." unique_id=131296880]
 offset_left = 64.0
 offset_top = 144.0
 offset_right = 404.0
 offset_bottom = 167.0
-theme_override_fonts/font = SubResource("SystemFont_u6ky3")
+theme_override_fonts/font = ExtResource("font_silk")
 theme_override_font_sizes/font_size = 7
 theme_override_colors/font_color = Color(0.45, 0.3, 0.16, 1)
-text = "深棕：可破坏块 —— 冲刺撞碎（16×16 一块）"
+text = "Dark brown: Breakable - dash to break (16x16 unit)"
 
 [node name="@Label@7" type="Label" parent="." unique_id=569160701]
 offset_left = 64.0
 offset_top = 176.0
 offset_right = 459.0
 offset_bottom = 199.0
-theme_override_fonts/font = SubResource("SystemFont_u6ky3")
+theme_override_fonts/font = ExtResource("font_silk")
 theme_override_font_sizes/font_size = 7
 theme_override_colors/font_color = Color(0.59, 0.39, 0.86, 1)
-text = "紫：Dream Block —— 冲刺穿过，出块回满，撞墙死亡"
+text = "Purple: Dream Block - dash through, refill on exit"
 
 [node name="@Label@8" type="Label" parent="." unique_id=2098099610]
 offset_left = 64.0
 offset_top = 208.0
 offset_right = 404.0
 offset_bottom = 231.0
-theme_override_fonts/font = SubResource("SystemFont_u6ky3")
+theme_override_fonts/font = ExtResource("font_silk")
 theme_override_font_sizes/font_size = 7
 theme_override_colors/font_color = Color(0.95, 0.8, 0.25, 1)
-text = "金：存档点 —— 碰到记录位置，死亡在此复活"
+text = "Gold: Checkpoint - saves your respawn position"
 
 [node name="@Label@9" type="Label" parent="." unique_id=408111258]
 offset_left = 64.0
 offset_top = 240.0
 offset_right = 581.0
 offset_bottom = 263.0
-theme_override_fonts/font = SubResource("SystemFont_u6ky3")
+theme_override_fonts/font = ExtResource("font_silk")
 theme_override_font_sizes/font_size = 7
 theme_override_colors/font_color = Color(1, 0.55, 0.55, 1)
-text = "浅红：隐藏死亡区 —— 画在地形层（8px），功能同红块，游戏中不可见"
+text = "Light red: Hidden hazard - terrain layer, invisible in game"
 
 [node name="@Label@10" type="Label" parent="." unique_id=153479984]
 offset_left = 14.0
 offset_top = 288.0
 offset_right = 14.0
 offset_bottom = 288.0
-theme_override_fonts/font = SubResource("SystemFont_u6ky3")
+theme_override_fonts/font = ExtResource("font_silk")
 theme_override_font_sizes/font_size = 7
 theme_override_colors/font_color = Color(0.42, 0.42, 0.45, 1)
-text = "上"
+text = "Up"
 
 [node name="@Label@11" type="Label" parent="." unique_id=227261224]
 offset_left = 38.0
 offset_top = 288.0
 offset_right = 38.0
 offset_bottom = 288.0
-theme_override_fonts/font = SubResource("SystemFont_u6ky3")
+theme_override_fonts/font = ExtResource("font_silk")
 theme_override_font_sizes/font_size = 7
 theme_override_colors/font_color = Color(0.42, 0.42, 0.45, 1)
-text = "下"
+text = "Down"
 
 [node name="@Label@12" type="Label" parent="." unique_id=698712854]
 offset_left = 62.0
 offset_top = 288.0
 offset_right = 62.0
 offset_bottom = 288.0
-theme_override_fonts/font = SubResource("SystemFont_u6ky3")
+theme_override_fonts/font = ExtResource("font_silk")
 theme_override_font_sizes/font_size = 7
 theme_override_colors/font_color = Color(0.42, 0.42, 0.45, 1)
-text = "左"
+text = "Left"
 
 [node name="@Label@13" type="Label" parent="." unique_id=1452911295]
 offset_left = 86.0
 offset_top = 288.0
 offset_right = 86.0
 offset_bottom = 288.0
-theme_override_fonts/font = SubResource("SystemFont_u6ky3")
+theme_override_fonts/font = ExtResource("font_silk")
 theme_override_font_sizes/font_size = 7
 theme_override_colors/font_color = Color(0.42, 0.42, 0.45, 1)
-text = "右"
+text = "Right"
 
 [node name="@Label@14" type="Label" parent="." unique_id=1124540001]
 offset_left = 64.0
 offset_top = 304.0
 offset_right = 579.0
 offset_bottom = 327.0
-theme_override_fonts/font = SubResource("SystemFont_u6ky3")
+theme_override_fonts/font = ExtResource("font_silk")
 theme_override_font_sizes/font_size = 7
 theme_override_colors/font_color = Color(0.42, 0.42, 0.45, 1)
-text = "深灰：单向墙 ×4 —— 地形色边所在侧 = 可通行方向（顺序上/下/左/右）"
+text = "Dark gray: One-way walls x4 - pass toward the colored edge"
 
 [node name="@Label@15" type="Label" parent="." unique_id=743742294]
 offset_left = 8.0
 offset_right = 8.0
-theme_override_fonts/font = SubResource("SystemFont_u6ky3")
+theme_override_fonts/font = ExtResource("font_silk")
 theme_override_font_sizes/font_size = 10
 text = "灰盒组件备忘 / Graybox Components Reference"

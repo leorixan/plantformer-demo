@@ -1,12 +1,11 @@
 [gd_scene format=3 uid="uid://ldlrl7de1g10"]
 
 [ext_resource type="Script" uid="uid://dkwwkrbc3yrpr" path="res://scripts/components/label_trigger.gd" id="1_lbl"]
+[ext_resource type="FontFile" path="res://assets/fonts/Silkscreen-Regular.ttf" id="font_silk"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_lbl"]
 size = Vector2(64, 24)
 
-[sub_resource type="SystemFont" id="SystemFont_zh"]
-font_names = PackedStringArray("Microsoft YaHei", "SimHei", "Arial")
 
 [node name="LabelTrigger" type="Area2D" unique_id=1572678557]
 collision_layer = 0
@@ -36,6 +35,6 @@ offset_bottom = 10.0
 theme_override_colors/font_color = Color(0.96, 0.96, 0.96, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
 theme_override_constants/outline_size = 1
-theme_override_fonts/font = SubResource("SystemFont_zh")
+theme_override_fonts/font = ExtResource("font_silk")
 theme_override_font_sizes/font_size = 8
-text = "提示文字"
+text = "Hint"
