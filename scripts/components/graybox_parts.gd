@@ -223,8 +223,20 @@ class Spring extends StaticBody2D:
 		_launched_body = body as CharacterBody2D
 		_exception = false
 		_player = null
-		# 从弹簧中心点发射：把玩家身体中心对齐到弹簧中心
-		body.global_position = global_position + Vector2(0.0, 5.5)
+		# 从弹射表面中心发射：把玩家对应的一侧边缘对齐到弹簧木色表面中心
+		var half := size * 0.5
+		if dir.y < 0.0:
+			# 朝上：脚底对齐弹簧顶面中心
+			body.global_position = global_position + Vector2(0.0, -half.y)
+		elif dir.y > 0.0:
+			# 朝下：头顶对齐弹簧底面中心（玩家碰撞盒高 11）
+			body.global_position = global_position + Vector2(0.0, half.y + 11.0)
+		elif dir.x < 0.0:
+			# 朝左：身体右边缘对齐弹簧左面中心
+			body.global_position = global_position + Vector2(-half.x - 4.0, 5.5)
+		else:
+			# 朝右：身体左边缘对齐弹簧右面中心
+			body.global_position = global_position + Vector2(half.x + 4.0, 5.5)
 		if body.has_method("refill_dash"):
 			body.call("refill_dash")
 		if body.has_method("apply_spring_boost"):
