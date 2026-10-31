@@ -360,6 +360,7 @@ class DreamBlock extends StaticBody2D:
 	var _detector: Area2D
 
 	func _ready() -> void:
+		add_to_group("oneway_platforms")
 		var cs := CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
 		rect.size = size
@@ -480,6 +481,7 @@ class OneWay extends StaticBody2D:
 	var _exception := false
 
 	func _ready() -> void:
+		add_to_group("oneway_platforms")
 		var cs := CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
 		rect.size = size

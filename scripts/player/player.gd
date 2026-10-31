@@ -231,8 +231,8 @@ func _physics_process(delta: float) -> void:
 			if hit.is_empty():
 				break
 			var hc = hit.get("collider")
-			if hc != null and hc is Node and (hc as Node).is_in_group("dream_blocks"):
-				# 跳过紫块自身，继续向前探测（紫块可能紧挨墙）
+			if hc != null and hc is Node and ((hc as Node).is_in_group("dream_blocks") or _is_passable_oneway(hc)):
+				# 跳过紫块/可穿过的单向墙，继续向前探测（后面可能紧挨墙）
 				from = (hit.get("position") as Vector2) + dream_dir * 0.5
 				continue
 			var hn: Vector2 = hit.get("normal", Vector2.ZERO)
@@ -248,6 +248,8 @@ func _physics_process(delta: float) -> void:
 			for r in space.intersect_point(pq, 8):
 				var rc = r.get("collider")
 				if rc != null and rc is Node and (rc as Node).is_in_group("dream_blocks"):
+					continue
+				if _is_passable_oneway(rc):
 					continue
 				_dream_dash_die()
 				break
@@ -270,6 +272,18 @@ func _physics_process(delta: float) -> void:
 
 # 物理帧补采样：与 _unhandled_input 写同一个缓存计时器，两条路径任一命中都算按下，
 # 这样 headless 回归的 Input.action_press（不产生 InputEvent）也能驱动。
+func _is_passable_oneway(collider) -> bool:
+	# Dream Dash 方向上可穿过的单向墙：不应判定为撞墙
+	if collider == null or not (collider is Node):
+		return false
+	if not (collider as Node).is_in_group("oneway_platforms"):
+		return false
+	var pd = collider.get("pass_dir")
+	if pd is Vector2 and (pd as Vector2).dot(dream_dir) > 0.5:
+		return true
+	return false
+
+
 func _dream_dash_would_hit_solid(delta: float) -> bool:
 	# 前向形状探测：下一帧身体会碰到的非紫块实体地形
 	var h := _body_height()
@@ -285,6 +299,8 @@ func _dream_dash_would_hit_solid(delta: float) -> bool:
 	for r in get_world_2d().direct_space_state.intersect_shape(params, 8):
 		var c = r.get("collider")
 		if c is Node and (c as Node).is_in_group("dream_blocks"):
+			continue
+		if _is_passable_oneway(c):
 			continue
 		return true
 	return false
@@ -1147,8 +1163,25 @@ func _wall_is_dream_block() -> bool:
 
 
 func _body_overlaps_solid() -> bool:
+	# 只统计"硬实体"：紫块和当前冲刺方向上可穿过的单向墙不算卡墙
 	var h := _body_height()
-	return _box_is_solid(global_position + Vector2(0.0, -h * 0.5), Vector2(body_width, h))
+	var center := global_position + Vector2(0.0, -h * 0.5)
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(body_width, h) - Vector2(SHAPE_INSET, SHAPE_INSET)
+	var params := PhysicsShapeQueryParameters2D.new()
+	params.shape = rect
+	params.transform = Transform2D(0.0, center)
+	params.collision_mask = collision_mask
+	params.collide_with_areas = false
+	params.exclude = [get_rid()]
+	for r in get_world_2d().direct_space_state.intersect_shape(params, 8):
+		var c = r.get("collider")
+		if c is Node and (c as Node).is_in_group("dream_blocks"):
+			continue
+		if _is_passable_oneway(c):
+			continue
+		return true
+	return false
 
 
 func _dream_hit_solid() -> void:
