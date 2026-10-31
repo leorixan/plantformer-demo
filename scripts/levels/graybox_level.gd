@@ -778,23 +778,45 @@ func _build_fake_terrain_masks() -> void:
 			patch.set_cell(cell, terr.get_cell_source_id(cell), terr.get_cell_atlas_coords(cell), 0)
 			minc = Vector2i(mini(minc.x, cell.x), mini(minc.y, cell.y))
 			maxc = Vector2i(maxi(maxc.x, cell.x), maxi(maxc.y, cell.y))
-		var px := Vector2(float(minc.x) * TILE, float(minc.y) * TILE)
-		var size_px := Vector2(float(maxc.x - minc.x + 1) * TILE, float(maxc.y - minc.y + 1) * TILE)
 		var area := Area2D.new()
 		area.name = "Trigger"
 		area.collision_layer = 0
 		area.collision_mask = 2
-		var cs := CollisionShape2D.new()
-		var rect := RectangleShape2D.new()
-		rect.size = size_px
-		cs.shape = rect
-		area.add_child(cs)
-		area.position = px + size_px * 0.5
+		# 只覆盖实际存在的假地形格（按行连续段生成形状），不要用整块包围盒，
+		# 否则 L 形/凹形区域的空角落也会被误触发
+		var row_cells: Dictionary = {}
+		for cell in comp:
+			var cv: Vector2i = cell
+			if not row_cells.has(cv.y):
+				row_cells[cv.y] = []
+			row_cells[cv.y].append(cv.x)
+		for ry in row_cells:
+			var xs: Array = row_cells[ry]
+			xs.sort()
+			var run_start: int = xs[0]
+			var run_prev: int = xs[0]
+			for i in range(1, xs.size()):
+				var cx: int = xs[i]
+				if cx != run_prev + 1:
+					_add_fake_trigger_shape(area, run_start, run_prev, ry)
+					run_start = cx
+				run_prev = cx
+			_add_fake_trigger_shape(area, run_start, run_prev, ry)
 		area.body_entered.connect(_on_fake_terrain_entered.bind(patch))
 		patch.add_child(area)
 	# 原始假 tile 从 Terrain 层擦除（视觉由 patch 接管）
 	for c in cells:
 		terr.erase_cell(c)
+
+
+func _add_fake_trigger_shape(area: Area2D, x0: int, x1: int, y: int) -> void:
+	var w := float(x1 - x0 + 1) * TILE
+	var cs := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(w, TILE)
+	cs.shape = rect
+	cs.position = Vector2(float(x0) * TILE + w * 0.5, float(y) * TILE + TILE * 0.5)
+	area.add_child(cs)
 
 
 func _on_fake_terrain_entered(body: Node2D, patch: Node) -> void:
