@@ -575,6 +575,8 @@ func _build_fake_terrain_masks() -> void:
 		patch.name = "Patch"
 		patch.tile_set = terr.tile_set
 		patch.collision_enabled = false
+		# 遮罩要盖住玩家/实体（渲染在它们之上）
+		patch.z_index = 20
 		root.add_child(patch)
 		var minc := Vector2i(1 << 30, 1 << 30)
 		var maxc := Vector2i(-(1 << 30), -(1 << 30))
