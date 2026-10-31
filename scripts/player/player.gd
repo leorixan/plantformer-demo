@@ -53,6 +53,8 @@ const CRYSTAL_COLOR := Color(0.28, 0.78, 0.82, 1.0)
 @export_category("Dash")
 @export var max_dashes := 1
 @export var dash_speed := 240.0 # DashSpeed
+@export var dream_dash_speed := 200.0 # 紫块内 Dream Dash 速度
+@export var dream_jump_h_speed := 230.0 # 出紫块 Super（Dream Jump）的水平速度上限
 @export var dash_end_speed := 160.0 # EndDashSpeed
 @export var end_dash_up_mult := 0.75 # EndDashUpMult
 @export var dash_duration := 0.15 # DashTime
@@ -215,7 +217,8 @@ func _physics_process(delta: float) -> void:
 			_jump_buffer = 0.0
 			_dream_exit_timer = 0.0
 			velocity.y = -jump_speed
-			velocity.x += jump_speed_boost * move_x
+			# 出紫块 Super 的水平速度固定为 dream_jump_h_speed（保留冲刺方向）
+			velocity.x = signf(dream_dir.x) * dream_jump_h_speed
 			_var_jump_speed = velocity.y
 			_var_jump_timer = var_jump_time
 			_var_jump_timer = maxf(_var_jump_timer, 0.1)
@@ -293,7 +296,7 @@ func _dream_dash_would_hit_solid(delta: float) -> bool:
 	# 前向形状探测：下一帧身体会碰到的非紫块实体地形
 	var h := _body_height()
 	var center := global_position + Vector2(0.0, -h * 0.5)
-	var next_center := center + dream_dir * (dash_speed * delta + 0.5)
+	var next_center := center + dream_dir * (dream_dash_speed * delta + 0.5)
 	var rect := RectangleShape2D.new()
 	rect.size = Vector2(body_width, h) - Vector2(SHAPE_INSET, SHAPE_INSET)
 	var params := PhysicsShapeQueryParameters2D.new()
@@ -1053,7 +1056,7 @@ func start_dream_dash(dir: Vector2, block: Node = null) -> void:
 	_force_move_x_timer = 0.0
 	_wall_boost_timer = 0.0
 	_wall_speed_retention_timer = 0.0
-	velocity = dream_dir * dash_speed
+	velocity = dream_dir * dream_dash_speed
 	_dream_last_pos = global_position
 	_dream_stall = 0.0
 	_dream_exceptions.clear()
@@ -1075,7 +1078,7 @@ func end_dream_dash(block: Node = null) -> void:
 	dash_timer = 0.0
 	mode = Mode.NORMAL
 		# 出块保持原速；跳跃按普通跳跃规则处理（不再有特殊的超级跳）
-	velocity = dream_dir * dash_speed   # 离开方块保持原速
+	velocity = dream_dir * dream_dash_speed   # 离开方块保持原速
 	dash_count = max_dashes
 	stamina = max_stamina
 	for db in _dream_exceptions:
@@ -1188,7 +1191,7 @@ func _dream_dash_lifecycle() -> void:
 	# Dream Dash 只有在完全离开所有紫块后才结束（对厚墙/贴脸/斜向都适用）
 	if not dream_dashing:
 		return
-	velocity = dream_dir * dash_speed
+	velocity = dream_dir * dream_dash_speed
 	_dream_time += get_physics_process_delta_time()
 	var moved := global_position.distance_to(_dream_last_pos)
 	_dream_last_pos = global_position
