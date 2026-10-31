@@ -698,6 +698,15 @@ func _try_start_dash() -> bool:
 	return true
 
 # 参考 DashCoroutine：冻结结束后才读方向、写速度，同向更快的旧速度保留，绝不降速。
+func _on_dream_block_below() -> bool:
+	# 站在紫块上：脚底下方 1px 的点落在紫块内
+	var foot_probe := global_position + Vector2(0.0, 1.0)
+	for db in get_tree().get_nodes_in_group("dream_blocks"):
+		if db.has_method("contains_center") and bool(db.call("contains_center", foot_probe)):
+			return true
+	return false
+
+
 func _launch_dash() -> void:
 	dash_dir = get_dash_direction()
 	var new_speed := dash_dir * dash_speed
@@ -707,7 +716,8 @@ func _launch_dash() -> void:
 	if dash_dir.x != 0.0:
 		facing = signf(dash_dir.x)
 		visuals.scale.x = facing
-	if _on_ground() and dash_dir.x != 0.0 and dash_dir.y > 0.0 and velocity.y > 0.0:
+	if _on_ground() and dash_dir.x != 0.0 and dash_dir.y > 0.0 and velocity.y > 0.0 \
+			and not _on_dream_block_below():
 		_dash_slide()
 
 # 参考 Dash Slide：斜下 Dash 触地转为水平 Dash 并提速，绝不清零水平速度。
@@ -965,7 +975,6 @@ func start_dream_dash(dir: Vector2, block: Node = null) -> void:
 	dash_timer = 999.0
 	_dash_buffer = 0.0
 	_jump_buffer = 0.0   # 清掉进入紫块前残留的跳跃缓冲，避免不按跳也自动跳出
-	_dash_freeze = maxf(_dash_freeze, 5.0 / 60.0)   # 进紫块冻结 5 帧
 	_dream_saved_mask = collision_mask
 	collision_mask = 0
 	_dream_time = 0.0
