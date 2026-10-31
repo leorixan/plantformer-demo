@@ -197,10 +197,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_apply_hitbox()
 
 func hitstop_frames(frames: int) -> void:
-	# 用真实时间而不是渲染帧数计：高刷新率屏幕下"帧数"会短到看不见
-	Engine.time_scale = 0.0
-	var until := Time.get_ticks_msec() + int(round(float(frames) * 1000.0 / 60.0))
-	_hitstop_end_msec = maxi(_hitstop_end_msec, until)
+	# 和冲刺冻结帧同一套逻辑：帧数 -> 秒，按物理帧 delta 递减
+	_hitstop_timer = maxf(_hitstop_timer, float(frames) / 60.0)
 
 
 func freeze_frames(frames: int) -> void:
@@ -208,8 +206,9 @@ func freeze_frames(frames: int) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	# 冻结帧（hitstop）期间直接跳过玩家物理，避免 Engine.time_scale 生效前又吃到一帧重力
-	if _hitstop_end_msec > 0 and Time.get_ticks_msec() < _hitstop_end_msec:
+	# 冻结帧（hitstop）：按物理帧计时，期间冻结玩家逻辑（不冻结整个游戏）
+	if _hitstop_timer > 0.0:
+		_hitstop_timer = maxf(0.0, _hitstop_timer - delta)
 		return
 	_dream_dash_lifecycle()
 	if is_dashing():
@@ -1016,7 +1015,7 @@ var _dream_entered := false
 var _dream_saved_mask := 1
 var _dream_exit_timer := 0.0
 var _dream_correct_timer := 0.0
-var _hitstop_end_msec := 0
+var _hitstop_timer := 0.0
 var _stamina_flash_timer := 0.0
 var _afterimage_tick := 0
 var _stamina_flash_red := false
@@ -1285,9 +1284,6 @@ func _dream_hit_solid() -> void:
 
 func _process(_delta: float) -> void:
 	_update_stamina_flash(_delta)
-	if _hitstop_end_msec > 0 and Time.get_ticks_msec() >= _hitstop_end_msec:
-		_hitstop_end_msec = 0
-		Engine.time_scale = 1.0
 
 
 func _exit_tree() -> void:
