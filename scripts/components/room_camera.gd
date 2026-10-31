@@ -6,6 +6,8 @@ extends Node
 
 const PAN_TIME := 0.40
 const PAUSE_TIME := 0.20
+# 大房间内跟随玩家的平滑时间常数（秒），越大越"拖"
+const FOLLOW_TIME := 0.16
 
 var _cam: Camera2D
 var _player: Node2D
@@ -52,7 +54,14 @@ func _process(delta: float) -> void:
 		_to = _target_for(idx)
 		_wait = PAUSE_TIME
 		return
-	_cam.global_position = _snap(_target_for(_current))
+	var target := _target_for(_current)
+	var room: Rect2 = _rects[_current]
+	if room.size.x > _view.x or room.size.y > _view.y:
+		# 大房间：平滑跟随（指数平滑，和帧率无关）
+		var k := 1.0 - exp(-delta / FOLLOW_TIME)
+		_cam.global_position = _snap(_cam.global_position.lerp(target, k))
+	else:
+		_cam.global_position = _snap(target)
 
 
 func _snap(v: Vector2) -> Vector2:
