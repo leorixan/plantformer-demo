@@ -480,6 +480,8 @@ class DreamBlock extends StaticBody2D:
 				# 紧贴紫块、沿着表面/旁边冲刺不应触发（否则会误触发 Dream Dash 效果）。
 				if not dash_enters_block(b, dir):
 					continue
+				if b.has_method("dream_path_blocked") and bool(b.call("dream_path_blocked", dir)):
+					continue
 				if b.has_method("start_dream_dash"):
 					print("[dream] trigger pressed=", pressed, " dir=", dir, " player=", b.global_position)
 					b.call("start_dream_dash", dir, self)

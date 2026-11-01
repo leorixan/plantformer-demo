@@ -320,6 +320,46 @@ func _is_passable_oneway(collider) -> bool:
 	return false
 
 
+func _oneway_passable_dir(collider, dir: Vector2) -> bool:
+	if collider == null or not (collider is Node):
+		return false
+	if not (collider as Node).is_in_group("oneway_platforms"):
+		return false
+	var pd = collider.get("pass_dir")
+	if pd is Vector2:
+		return (pd as Vector2).dot(dir) > 0.0
+	return false
+
+
+func dream_path_blocked(dir: Vector2) -> bool:
+	# 紫块触发前检查：玩家到紫块之间是否被实体地形/不可穿单向墙挡住。
+	# 被挡住时不该触发 Dream Dash（否则会先穿过挡路的墙）。
+	var d := dir.normalized()
+	if d == Vector2.ZERO:
+		return false
+	if dream_dashing:
+		return false
+	var h := _body_height()
+	var center := global_position + Vector2(0.0, -h * 0.5)
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(body_width, h) - Vector2(SHAPE_INSET, SHAPE_INSET)
+	for dist in [2.0, 5.0, 9.0, 14.0]:
+		var params := PhysicsShapeQueryParameters2D.new()
+		params.shape = rect
+		params.transform = Transform2D(0.0, center + d * dist)
+		params.collision_mask = 1
+		params.collide_with_areas = false
+		params.exclude = [get_rid()]
+		for r in get_world_2d().direct_space_state.intersect_shape(params, 8):
+			var c = r.get("collider")
+			if c is Node and (c as Node).is_in_group("dream_blocks"):
+				continue
+			if _oneway_passable_dir(c, d):
+				continue
+			return true
+	return false
+
+
 func _dream_dash_would_hit_solid(delta: float) -> bool:
 	# 前向形状探测：下一帧身体会碰到的非紫块实体地形
 	var h := _body_height()
