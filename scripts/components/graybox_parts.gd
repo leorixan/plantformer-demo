@@ -21,30 +21,26 @@ class Hazard extends Area2D:
 		cs.shape = rect
 		add_child(cs)
 
-	func _player_move_dir(body: CharacterBody2D) -> Vector2:
+	func _intended_velocity(body: CharacterBody2D) -> Vector2:
 		if body.velocity.length() > 15.0:
-			return body.velocity.normalized()
+			return body.velocity
 		if body.has_method("get_move_input"):
 			var mi = body.call("get_move_input")
-			if mi is Vector2 and (mi as Vector2).length() > 0.3:
-				return (mi as Vector2).normalized()
+			if mi is Vector2:
+				return (mi as Vector2) * 200.0
 		return Vector2.ZERO
 
 	func _can_pass(body: CharacterBody2D) -> bool:
 		if pass_dir == Vector2.ZERO:
 			return false
 		if body == _passing:
-			# 已在通过中：必须继续保持沿可通过方向移动，停下/变向/斜向都会死
-			var md := _player_move_dir(body)
-			return md == Vector2.ZERO == false and md.dot(pass_dir) > 0.6
-		# 首次接触：必须从背面进入 + 运动方向几乎完全沿可通过方向
+			# 已在通过中：只要还带着沿可通过方向的速度就继续，停下/反向会死
+			return body.velocity.dot(pass_dir) > 0.0
+		# 首次接触：必须从背面进入（不能从侧面顶上来），斜向通过是允许的
 		var rel := body.global_position - global_position
-		if rel.dot(pass_dir) > 2.0:
+		if rel.dot(pass_dir) >= 0.0:
 			return false
-		var mv := _player_move_dir(body)
-		if mv == Vector2.ZERO:
-			return false
-		return mv.dot(pass_dir) > 0.85
+		return _intended_velocity(body).dot(pass_dir) > 0.0
 
 	func _physics_process(_delta: float) -> void:
 		if level == null:
