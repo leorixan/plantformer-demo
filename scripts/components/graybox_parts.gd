@@ -175,6 +175,7 @@ class Spring extends StaticBody2D:
 	var _launch_grace := 0.0
 	var _launched_body: CharacterBody2D = null
 	var _pending_body: CharacterBody2D = null
+	var _climb_area: Area2D
 
 
 	func _ready() -> void:
@@ -197,6 +198,15 @@ class Spring extends StaticBody2D:
 		_area.add_child(acs)
 		add_child(_area)
 		_area.body_entered.connect(_on_body_entered)
+		# 攀爬用的大检测框：在侧面/背面贴着弹簧往上爬或下滑时也能触发
+		_climb_area = Area2D.new()
+		_climb_area.collision_mask = 2
+		var cacs := CollisionShape2D.new()
+		var carect := RectangleShape2D.new()
+		carect.size = size + Vector2(8, 8)
+		cacs.shape = carect
+		_climb_area.add_child(cacs)
+		add_child(_climb_area)
 
 
 	func _is_climbing(body: Node2D) -> bool:
@@ -242,6 +252,12 @@ class Spring extends StaticBody2D:
 			if is_instance_valid(pb) and _area.overlaps_body(pb) and (_is_climbing(pb) or _from_valid_side(pb)):
 				_on_body_entered(pb)
 				return
+		# 攀爬状态：贴着弹簧侧面往上爬/下滑时也触发
+		if _cooldown <= 0.0:
+			for cb in _climb_area.get_overlapping_bodies():
+				if cb is CharacterBody2D and _is_climbing(cb):
+					_on_body_entered(cb)
+					return
 		var p := _overlap_player()
 		# 持续判定：冷却结束后只要玩家还在弹簧上/正压向弹簧就再次弹射。
 		# 只靠 body_entered 会漏掉"低矮天花板下弹一次又落回弹簧"的情况（没有再次进出区域）。
@@ -458,6 +474,14 @@ class DreamBlock extends StaticBody2D:
 			if b.has_method("dash_input_dir"):
 				aim = b.call("dash_input_dir")
 			var aim_ok: bool = aim.length() > 0.01 and aim.normalized().dot(toward) > 0.25
+			if pressed and not (dashing or just_dashed):
+				# 没有冲刺充能时按冲刺键不能触发 Dream Dash
+				var dc = b.get("dash_count")
+				if dc != null and int(dc) <= 0:
+					continue
+				var cd = b.get("dash_cooldown_timer")
+				if cd != null and float(cd) > 0.0:
+					continue
 			if dashing or just_dashed or (pressed and aim_ok):
 				var dir: Vector2 = b.velocity
 				if dashing or just_dashed:
