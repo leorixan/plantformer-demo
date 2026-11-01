@@ -499,12 +499,7 @@ class DreamBlock extends StaticBody2D:
 		for i in range(1, 17):
 			var c := center + d * (float(i) * 1.5)
 			var body_rect := Rect2(c - Vector2(3.5, 5.0), Vector2(7.0, 10.0))
-			if not block_rect.intersects(body_rect):
-				continue
-			# 要求身体和紫块的重叠深度 >= 2px 才算"进入"；
-			# 只是擦过边缘（例如贴着紫块下边缘水平冲）不算
-			var inter := block_rect.intersection(body_rect)
-			if minf(inter.size.x, inter.size.y) >= 2.0:
+			if block_rect.intersects(body_rect):
 				return true
 		return false
 
