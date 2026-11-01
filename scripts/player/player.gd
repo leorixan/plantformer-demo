@@ -332,31 +332,45 @@ func _oneway_passable_dir(collider, dir: Vector2) -> bool:
 
 
 func dream_path_blocked(dir: Vector2) -> bool:
-	# 紫块触发前检查：玩家到紫块之间是否被实体地形/不可穿单向墙挡住。
-	# 被挡住时不该触发 Dream Dash（否则会先穿过挡路的墙）。
+	# 紫块触发前检查：沿冲刺方向逐步推进，先看身体会不会进入紫块；
+	# 进入紫块之前如果先被实体地形/不可穿单向墙挡住，就不触发 Dream Dash。
 	var d := dir.normalized()
-	if d == Vector2.ZERO:
-		return false
-	if dream_dashing:
+	if d == Vector2.ZERO or dream_dashing:
 		return false
 	var h := _body_height()
 	var center := global_position + Vector2(0.0, -h * 0.5)
-	var rect := RectangleShape2D.new()
-	rect.size = Vector2(body_width, h) - Vector2(SHAPE_INSET, SHAPE_INSET)
-	for dist in [2.0, 5.0, 9.0, 14.0]:
+	var rsize := Vector2(body_width, h) - Vector2(SHAPE_INSET, SHAPE_INSET)
+	var shape := RectangleShape2D.new()
+	shape.size = rsize
+	var t := 1.0
+	while t <= 24.0:
+		var c := center + d * t
+		var body_rect := Rect2(c - rsize * 0.5, rsize)
+		# 同一步内能进入紫块 -> 允许触发（优先于脚下地面等已在身边的地形）
+		for db in get_tree().get_nodes_in_group("dream_blocks"):
+			if not is_instance_valid(db):
+				continue
+			var sz = db.get("size")
+			if sz is Vector2:
+				var block_rect := Rect2((db as Node2D).global_position - (sz as Vector2) * 0.5, sz as Vector2)
+				if block_rect.intersects(body_rect):
+					return false
 		var params := PhysicsShapeQueryParameters2D.new()
-		params.shape = rect
-		params.transform = Transform2D(0.0, center + d * dist)
+		params.shape = shape
+		params.transform = Transform2D(0.0, c)
 		params.collision_mask = 1
 		params.collide_with_areas = false
 		params.exclude = [get_rid()]
 		for r in get_world_2d().direct_space_state.intersect_shape(params, 8):
-			var c = r.get("collider")
-			if c is Node and (c as Node).is_in_group("dream_blocks"):
+			var cc = r.get("collider")
+			if cc == null or not (cc is Node):
 				continue
-			if _oneway_passable_dir(c, d):
+			if (cc as Node).is_in_group("dream_blocks"):
+				continue
+			if _oneway_passable_dir(cc, d):
 				continue
 			return true
+		t += 1.0
 	return false
 
 
