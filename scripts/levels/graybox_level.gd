@@ -438,7 +438,7 @@ func respawn_player() -> void:
 	player.velocity = Vector2.ZERO
 	player.reset_physics_interpolation()
 	player.visible = true
-	await _reset_level_entities()
+	_reset_level_entities()
 	player.visible = true
 	if player.has_method("set_input_locked"):
 		player.call("set_input_locked", false)
@@ -875,13 +875,17 @@ func _hide_invisible_hazards() -> void:
 
 func _reset_level_entities() -> void:
 	# 复活重置：删除运行时生成的机关节点 + 恢复初始 tile，再重建（奖杯已收集的格子不再出现）
+	# 全部在同一帧内完成，不能等帧：否则会出现"实体消失一帧"的闪烁。
 	for n in get_tree().get_nodes_in_group("graybox_parts"):
 		if is_ancestor_of(n):
+			if n is CanvasItem:
+				(n as CanvasItem).visible = false   # 防止旧节点和重建节点重叠一帧
 			n.queue_free()
 	var cd := get_node_or_null("CrystalCooldown")
 	if cd:
+		if cd is CanvasItem:
+			(cd as CanvasItem).visible = false
 		cd.queue_free()
-	await get_tree().process_frame
 	var ents := _entity_layer()
 	var terr := _terrain_layer()
 	if ents:
