@@ -4,10 +4,13 @@ extends RefCounted
 
 
 class Hazard extends Area2D:
-	## 四向伤害区：pass_dir 不为零时，玩家沿该方向通过不受伤（和单向墙同规则）
+	## 四向伤害区：只允许"完全沿可通过方向"穿过；侧面接触 / 停在里面 / 斜向穿过都会死亡。
+	## 用逐帧持续判定（不是进入事件），避免穿过途中停下后卡在伤害区里。
 	var level: Node
 	var size := Vector2(8, 8)
 	var pass_dir := Vector2.ZERO
+	var _passing: CharacterBody2D = null
+	var _kill_latched := false
 
 	func _ready() -> void:
 		# 伤害判定用玩家 player.tscn 里的圆形 hurtbox（不再用身体矩形）
@@ -17,22 +20,55 @@ class Hazard extends Area2D:
 		rect.size = size
 		cs.shape = rect
 		add_child(cs)
-		area_entered.connect(_on_area)
 
-	func _on_area(area: Area2D) -> void:
-		if level == null or not area.is_in_group("player_hurtbox"):
+	func _player_move_dir(body: CharacterBody2D) -> Vector2:
+		if body.velocity.length() > 15.0:
+			return body.velocity.normalized()
+		if body.has_method("get_move_input"):
+			var mi = body.call("get_move_input")
+			if mi is Vector2 and (mi as Vector2).length() > 0.3:
+				return (mi as Vector2).normalized()
+		return Vector2.ZERO
+
+	func _can_pass(body: CharacterBody2D) -> bool:
+		if pass_dir == Vector2.ZERO:
+			return false
+		if body == _passing:
+			# 已在通过中：必须继续保持沿可通过方向移动，停下/变向/斜向都会死
+			var md := _player_move_dir(body)
+			return md == Vector2.ZERO == false and md.dot(pass_dir) > 0.6
+		# 首次接触：必须从背面进入 + 运动方向几乎完全沿可通过方向
+		var rel := body.global_position - global_position
+		if rel.dot(pass_dir) > 2.0:
+			return false
+		var mv := _player_move_dir(body)
+		if mv == Vector2.ZERO:
+			return false
+		return mv.dot(pass_dir) > 0.85
+
+	func _physics_process(_delta: float) -> void:
+		if level == null:
 			return
-		if pass_dir != Vector2.ZERO:
-			var body := area.get_parent()
-			if body is CharacterBody2D:
-				var cb := body as CharacterBody2D
-				if cb.velocity.dot(pass_dir) > 0.1:
-					return
-				if cb.has_method("get_move_input"):
-					var mi = cb.call("get_move_input")
-					if mi is Vector2 and (mi as Vector2).dot(pass_dir) > 0.3:
-						return
-		level.call("respawn_player")
+		var hit: CharacterBody2D = null
+		for a in get_overlapping_areas():
+			if not a.is_in_group("player_hurtbox"):
+				continue
+			var b := a.get_parent()
+			if b is CharacterBody2D:
+				hit = b as CharacterBody2D
+				break
+		if hit == null:
+			_passing = null
+			_kill_latched = false
+			return
+		if _can_pass(hit):
+			_passing = hit
+			_kill_latched = false
+			return
+		_passing = null
+		if not _kill_latched:
+			_kill_latched = true
+			level.call("respawn_player")
 
 
 class Crystal extends Area2D:
@@ -158,8 +194,10 @@ class Spring extends StaticBody2D:
 		_area.collision_mask = 2
 		var acs := CollisionShape2D.new()
 		var arect := RectangleShape2D.new()
-		arect.size = size + Vector2(8, 8)
+		# 只在弹射面一侧外扩 4px：踩上去/落到上面才算接触，贴边不会触发
+		arect.size = size + Vector2(absf(dir.x), absf(dir.y)) * 4.0
 		acs.shape = arect
+		acs.position = dir * 2.0
 		_area.add_child(acs)
 		add_child(_area)
 		_area.body_entered.connect(_on_body_entered)
@@ -193,6 +231,13 @@ class Spring extends StaticBody2D:
 		return (body_center - global_position).dot(dir) >= 0.0
 
 
+	func _approaching(body: Node2D) -> bool:
+		# 只有朝弹簧面运动（或静止落在上面）才触发；离开弹簧方向不触发
+		if body is CharacterBody2D:
+			return (body as CharacterBody2D).velocity.dot(dir) < 0.5
+		return true
+
+
 	func _physics_process(delta: float) -> void:
 		if _launch_grace > 0.0:
 			_launch_grace = maxf(0.0, _launch_grace - delta)
@@ -205,7 +250,7 @@ class Spring extends StaticBody2D:
 		if _pending_body != null and _cooldown <= 0.0:
 			var pb := _pending_body
 			_pending_body = null
-			if is_instance_valid(pb) and _area.overlaps_body(pb) and (_is_climbing(pb) or _from_valid_side(pb)):
+			if is_instance_valid(pb) and _area.overlaps_body(pb) and (_is_climbing(pb) or (_from_valid_side(pb) and _approaching(pb))):
 				_on_body_entered(pb)
 				return
 		var p := _overlap_player()
@@ -244,6 +289,8 @@ class Spring extends StaticBody2D:
 			_pending_body = body as CharacterBody2D
 			return
 		if not _from_valid_side(body) and not _is_climbing(body):
+			return
+		if not _is_climbing(body) and not _approaching(body):
 			return
 		_cooldown = 0.25
 		_launched_body = body as CharacterBody2D
