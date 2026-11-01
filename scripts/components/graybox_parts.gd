@@ -34,8 +34,8 @@ class Hazard extends Area2D:
 		if pass_dir == Vector2.ZERO:
 			return false
 		if body == _passing:
-			# 已在通过中：只要还带着沿可通过方向的速度就继续，停下/反向会死
-			return body.velocity.dot(pass_dir) > 0.0
+			# 已在通过中：只要不是逆着可通过方向运动就继续（冲刺结束后下坠/侧滑也算通过）
+			return body.velocity.dot(pass_dir) >= 0.0
 		# 首次接触：必须从背面进入（不能从侧面顶上来），斜向通过是允许的
 		var rel := body.global_position - global_position
 		if rel.dot(pass_dir) >= 0.0:
