@@ -227,13 +227,6 @@ class Spring extends StaticBody2D:
 		return (body_center - global_position).dot(dir) >= 0.0
 
 
-	func _approaching(body: Node2D) -> bool:
-		# 只有朝弹簧面运动（或静止落在上面）才触发；离开弹簧方向不触发
-		if body is CharacterBody2D:
-			return (body as CharacterBody2D).velocity.dot(dir) < 0.5
-		return true
-
-
 	func _physics_process(delta: float) -> void:
 		if _launch_grace > 0.0:
 			_launch_grace = maxf(0.0, _launch_grace - delta)
@@ -246,7 +239,7 @@ class Spring extends StaticBody2D:
 		if _pending_body != null and _cooldown <= 0.0:
 			var pb := _pending_body
 			_pending_body = null
-			if is_instance_valid(pb) and _area.overlaps_body(pb) and (_is_climbing(pb) or (_from_valid_side(pb) and _approaching(pb))):
+			if is_instance_valid(pb) and _area.overlaps_body(pb) and (_is_climbing(pb) or _from_valid_side(pb)):
 				_on_body_entered(pb)
 				return
 		var p := _overlap_player()
@@ -285,8 +278,6 @@ class Spring extends StaticBody2D:
 			_pending_body = body as CharacterBody2D
 			return
 		if not _from_valid_side(body) and not _is_climbing(body):
-			return
-		if not _is_climbing(body) and not _approaching(body):
 			return
 		_cooldown = 0.25
 		_launched_body = body as CharacterBody2D
