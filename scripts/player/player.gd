@@ -1061,10 +1061,6 @@ func start_dream_dash(dir: Vector2, block: Node = null) -> void:
 	dream_dashing = true
 	_dream_block = block
 	dream_dir = dir.normalized() if dir.length() > 0.01 else Vector2(facing, 0.0)
-	# 站在地面朝紫块斜下冲：向下的分量会被脚下地面挡住，
-	# 压成水平进入紫块，而不是撞地判死。
-	if dream_dir.y > 0.01 and absf(dream_dir.x) > 0.01 and _on_ground():
-		dream_dir = Vector2(signf(dream_dir.x), 0.0)
 	mode = Mode.DASH
 	dash_dir = dream_dir
 	dash_timer = 999.0
@@ -1154,7 +1150,7 @@ func _try_dream_reverse_grab() -> bool:
 func _dream_entry_grace() -> bool:
 	# Dream Dash 刚触发、身体还没进入紫块时：这条冲刺路线确实会进入紫块，
 	# 先允许穿过脚下的地面/边缘进入紫块，不要在这一两帧里判撞墙死亡。
-	if not dream_dashing or _dream_entered or _dream_time > 0.15:
+	if not dream_dashing or _dream_time > 0.1:
 		return false
 	for db in get_tree().get_nodes_in_group("dream_blocks"):
 		if db.has_method("dash_enters_block") and bool(db.call("dash_enters_block", self, dream_dir)):
