@@ -230,6 +230,7 @@ func _physics_process(delta: float) -> void:
 		_poll_input(delta)
 		return
 	_dream_dash_lifecycle()
+	_dream_exit_overlap_step()
 	if is_dashing():
 		_spawn_afterimage_tick()
 	if _dream_exit_timer > 0.0:
@@ -1034,6 +1035,7 @@ var _dream_entered := false
 var _dream_saved_mask := 1
 var _dream_exit_timer := 0.0
 var _dream_correct_timer := 0.0
+var _dream_exiting := false
 var _stamina_flash_timer := 0.0
 var _afterimage_tick := 0
 var _stamina_flash_red := false
@@ -1074,6 +1076,7 @@ func start_dream_dash(dir: Vector2, block: Node = null) -> void:
 	_dream_time = 0.0
 	_dream_entered = false
 	_dream_correct_timer = 0.0
+	_dream_exiting = false
 	# 清理攀爬/贴墙/外力残留，避免先回弹再冲进去
 	_grab_pressed = false
 	_wall_slide_dir = 0
@@ -1099,7 +1102,6 @@ func end_dream_dash(block: Node = null) -> void:
 		return
 	dream_dashing = false
 	_dream_exit_timer = 0.12
-	collision_mask = _dream_saved_mask if _dream_saved_mask != 0 else 1
 	dash_timer = 0.0
 	mode = Mode.NORMAL
 		# 出块保持原速；跳跃按普通跳跃规则处理（不再有特殊的超级跳）
@@ -1111,7 +1113,41 @@ func end_dream_dash(block: Node = null) -> void:
 			remove_collision_exception_with(db)
 	_dream_exceptions.clear()
 	_dream_block = null
+	# 结束时身体还和紫块重叠：先保持无碰撞，等完全离开紫块再恢复，
+	# 否则物理引擎会把角色从紫块里挤出去（例如挤到紫块下方）。
+	if _dream_overlaps_block():
+		_dream_exiting = true
+		collision_mask = 0
+		return
+	collision_mask = _dream_saved_mask if _dream_saved_mask != 0 else 1
 	# 若结束时身体已经和实体地形重叠（冲刺方向撞进墙），直接死亡
+	if is_inside_tree() and _body_overlaps_solid():
+		_dream_dash_die()
+
+
+func _dream_overlaps_block() -> bool:
+	var h := _body_height()
+	var center := global_position + Vector2(0.0, -h * 0.5)
+	var body_rect := Rect2(center - Vector2(body_width, h) * 0.5, Vector2(body_width, h))
+	for db in get_tree().get_nodes_in_group("dream_blocks"):
+		if not is_instance_valid(db):
+			continue
+		var sz = db.get("size")
+		if sz is Vector2:
+			var block_rect := Rect2((db as Node2D).global_position - (sz as Vector2) * 0.5, sz as Vector2)
+			if block_rect.intersects(body_rect):
+				return true
+	return false
+
+
+func _dream_exit_overlap_step() -> void:
+	if not _dream_exiting or dream_dashing:
+		return
+	if _dream_overlaps_block():
+		collision_mask = 0
+		return
+	_dream_exiting = false
+	collision_mask = _dream_saved_mask if _dream_saved_mask != 0 else 1
 	if is_inside_tree() and _body_overlaps_solid():
 		_dream_dash_die()
 
