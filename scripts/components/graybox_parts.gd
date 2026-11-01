@@ -203,7 +203,7 @@ class Spring extends StaticBody2D:
 		_climb_area.collision_mask = 2
 		var cacs := CollisionShape2D.new()
 		var carect := RectangleShape2D.new()
-		carect.size = size + Vector2(8, 8)
+		carect.size = size + Vector2(4, 4)   # 每侧只外扩 2px，够检测"贴着爬"即可
 		cacs.shape = carect
 		_climb_area.add_child(cacs)
 		add_child(_climb_area)
@@ -230,6 +230,20 @@ class Spring extends StaticBody2D:
 			if b is CharacterBody2D:
 				return b
 		return null
+
+
+	func _on_spring_tile(body: Node2D) -> bool:
+		# 非攀爬触发时要求身体确实在弹簧这一格的正上方/正贴面，
+		# 只是站在旁边（横向错开一格）不会触发。
+		var c: Vector2 = body.global_position + Vector2(0.0, -5.5)
+		var half := size * 0.5
+		if absf(dir.y) > 0.5:
+			if absf(c.x - global_position.x) > half.x:
+				return false
+			return c.y >= global_position.y - half.y - 12.0 and c.y <= global_position.y + half.y + 1.0
+		if absf(c.y - global_position.y) > half.y + 6.0:
+			return false
+		return true
 
 
 	func _from_valid_side(body: Node2D) -> bool:
@@ -294,6 +308,8 @@ class Spring extends StaticBody2D:
 			_pending_body = body as CharacterBody2D
 			return
 		if not _from_valid_side(body) and not _is_climbing(body):
+			return
+		if not _is_climbing(body) and not _on_spring_tile(body):
 			return
 		_cooldown = 0.25
 		_launched_body = body as CharacterBody2D
