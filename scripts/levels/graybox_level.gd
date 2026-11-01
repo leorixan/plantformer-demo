@@ -764,7 +764,7 @@ func _build_fake_terrain_masks() -> void:
 	var root := Node2D.new()
 	root.name = "FakeTerrainRuntime"
 	add_child(root)
-	# 8 邻接连通块（斜向相接也算同一块）
+	# 4 邻接连通块（只有正交相邻才算同一块）
 	var visited: Dictionary = {}
 	var comps: Array = []
 	for c in cells:
@@ -776,7 +776,7 @@ func _build_fake_terrain_masks() -> void:
 		while not stack.is_empty():
 			var cur: Vector2i = stack.pop_back()
 			comp.append(cur)
-			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(-1, -1)]:
+			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 				var n: Vector2i = cur + d
 				if cells.has(n) and not visited.has(n):
 					visited[n] = true
