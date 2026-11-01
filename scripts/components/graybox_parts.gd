@@ -4,8 +4,10 @@ extends RefCounted
 
 
 class Hazard extends Area2D:
+	## 四向伤害区：pass_dir 不为零时，玩家沿该方向通过不受伤（和单向墙同规则）
 	var level: Node
 	var size := Vector2(8, 8)
+	var pass_dir := Vector2.ZERO
 
 	func _ready() -> void:
 		# 伤害判定用玩家 player.tscn 里的圆形 hurtbox（不再用身体矩形）
@@ -18,8 +20,19 @@ class Hazard extends Area2D:
 		area_entered.connect(_on_area)
 
 	func _on_area(area: Area2D) -> void:
-		if level and area.is_in_group("player_hurtbox"):
-			level.call("respawn_player")
+		if level == null or not area.is_in_group("player_hurtbox"):
+			return
+		if pass_dir != Vector2.ZERO:
+			var body := area.get_parent()
+			if body is CharacterBody2D:
+				var cb := body as CharacterBody2D
+				if cb.velocity.dot(pass_dir) > 0.1:
+					return
+				if cb.has_method("get_move_input"):
+					var mi = cb.call("get_move_input")
+					if mi is Vector2 and (mi as Vector2).dot(pass_dir) > 0.3:
+						return
+		level.call("respawn_player")
 
 
 class Crystal extends Area2D:

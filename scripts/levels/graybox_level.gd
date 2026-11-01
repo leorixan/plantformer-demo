@@ -16,7 +16,7 @@ var _collected_trophy_cells: Dictionary = {}
 var trophies_collected := 0
 const KIND_ORDER := ["terrain", "hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
 const ENTITY_KINDS := ["hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
-const ENTITY_ATLAS := ["hazard", "crystal", "breakable8", "breakable16", "dream", "checkpoint", "hazard_hidden", "trophy", "spring_up", "spring_down", "spring_left", "spring_right", "oneway_up", "oneway_down", "oneway_left", "oneway_right"]
+const ENTITY_ATLAS := ["hazard", "crystal", "breakable8", "breakable16", "dream", "checkpoint", "hazard_hidden", "trophy", "spring_up", "spring_down", "spring_left", "spring_right", "oneway_up", "oneway_down", "oneway_left", "oneway_right", "hazard_up", "hazard_down", "hazard_left", "hazard_right"]
 # 旧版图集坐标 → v7 双行坐标（运行时自动迁移旧地图）
 const ENTITY_TILE_MIGRATION := {
 	Vector2i(0, 0): Vector2i(0, 0), Vector2i(1, 0): Vector2i(1, 0),
@@ -326,6 +326,26 @@ func _make_part(kind: String, size: Vector2, pos: Vector2) -> Node2D:
 			var h = parts.Hazard.new()
 			h.level = self
 			node = h
+		"hazard_up":
+			var hu = parts.Hazard.new()
+			hu.level = self
+			hu.pass_dir = Vector2.UP
+			node = hu
+		"hazard_down":
+			var hd = parts.Hazard.new()
+			hd.level = self
+			hd.pass_dir = Vector2.DOWN
+			node = hd
+		"hazard_left":
+			var hl = parts.Hazard.new()
+			hl.level = self
+			hl.pass_dir = Vector2.LEFT
+			node = hl
+		"hazard_right":
+			var hr = parts.Hazard.new()
+			hr.level = self
+			hr.pass_dir = Vector2.RIGHT
+			node = hr
 		"crystal":
 			node = parts.Crystal.new()
 		"spring", "spring_up":
