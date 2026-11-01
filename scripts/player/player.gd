@@ -1219,6 +1219,42 @@ func _dream_inside_block() -> bool:
 	return false
 
 
+func _dream_solid_at(at: Vector2, height: float) -> bool:
+	# Dream Dash 期间用（此时 collision_mask 为 0），按保存的 mask 查询实体地形；
+	# 紫块和当前冲刺方向可穿过的单向墙不算。
+	var mask := _dream_saved_mask if _dream_saved_mask != 0 else 1
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(body_width, height) - Vector2(SHAPE_INSET, SHAPE_INSET)
+	var params := PhysicsShapeQueryParameters2D.new()
+	params.shape = rect
+	params.transform = Transform2D(0.0, at + Vector2(0.0, -height * 0.5))
+	params.collision_mask = mask
+	params.collide_with_areas = false
+	params.exclude = [get_rid()]
+	for r in get_world_2d().direct_space_state.intersect_shape(params, 8):
+		var c = r.get("collider")
+		if c == null or not (c is Node):
+			continue
+		if (c as Node).is_in_group("dream_blocks"):
+			continue
+		if _is_passable_oneway(c):
+			continue
+		return true
+	return false
+
+
+func _dream_try_autoduck() -> void:
+	# 紫块内向上冲、前方只有一格高的空间时自动蹲下，避免出块时站起来卡住
+	if not dream_dashing or is_ducking or dream_dir.y > -0.01:
+		return
+	var next_pos := global_position + dream_dir * dream_dash_speed * get_physics_process_delta_time()
+	if not (_dream_solid_at(global_position, stand_height) or _dream_solid_at(next_pos, stand_height)):
+		return
+	if _dream_solid_at(global_position, duck_height) or _dream_solid_at(next_pos, duck_height):
+		return
+	_set_duck(true)
+
+
 func _dream_body_fits(at: Vector2) -> bool:
 	# 用 saved mask（dream dash 期间 collision_mask 为 0，不能直接用它查询）
 	var mask := _dream_saved_mask if _dream_saved_mask != 0 else 1
@@ -1287,6 +1323,7 @@ func _dream_dash_lifecycle() -> void:
 		return
 	_dream_correct_timer = maxf(0.0, _dream_correct_timer - get_physics_process_delta_time())
 	velocity = dream_dir * dream_dash_speed
+	_dream_try_autoduck()
 	_dream_time += get_physics_process_delta_time()
 	var moved := global_position.distance_to(_dream_last_pos)
 	_dream_last_pos = global_position
