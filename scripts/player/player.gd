@@ -263,6 +263,8 @@ func _physics_process(delta: float) -> void:
 				continue
 			var hn: Vector2 = hit.get("normal", Vector2.ZERO)
 			if hn.dot(dream_dir) < -0.2:
+				if _dream_entry_grace():
+					break
 				if not _dream_try_corner_correction(hc):
 					_dream_hit_solid()
 				return
@@ -279,6 +281,8 @@ func _physics_process(delta: float) -> void:
 					continue
 				if _is_passable_oneway(rc):
 					continue
+				if _dream_entry_grace():
+					break
 				if _dream_try_corner_correction(rc):
 					return
 				_dream_dash_die()
@@ -290,7 +294,7 @@ func _physics_process(delta: float) -> void:
 		Mode.DASH: _dash_update()
 		Mode.CLIMB: _climb_update(delta)
 		_: _normal_update(delta)
-	if dream_dashing and _dream_dash_would_hit_solid(delta):
+	if dream_dashing and not _dream_entry_grace() and _dream_dash_would_hit_solid(delta):
 		if not _dream_try_corner_correction():
 			_dream_hit_solid()
 			velocity = Vector2.ZERO
@@ -1057,6 +1061,10 @@ func start_dream_dash(dir: Vector2, block: Node = null) -> void:
 	dream_dashing = true
 	_dream_block = block
 	dream_dir = dir.normalized() if dir.length() > 0.01 else Vector2(facing, 0.0)
+	# 站在地面朝紫块斜下冲：向下的分量会被脚下地面挡住，
+	# 压成水平进入紫块，而不是撞地判死。
+	if dream_dir.y > 0.01 and absf(dream_dir.x) > 0.01 and _on_ground():
+		dream_dir = Vector2(signf(dream_dir.x), 0.0)
 	mode = Mode.DASH
 	dash_dir = dream_dir
 	dash_timer = 999.0
@@ -1143,6 +1151,17 @@ func _try_dream_reverse_grab() -> bool:
 	return false
 
 
+func _dream_entry_grace() -> bool:
+	# Dream Dash 刚触发、身体还没进入紫块时：这条冲刺路线确实会进入紫块，
+	# 先允许穿过脚下的地面/边缘进入紫块，不要在这一两帧里判撞墙死亡。
+	if not dream_dashing or _dream_entered or _dream_time > 0.15:
+		return false
+	for db in get_tree().get_nodes_in_group("dream_blocks"):
+		if db.has_method("dash_enters_block") and bool(db.call("dash_enters_block", self, dream_dir)):
+			return true
+	return false
+
+
 func _dream_inside_block() -> bool:
 	for db in get_tree().get_nodes_in_group("dream_blocks"):
 		if db.has_method("player_inside") and bool(db.call("player_inside", self)):
@@ -1181,7 +1200,7 @@ func _dream_try_corner_correction(blocking: Node = null) -> bool:
 	if _dream_correct_timer > 0.0:
 		# 刚修正完又被挡住：说明这不是"错位"而是真撞墙，交给撞墙判定
 		return false
-	if not _dream_inside_block():
+	if not _dream_inside_block() and not _dream_entry_grace():
 		return false
 	var perp := Vector2(absf(dream_dir.y), absf(dream_dir.x))
 	if perp.length() < 0.01:
