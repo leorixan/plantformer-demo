@@ -300,7 +300,6 @@ func _physics_process(delta: float) -> void:
 			velocity = Vector2.ZERO
 	var pre_move_velocity := velocity
 	move_and_slide()
-	_try_dream_dash_on_contact()
 	_resolve_collisions(pre_move_velocity)
 	_resolve_collisions(pre_move_velocity)
 	_update_indicators()
@@ -321,21 +320,58 @@ func _is_passable_oneway(collider) -> bool:
 	return false
 
 
-func _try_dream_dash_on_contact() -> void:
-	# 只有真正撞到紫块的迎面才触发 Dream Dash：
-	# 被单向墙/实体挡住时根本接触不到紫块；沿表面擦过时接触法线和冲刺方向垂直，也不会触发。
-	if dream_dashing or not is_dashing():
-		return
-	for i in get_slide_collision_count():
-		var col := get_slide_collision(i)
-		var c = col.get_collider()
-		if c == null or not (c is Node):
-			continue
-		if not (c as Node).is_in_group("dream_blocks"):
-			continue
-		if col.get_normal().dot(dash_dir) < -0.3:
-			start_dream_dash(dash_dir, c)
-			return
+func _oneway_passable_dir(collider, dir: Vector2) -> bool:
+	if collider == null or not (collider is Node):
+		return false
+	if not (collider as Node).is_in_group("oneway_platforms"):
+		return false
+	var pd = collider.get("pass_dir")
+	if pd is Vector2:
+		return (pd as Vector2).dot(dir) > 0.0
+	return false
+
+
+func dream_path_blocked(dir: Vector2) -> bool:
+	# 紫块触发前检查：沿冲刺方向逐步推进，先看身体会不会进入紫块；
+	# 进入紫块之前如果先被实体地形/不可穿单向墙挡住，就不触发 Dream Dash。
+	var d := dir.normalized()
+	if d == Vector2.ZERO or dream_dashing:
+		return false
+	var h := _body_height()
+	var center := global_position + Vector2(0.0, -h * 0.5)
+	var rsize := Vector2(body_width, h) - Vector2(SHAPE_INSET, SHAPE_INSET)
+	var shape := RectangleShape2D.new()
+	shape.size = rsize
+	var t := 1.0
+	while t <= 24.0:
+		var c := center + d * t
+		var body_rect := Rect2(c - rsize * 0.5, rsize)
+		# 同一步内能进入紫块 -> 允许触发（优先于脚下地面等已在身边的地形）
+		for db in get_tree().get_nodes_in_group("dream_blocks"):
+			if not is_instance_valid(db):
+				continue
+			var sz = db.get("size")
+			if sz is Vector2:
+				var block_rect := Rect2((db as Node2D).global_position - (sz as Vector2) * 0.5, sz as Vector2)
+				if block_rect.intersects(body_rect):
+					return false
+		var params := PhysicsShapeQueryParameters2D.new()
+		params.shape = shape
+		params.transform = Transform2D(0.0, c)
+		params.collision_mask = 1
+		params.collide_with_areas = false
+		params.exclude = [get_rid()]
+		for r in get_world_2d().direct_space_state.intersect_shape(params, 8):
+			var cc = r.get("collider")
+			if cc == null or not (cc is Node):
+				continue
+			if (cc as Node).is_in_group("dream_blocks"):
+				continue
+			if _oneway_passable_dir(cc, d):
+				continue
+			return true
+		t += 1.0
+	return false
 
 
 func _dream_dash_would_hit_solid(delta: float) -> bool:

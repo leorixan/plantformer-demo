@@ -438,6 +438,55 @@ class DreamBlock extends StaticBody2D:
 		_detector.add_child(dcs)
 		add_child(_detector)
 
+	func _physics_process(_delta: float) -> void:
+		for b in _detector.get_overlapping_bodies():
+			if not (b is CharacterBody2D):
+				continue
+			if b.has_method("is_dream_dashing") and bool(b.call("is_dream_dashing")):
+				return
+			# 刚离开紫块 0.12s 内不重新触发，避免"结束→再触发"循环
+			var exit_t = b.get("_dream_exit_timer")
+			if exit_t != null and float(exit_t) > 0.0:
+				return
+			var dashing: bool = b.has_method("is_dashing") and bool(b.call("is_dashing"))
+			var just_dashed: bool = b.get("dash_attack_timer") != null and float(b.get("dash_attack_timer")) > 0.0
+			var pressed: bool = (b.has_method("is_dash_pressed") and bool(b.call("is_dash_pressed"))) or Input.is_action_pressed("dash")
+			if not player_near(b):
+				continue
+			var toward: Vector2 = (global_position - b.global_position).normalized()
+			var aim: Vector2 = Vector2.ZERO
+			if b.has_method("dash_input_dir"):
+				aim = b.call("dash_input_dir")
+			var aim_ok: bool = aim.length() > 0.01 and aim.normalized().dot(toward) > 0.25
+			if dashing or just_dashed or (pressed and aim_ok):
+				var dir: Vector2 = b.velocity
+				if dashing or just_dashed:
+					var dd = b.get("dash_dir")
+					if dd is Vector2 and (dd as Vector2).length() > 0.01:
+						dir = dd
+					elif aim.length() > 0.01:
+						# 冲刺冻结期 dash_dir 还未写入：用当前输入方向，避免变成水平滑行
+						dir = aim
+					else:
+						# 方向还没采样到（同帧按下方向+冲刺）：等下一帧再判定
+						continue
+				elif pressed:
+					# 关键：按住冲刺触发时优先用当前输入方向，避免读到上一次冲刺的 dash_dir（导致向上冲却向下走）
+					if aim.length() > 0.01:
+						dir = aim
+					else:
+						dir = toward
+				# 冲刺必须真的会把身体扫进紫块才触发；
+				# 紧贴紫块、沿着表面/旁边冲刺不应触发（否则会误触发 Dream Dash 效果）。
+				if not dash_enters_block(b, dir):
+					continue
+				if b.has_method("dream_path_blocked") and bool(b.call("dream_path_blocked", dir)):
+					continue
+				if b.has_method("start_dream_dash"):
+					print("[dream] trigger pressed=", pressed, " dir=", dir, " player=", b.global_position)
+					b.call("start_dream_dash", dir, self)
+				return
+
 	func dash_enters_block(body: Node2D, dir: Vector2) -> bool:
 		# 玩家身体（8x11，中心在脚底上方 5.5）沿冲刺方向扫掠，看是否真的会进入方块。
 		# 只是"朝方块中心方向"还不够：站在顶面朝方块中心水平冲时也会满足该条件，
