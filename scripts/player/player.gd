@@ -97,7 +97,7 @@ const CRYSTAL_COLOR := Color(0.28, 0.78, 0.82, 1.0)
 @export_category("Feel")
 @export var corner_correction_px := 4 # UpwardCornerCorrection
 @export var dash_corner_correction_px := 4 # DashCornerCorrection
-@export var spring_force_time := 0.20 # 弹簧弹出后水平输入锁定时间
+@export var spring_force_time := 0.25 # 弹簧弹出后水平输入锁定时间（15 帧）
 @export var wall_jump_force_time := 0.16 # WallJumpForceTime
 @export var super_wall_jump_force_time := 0.20 # SuperWallJumpForceTime
 @export var wall_speed_retention_time := 0.06 # WallSpeedRetentionTime；Cornerboost 的来源
