@@ -440,9 +440,14 @@ func respawn_player() -> void:
 	player.visible = true
 	_reset_level_entities()
 	player.visible = true
+	player.set_physics_process(true)
+	# 复活后继续禁用输入 8 帧，避免死亡期间残留的按键立刻生效
+	if player.has_method("set_input_locked"):
+		player.call("set_input_locked", true)
+	for i in 8:
+		await get_tree().physics_frame
 	if player.has_method("set_input_locked"):
 		player.call("set_input_locked", false)
-	player.set_physics_process(true)
 	_dying = false
 
 

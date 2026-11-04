@@ -398,10 +398,19 @@ func _dream_dash_would_hit_solid(delta: float) -> bool:
 
 
 func _poll_input(delta: float) -> void:
-	if not _input_locked:
-		if Input.is_action_just_pressed("jump"): _jump_buffer = jump_buffer_time
-		if Input.is_action_just_pressed("dash"): _dash_buffer = dash_buffer_time
-		if Input.is_action_just_pressed("grab"): _grab_pressed = true
+	# 输入锁定（死亡/复活保护）时完全不读输入：按键缓存与方向都清零
+	if _input_locked:
+		_jump_buffer = 0.0
+		_dash_buffer = 0.0
+		_grab_pressed = false
+		_raw_move_x = 0.0
+		move_x = 0.0
+		move_y = 0.0
+		_force_move_x_timer = 0.0
+		return
+	if Input.is_action_just_pressed("jump"): _jump_buffer = jump_buffer_time
+	if Input.is_action_just_pressed("dash"): _dash_buffer = dash_buffer_time
+	if Input.is_action_just_pressed("grab"): _grab_pressed = true
 	_raw_move_x = signf(Input.get_axis("move_left", "move_right"))
 	move_y = signf(Input.get_axis("move_up", "move_down"))
 	# 参考 Update 的 forceMoveX 段：墙跳 / 翻墙 hop 后短时间内接管水平输入。
@@ -1075,9 +1084,15 @@ func apply_spring_boost(duration: float = 0.25, force_dir: float = 0.0) -> void:
 func set_input_locked(value: bool) -> void:
 	_input_locked = value
 	if value:
+		# 清空所有输入缓存与当前方向
 		_jump_buffer = 0.0
 		_dash_buffer = 0.0
 		_grab_pressed = false
+		_raw_move_x = 0.0
+		move_x = 0.0
+		move_y = 0.0
+		_force_move_x = 0.0
+		_force_move_x_timer = 0.0
 
 
 func refill_dash() -> void:
