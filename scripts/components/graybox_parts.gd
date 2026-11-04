@@ -11,6 +11,7 @@ class Hazard extends Area2D:
 	var pass_dir := Vector2.ZERO
 	var _passing: CharacterBody2D = null
 	var _kill_latched := false
+	var _pass_grace := 0.0
 
 	func _ready() -> void:
 		# 伤害判定用玩家 player.tscn 里的圆形 hurtbox（不再用身体矩形）
@@ -45,6 +46,7 @@ class Hazard extends Area2D:
 	func _physics_process(_delta: float) -> void:
 		if level == null:
 			return
+		_pass_grace = maxf(0.0, _pass_grace - _delta)
 		var hit: CharacterBody2D = null
 		for a in get_overlapping_areas():
 			if not a.is_in_group("player_hurtbox"):
@@ -58,6 +60,12 @@ class Hazard extends Area2D:
 			_kill_latched = false
 			return
 		if _can_pass(hit):
+			_passing = hit
+			_kill_latched = false
+			_pass_grace = 0.30   # 成功通过后 0.3s 内从出口侧再擦到不再判死
+			return
+		if _pass_grace > 0.0 and hit.velocity.dot(pass_dir) >= -1.0:
+			# 刚从出口侧出来（例如穿过竖条后下坠/贴边）不算侧向进入
 			_passing = hit
 			_kill_latched = false
 			return
