@@ -97,6 +97,7 @@ const CRYSTAL_COLOR := Color(0.28, 0.78, 0.82, 1.0)
 @export_category("Feel")
 @export var corner_correction_px := 4 # UpwardCornerCorrection
 @export var dash_corner_correction_px := 4 # DashCornerCorrection
+@export var spring_force_time := 0.20 # 弹簧弹出后水平输入锁定时间
 @export var wall_jump_force_time := 0.16 # WallJumpForceTime
 @export var super_wall_jump_force_time := 0.20 # SuperWallJumpForceTime
 @export var wall_speed_retention_time := 0.06 # WallSpeedRetentionTime；Cornerboost 的来源
@@ -1057,12 +1058,17 @@ func set_facing(direction: float) -> void:
 		visuals.scale.x = facing
 
 
-func apply_spring_boost(duration: float = 0.25) -> void:
+func apply_spring_boost(duration: float = 0.25, force_dir: float = 0.0) -> void:
 	_spring_boost_timer = maxf(_spring_boost_timer, duration)
 	# 弹簧发射时打断冲刺/爬墙：否则冲刺结束会重置速度、爬墙每帧覆写竖直速度
 	mode = Mode.NORMAL
 	cancel_freeze()
+	_force_move_x = 0.0
 	_force_move_x_timer = 0.0
+	# 弹出后短时间内锁定水平输入方向（横向弹簧锁弹出方向；竖直弹簧锁起跳时的输入方向）
+	if absf(force_dir) > 0.01:
+		_force_move_x = signf(force_dir)
+		_force_move_x_timer = spring_force_time
 	_wall_slide_timer = wall_slide_time
 
 

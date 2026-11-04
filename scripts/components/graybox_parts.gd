@@ -318,7 +318,13 @@ class Spring extends StaticBody2D:
 		if body.has_method("refill_dash"):
 			body.call("refill_dash")
 		if body.has_method("apply_spring_boost"):
-			body.call("apply_spring_boost", 0.25)
+			# 横向弹簧锁弹出方向；竖直弹簧锁起跳时的水平输入方向
+			var force_x := 0.0
+			if absf(dir.x) > 0.5:
+				force_x = dir.x
+			elif body.has_method("get_move_input"):
+				force_x = (body.call("get_move_input") as Vector2).x
+			body.call("apply_spring_boost", 0.25, force_x)
 		if body is CharacterBody2D:
 			var cb := body as CharacterBody2D
 			if _launch_player != null and is_instance_valid(_launch_player) and _launch_player != cb:
