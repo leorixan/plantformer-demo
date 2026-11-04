@@ -626,11 +626,9 @@ class OneWay extends StaticBody2D:
 		add_child(_detector)
 
 	func _want(p: CharacterBody2D) -> bool:
-		if p.velocity.dot(pass_dir) > 0.1:
-			return true
-		if p.has_method("get_move_input"):
-			return (p.call("get_move_input") as Vector2).dot(pass_dir) > 0.3
-		return false
+		# 只按实际速度方向判断：按着方向键但人在下坠/被挡住时不能开例外，
+		# 否则会"掉着掉着就穿过单向平台"
+		return p.velocity.dot(pass_dir) > 0.1
 
 	func _body_center(p: CharacterBody2D) -> Vector2:
 		var h: float = 11.0
