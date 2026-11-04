@@ -83,6 +83,7 @@ const CRYSTAL_COLOR := Color(0.28, 0.78, 0.82, 1.0)
 @export var climb_still_stamina_cost := 10.0 # ClimbStillCost 100/10
 @export var climb_jump_stamina_cost := 27.5 # ClimbJumpCost 110/4
 @export var climb_check_distance := 2.0 # ClimbCheckDist；抓墙检测 + 贴墙吸附距离
+@export var climb_release_grace := 0.10 # 松抓后短时间内仍允许墙跳的宽限
 @export var wall_check_distance := 0.5 # WallJumpCheckDist（普通墙跳检测距离，越小越严格）
 @export var dash_wall_check_distance := 3.0 # 冲刺中墙跳检测距离（比普通墙跳宽松）
 @export var slip_check_depth := 4.0 # SlipCheck 的探针深度
@@ -144,6 +145,7 @@ var _coyote := 0.0
 var _var_jump_timer := 0.0
 var _var_jump_speed := 0.0
 var _climb_lock := 0.0
+var _climb_grace := 0.0
 var _max_fall := 160.0 # 参考 maxFall：会渐进到 FastMaxFall 的当前下落上限
 var _wall_slide_timer := 1.2
 var _wall_slide_dir := 0
@@ -432,6 +434,7 @@ func _tick_timers(delta: float) -> void:
 	_var_jump_timer = maxf(0.0, _var_jump_timer - delta)
 	if _var_jump_timer <= 0.0:
 		_climb_lock = maxf(0.0, _climb_lock - delta)
+	_climb_grace = maxf(0.0, _climb_grace - delta)
 	dash_attack_timer = maxf(0.0, dash_attack_timer - delta)
 	dash_cooldown_timer = maxf(0.0, dash_cooldown_timer - delta)
 	_event_timer = maxf(0.0, _event_timer - delta)
@@ -610,6 +613,7 @@ func _climb_update(delta: float) -> void:
 	if _try_start_dash(): return
 	var wall := int(facing)
 	if not Input.is_action_pressed("grab") or stamina <= 0.0:
+		_climb_grace = climb_release_grace
 		mode = Mode.NORMAL
 		_event("Climb end")
 		return
@@ -991,6 +995,10 @@ func get_dash_direction() -> Vector2:
 
 # 参考 WallJumpCheck：以 WallJumpCheckDist 做整箱检测。
 func _wall_jump_check(direction: int) -> bool:
+	# 松抓后的短宽限：爬墙结束瞬间碰撞盒离墙面还有半个 inset（_snap_to_wall 的后退），
+	# 普通 0.5px 墙跳检测会检测不到；宽限期内用抓墙距离检测，并允许已经在远离墙
+	if _climb_grace > 0.0:
+		return test_move(global_transform, Vector2(direction, 0.0) * (climb_check_distance + 0.5))
 	# 预输入保护：如果人已经在往远离墙的方向移动，就不再判定为墙跳
 	if velocity.x * float(direction) < -20.0:
 		return false
