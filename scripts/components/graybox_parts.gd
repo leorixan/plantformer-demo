@@ -238,9 +238,12 @@ class Spring extends StaticBody2D:
 		var c: Vector2 = body.global_position + Vector2(0.0, -5.5)
 		var half := size * 0.5
 		if absf(dir.y) > 0.5:
-			if absf(c.x - global_position.x) > half.x:
+			# 横向：身体和弹簧格有重叠即可（落在边缘也算踩上）
+			if absf(c.x - global_position.x) > half.x + 4.0:
 				return false
-			return c.y >= global_position.y - half.y - 12.0 and c.y <= global_position.y + half.y + 1.0
+			# 纵向：脚必须在弹簧顶面附近或以上（站在旁边地面上不算）
+			var feet_y: float = body.global_position.y
+			return feet_y <= global_position.y - half.y + 1.0
 		if absf(c.y - global_position.y) > half.y + 6.0:
 			return false
 		return true
