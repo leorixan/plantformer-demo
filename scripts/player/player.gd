@@ -556,9 +556,37 @@ func _can_unduck_at(at: Vector2) -> bool:
 # 不是"本帧有没有撞到地面"。Godot 的 is_on_floor() 属于后者：水平 Dash（vy=0 且关重力）、
 # 贴地滑行这类帧里根本没有向下位移，is_on_floor() 会变 false，于是 dash 次数、体力、土狼全都补不回来
 # —— Super / Hyper / Wavedash 之后 dash 不恢复就是这个原因。所有"是否站在地上"的判定统一走这里。
+func _ground_solid_at(point: Vector2) -> bool:
+	# 参考 Celeste 的 onGround：脚下点探针。
+	# 单向平台只有在"脚正好踩在它的顶面"时才算地面；穿过/贴边时不算，
+	# 否则在空中穿过单向墙会被误判成落地，从而恢复 dash/体力。
+	var params := PhysicsPointQueryParameters2D.new()
+	params.position = point
+	params.collision_mask = collision_mask
+	params.collide_with_areas = false
+	params.exclude = [get_rid()]
+	for r in get_world_2d().direct_space_state.intersect_point(params, 8):
+		var c = r.get("collider")
+		if c == null or not (c is Node):
+			continue
+		if (c as Node).is_in_group("oneway_platforms"):
+			var sz = c.get("size")
+			if sz is Vector2:
+				var top: float = (c as Node2D).global_position.y - (sz as Vector2).y * 0.5
+				if absf(global_position.y - top) <= 1.5:
+					return true
+			continue
+		return true
+	return false
+
+
 func _on_ground() -> bool:
 	if velocity.y < 0.0: return false
-	return _box_is_solid(global_position + Vector2(0.0, 1.0 - _body_height() * 0.5), Vector2(body_width, _body_height()))
+	var probe_y: float = global_position.y + 0.6
+	for dx in [0.0, -2.5, 2.5]:
+		if _ground_solid_at(Vector2(global_position.x + dx, probe_y)):
+			return true
+	return false
 
 # 参考 CollideCheck<Solid>：把当前碰撞盒整箱挪到 at 处，看是否无阻挡。
 func _body_fits_at(at: Vector2) -> bool:
