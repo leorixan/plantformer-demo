@@ -14,7 +14,7 @@ const CONTACT_MARGIN := 0.001
 ## Celeste 的坐标是整数，8px 宽的身体钻 8px 宽的缝是"严丝合缝"地过；Godot 里坐标是浮点，
 ## 缝隙与身体等宽时要求亚像素级对齐，角落修正因此大多数时候找不到可行位置。
 ## 内缩 1px（物理盒 7 宽）给 1 砖缝留出 1px 余量，角落修正才能像参考那样稳定命中。
-const SHAPE_INSET := 1.0
+const SHAPE_INSET := 0.2
 
 const JUMP_DUST := preload("res://scripts/fx/jump_dust.gd")
 
