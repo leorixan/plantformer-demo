@@ -1177,6 +1177,42 @@ func start_dream_dash(dir: Vector2, block: Node = null) -> void:
 		_dream_exceptions.append(block)
 
 
+func reset_for_respawn() -> void:
+	# 死亡复活时彻底清空战斗/移动状态：否则死亡瞬间的 Dash/紫块冲刺状态会残留，
+	# 复活后 timer 走完直接以残留 dash_dir 冲出去。
+	dream_dashing = false
+	_dream_exit_timer = 0.0
+	_dream_entered = false
+	_dream_block = null
+	for db in _dream_exceptions:
+		if is_instance_valid(db):
+			remove_collision_exception_with(db)
+	_dream_exceptions.clear()
+	collision_mask = _dream_saved_mask if _dream_saved_mask != 0 else 1
+	mode = Mode.NORMAL
+	dash_timer = 0.0
+	dash_dir = Vector2.ZERO
+	dash_attack_timer = 0.0
+	dash_count = max_dashes
+	dash_cooldown_timer = 0.0
+	_dash_refill_cooldown_timer = 0.0
+	_dash_buffer = 0.0
+	_jump_buffer = 0.0
+	_coyote = 0.0
+	_spring_boost_timer = 0.0
+	_force_move_x = 0.0
+	_force_move_x_timer = 0.0
+	_wall_boost_timer = 0.0
+	_wall_speed_retention_timer = 0.0
+	_wall_slide_timer = wall_slide_time
+	_climb_lock = 0.0
+	_climb_grace = 0.0
+	_hop_wait_x = 0
+	stamina = max_stamina
+	velocity = Vector2.ZERO
+	_set_duck(false)
+
+
 func end_dream_dash(block: Node = null) -> void:
 	if not dream_dashing:
 		return

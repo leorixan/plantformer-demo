@@ -436,6 +436,8 @@ func respawn_player() -> void:
 	player.set("collision_mask", 1)
 	player.global_position = checkpoint_pos
 	player.velocity = Vector2.ZERO
+	if player.has_method("reset_for_respawn"):
+		player.call("reset_for_respawn")
 	player.reset_physics_interpolation()
 	player.visible = true
 	_reset_level_entities()
