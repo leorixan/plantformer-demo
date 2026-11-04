@@ -623,6 +623,28 @@ class OneWay extends StaticBody2D:
 			return (p.call("get_move_input") as Vector2).dot(pass_dir) > 0.3
 		return false
 
+	func _body_center(p: CharacterBody2D) -> Vector2:
+		var h: float = 11.0
+		if p.has_method("_body_height"):
+			h = float(p.call("_body_height"))
+		return p.global_position + Vector2(0.0, -h * 0.5)
+
+	func _body_overlaps_wall(p: CharacterBody2D) -> bool:
+		# 玩家碰撞箱是否还和单向墙实体重叠（用于决定何时恢复碰撞）
+		var h: float = 11.0
+		if p.has_method("_body_height"):
+			h = float(p.call("_body_height"))
+		var center := p.global_position + Vector2(0.0, -h * 0.5)
+		var body_rect := Rect2(center - Vector2(4.0, h * 0.5), Vector2(8.0, h))
+		var wall_rect := Rect2(global_position - size * 0.5, size)
+		return wall_rect.intersects(body_rect)
+
+	func _pass_side_ok(p: CharacterBody2D) -> bool:
+		# 只允许从背面（朝可通过方向的前一侧）开始通过；
+		# 从黑色实心一侧蹭着走不能开例外
+		var rel := _body_center(p) - global_position
+		return rel.dot(pass_dir) < 2.0
+
 	func _physics_process(_delta: float) -> void:
 		var p: CharacterBody2D = null
 		for b in _detector.get_overlapping_bodies():
@@ -636,18 +658,17 @@ class OneWay extends StaticBody2D:
 			_player = null
 			return
 		if _exception:
-			# 只要还在朝通行方向移动就保留例外（不能因为"身体还没进墙"就移除，
-			# 否则靠近阶段就被取消，导致下向墙穿不过去）
-			if not _want(p):
+			# 碰撞箱完全离开单向墙之前一直保留例外，
+			# 避免"通过一半松开方向/速度变化"时恢复碰撞把人卡在墙里
+			if not _body_overlaps_wall(p):
 				p.remove_collision_exception_with(self)
 				_exception = false
 				_player = null
 			return
-		if _want(p):
+		if _want(p) and _pass_side_ok(p):
 			p.add_collision_exception_with(self)
 			_exception = true
 			_player = p
-			print("[oneway] pass dir=", pass_dir)
 
 
 class Trophy extends Area2D:
