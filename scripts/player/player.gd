@@ -589,11 +589,18 @@ func _on_ground() -> bool:
 	return false
 
 # 参考 CollideCheck<Solid>：把当前碰撞盒整箱挪到 at 处，看是否无阻挡。
+func _blocked_above() -> bool:
+	# 头顶是否被实体地形顶住；单向平台不算（向上穿过单向平台是允许的）
+	var h := _body_height()
+	var center := global_position + Vector2(0.0, -h * 0.5 - 1.0)
+	return _box_is_solid(center, Vector2(body_width, h), true)
+
+
 func _body_fits_at(at: Vector2) -> bool:
 	var height := _body_height()
 	return not _box_is_solid(at + Vector2(0.0, -height * 0.5), Vector2(body_width, height))
 
-func _box_is_solid(center: Vector2, size: Vector2) -> bool:
+func _box_is_solid(center: Vector2, size: Vector2, ignore_oneway := false) -> bool:
 	var rect := RectangleShape2D.new()
 	rect.size = size - Vector2(SHAPE_INSET, SHAPE_INSET)
 	var params := PhysicsShapeQueryParameters2D.new()
@@ -602,7 +609,12 @@ func _box_is_solid(center: Vector2, size: Vector2) -> bool:
 	params.collision_mask = collision_mask
 	params.collide_with_areas = false
 	params.exclude = [get_rid()]
-	return not get_world_2d().direct_space_state.intersect_shape(params, 1).is_empty()
+	for r in get_world_2d().direct_space_state.intersect_shape(params, 4):
+		var c = r.get("collider")
+		if ignore_oneway and c != null and c is Node and (c as Node).is_in_group("oneway_platforms"):
+			continue
+		return true
+	return false
 
 # 参考 DashUpdate：Dash 期间速度只在起手写一次，本函数只做冻结、起速与跳跃派生技巧。
 func _dash_update() -> void:
@@ -668,7 +680,7 @@ func _climb_update(delta: float) -> void:
 			target = -climb_up_speed
 			try_slip = false
 			# 参考 Up Limit：头顶顶住就停住；手已过墙沿则直接翻上去。
-			if test_move(global_transform, Vector2.UP):
+			if _blocked_above():
 				if velocity.y < 0.0: velocity.y = 0.0
 				target = 0.0
 				try_slip = true

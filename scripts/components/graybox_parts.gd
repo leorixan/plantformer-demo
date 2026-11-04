@@ -665,9 +665,9 @@ class OneWay extends StaticBody2D:
 			_player = null
 			return
 		if _exception:
-			# 碰撞箱完全离开单向墙之前一直保留例外，
-			# 避免"通过一半松开方向/速度变化"时恢复碰撞把人卡在墙里
-			if not _body_overlaps_wall(p):
+			# 接近/穿过期间保留例外；只有"不再想通过 且 碰撞箱已经完全离开"
+			# 时才恢复碰撞，避免靠近阶段就被取消或被卡在墙里
+			if not _body_overlaps_wall(p) and not _want(p):
 				p.remove_collision_exception_with(self)
 				_exception = false
 				_player = null
