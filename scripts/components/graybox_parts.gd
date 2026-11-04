@@ -70,6 +70,15 @@ class Hazard extends Area2D:
 			_kill_latched = false
 			return
 		_passing = null
+		# 已经和伤害区重叠、但正沿着可通过方向"往外"运动（例如站在出口侧向外走/冲），
+		# 只是离开而不是进入，不判死。只看 pass_dir 轴上的分量，避免下坠速度干扰。
+		var h: float = 11.0
+		if hit.has_method("_body_height"):
+			h = float(hit.call("_body_height"))
+		var body_center: Vector2 = hit.global_position + Vector2(0.0, -h * 0.5)
+		var side: float = (body_center - global_position).dot(pass_dir)
+		if side * hit.velocity.dot(pass_dir) > 0.0:
+			return
 		if not _kill_latched:
 			_kill_latched = true
 			level.call("respawn_player")
