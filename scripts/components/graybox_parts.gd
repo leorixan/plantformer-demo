@@ -585,12 +585,6 @@ class DreamBlock extends StaticBody2D:
 		if dir.length() < 0.01:
 			return false
 		var d := dir.normalized()
-		# 站在地面上斜下冲时，脚下的地面会先挡住下坠、让角色沿地面滑向紫块；
-		# 这时按水平方向预测进入点，避免把"先滑到块面再进入"误判成"直接斜着撞进地形"。
-		if d.y > 0.1 and body.has_method("_on_ground") and bool(body.call("_on_ground")):
-			d = Vector2(d.x, 0.0).normalized()
-			if d.length() < 0.01:
-				return false
 		var h := 11.0
 		if body.has_method("_body_height"):
 			h = float(body.call("_body_height"))
