@@ -558,31 +558,6 @@ class DreamBlock extends StaticBody2D:
 		var rsize := Vector2(8.0, h) - Vector2(0.2, 0.2)
 		return Rect2(center - rsize * 0.5, rsize)
 
-	func _hard_solid_at(center: Vector2, dir: Vector2) -> bool:
-		# 这一位置是否会被实体地形/不可穿单向墙挡住（紫块本身不算）
-		var h := 11.0
-		var params := PhysicsShapeQueryParameters2D.new()
-		var shape := RectangleShape2D.new()
-		shape.size = Vector2(8.0, h) - Vector2(0.2, 0.2)
-		params.shape = shape
-		params.transform = Transform2D(0.0, center)
-		params.collision_mask = 1
-		params.collide_with_areas = false
-		for r in get_world_2d().direct_space_state.intersect_shape(params, 8):
-			var c = r.get("collider")
-			if c == null or not (c is Node):
-				continue
-			if c == self:
-				continue
-			if (c as Node).is_in_group("dream_blocks"):
-				continue
-			if (c as Node).is_in_group("oneway_platforms"):
-				var pd = c.get("pass_dir")
-				if pd is Vector2 and (pd as Vector2).dot(dir) > 0.0:
-					continue
-			return true
-		return false
-
 	func dash_enters_block(body: Node2D, dir: Vector2) -> bool:
 		# 冲刺必须让身体中心真的进入紫块才触发。
 		# 身体中心没有进入路径的紫块（例如贴着紫块下沿向右冲、紫块在头顶上方）、
@@ -604,14 +579,7 @@ class DreamBlock extends StaticBody2D:
 				entry_t = t
 				break
 			t += 1.0
-		if entry_t < 0.0:
-			return false
-		var check_t := 0.5
-		while check_t < entry_t:
-			if _hard_solid_at(center + d * check_t, d):
-				return false
-			check_t += 1.0
-		return true
+		return entry_t >= 0.0
 
 
 	func contains_center(c: Vector2) -> bool:

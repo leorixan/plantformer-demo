@@ -349,26 +349,8 @@ func dream_path_blocked(dir: Vector2) -> bool:
 	while t <= 24.0:
 		var c := center + d * t
 		var body_rect := Rect2(c - rsize * 0.5, rsize)
-		# 这一位置如果先被实体地形/不可穿单向墙占住，这次冲刺到不了紫块
-		var params := PhysicsShapeQueryParameters2D.new()
-		params.shape = shape
-		params.transform = Transform2D(0.0, c)
-		params.collision_mask = 1
-		params.collide_with_areas = false
-		params.exclude = [get_rid()]
-		var blocked := false
-		for r in get_world_2d().direct_space_state.intersect_shape(params, 8):
-			var cc = r.get("collider")
-			if cc == null or not (cc is Node):
-				continue
-			if (cc as Node).is_in_group("dream_blocks"):
-				continue
-			if _oneway_passable_dir(cc, d):
-				continue
-			blocked = true
-			break
-		if blocked:
-			return true
+		# 同一步内能进入紫块 -> 允许触发（优先于脚下地面等已在身边的地形），
+		# 这样站地/贴边时斜下冲进入紫块的路线仍然成立
 		for db in get_tree().get_nodes_in_group("dream_blocks"):
 			if not is_instance_valid(db):
 				continue
@@ -377,6 +359,21 @@ func dream_path_blocked(dir: Vector2) -> bool:
 				var block_rect := Rect2((db as Node2D).global_position - (sz as Vector2) * 0.5, sz as Vector2)
 				if block_rect.intersects(body_rect):
 					return false
+		var params := PhysicsShapeQueryParameters2D.new()
+		params.shape = shape
+		params.transform = Transform2D(0.0, c)
+		params.collision_mask = 1
+		params.collide_with_areas = false
+		params.exclude = [get_rid()]
+		for r in get_world_2d().direct_space_state.intersect_shape(params, 8):
+			var cc = r.get("collider")
+			if cc == null or not (cc is Node):
+				continue
+			if (cc as Node).is_in_group("dream_blocks"):
+				continue
+			if _oneway_passable_dir(cc, d):
+				continue
+			return true
 		t += 1.0
 	return false
 
