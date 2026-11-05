@@ -551,21 +551,67 @@ class DreamBlock extends StaticBody2D:
 					b.call("start_dream_dash", dir, self)
 				return
 
+	func _body_rect_at(body: Node2D, center: Vector2) -> Rect2:
+		var h := 11.0
+		if body.has_method("_body_height"):
+			h = float(body.call("_body_height"))
+		var rsize := Vector2(8.0, h) - Vector2(0.2, 0.2)
+		return Rect2(center - rsize * 0.5, rsize)
+
+	func _hard_solid_at(center: Vector2, dir: Vector2) -> bool:
+		# 这一位置是否会被实体地形/不可穿单向墙挡住（紫块本身不算）
+		var h := 11.0
+		var params := PhysicsShapeQueryParameters2D.new()
+		var shape := RectangleShape2D.new()
+		shape.size = Vector2(8.0, h) - Vector2(0.2, 0.2)
+		params.shape = shape
+		params.transform = Transform2D(0.0, center)
+		params.collision_mask = 1
+		params.collide_with_areas = false
+		for r in get_world_2d().direct_space_state.intersect_shape(params, 8):
+			var c = r.get("collider")
+			if c == null or not (c is Node):
+				continue
+			if c == self:
+				continue
+			if (c as Node).is_in_group("dream_blocks"):
+				continue
+			if (c as Node).is_in_group("oneway_platforms"):
+				var pd = c.get("pass_dir")
+				if pd is Vector2 and (pd as Vector2).dot(dir) > 0.0:
+					continue
+			return true
+		return false
+
 	func dash_enters_block(body: Node2D, dir: Vector2) -> bool:
-		# 玩家身体（8x11，中心在脚底上方 5.5）沿冲刺方向扫掠，看是否真的会进入方块。
-		# 只是"朝方块中心方向"还不够：站在顶面朝方块中心水平冲时也会满足该条件，
-		# 但扫掠框一直在顶面上方，不会进入方块。
+		# 冲刺必须让身体中心真的进入紫块才触发。
+		# 身体中心没有进入路径的紫块（例如贴着紫块下沿向右冲、紫块在头顶上方）、
+		# 或者进入点之前先被墙挡住的，都不算进入。
 		if dir.length() < 0.01:
 			return false
 		var d := dir.normalized()
-		var center: Vector2 = body.global_position + Vector2(0.0, -5.5)
+		var h := 11.0
+		if body.has_method("_body_height"):
+			h = float(body.call("_body_height"))
+		var center: Vector2 = body.global_position + Vector2(0.0, -h * 0.5)
 		var block_rect := Rect2(global_position - size * 0.5, size)
-		for i in range(1, 17):
-			var c := center + d * (float(i) * 1.5)
-			var body_rect := Rect2(c - Vector2(3.5, 5.0), Vector2(7.0, 10.0))
-			if block_rect.intersects(body_rect):
-				return true
-		return false
+		if block_rect.has_point(center):
+			return false
+		var entry_t := -1.0
+		var t := 1.0
+		while t <= 24.0:
+			if block_rect.has_point(center + d * t):
+				entry_t = t
+				break
+			t += 1.0
+		if entry_t < 0.0:
+			return false
+		var check_t := 0.5
+		while check_t < entry_t:
+			if _hard_solid_at(center + d * check_t, d):
+				return false
+			check_t += 1.0
+		return true
 
 
 	func contains_center(c: Vector2) -> bool:
