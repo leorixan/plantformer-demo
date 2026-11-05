@@ -340,6 +340,11 @@ func dream_path_blocked(dir: Vector2) -> bool:
 	var d := dir.normalized()
 	if d == Vector2.ZERO or dream_dashing:
 		return false
+	# 站在地面上斜下冲：先沿地面滑到紫块面，再进入；路径按水平方向检查
+	if d.y > 0.1 and _on_ground():
+		d = Vector2(d.x, 0.0).normalized()
+		if d.length() < 0.01:
+			return false
 	var h := _body_height()
 	var center := global_position + Vector2(0.0, -h * 0.5)
 	var rsize := Vector2(body_width, h) - Vector2(SHAPE_INSET, SHAPE_INSET)
@@ -1312,6 +1317,9 @@ func _dream_entry_grace() -> bool:
 	# 先允许穿过脚下的地面/边缘进入紫块，不要在这一两帧里判撞墙死亡。
 	if not dream_dashing or _dream_time > 0.1:
 		return false
+	# 身体已经进入紫块（bbox 重叠）时仍处于进入过程，先不要判撞墙
+	if _dream_entered or _dream_inside_block():
+		return true
 	for db in get_tree().get_nodes_in_group("dream_blocks"):
 		if db.has_method("dash_enters_block") and bool(db.call("dash_enters_block", self, dream_dir)):
 			return true
