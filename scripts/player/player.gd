@@ -1312,6 +1312,9 @@ func _dream_entry_grace() -> bool:
 	# 先允许穿过脚下的地面/边缘进入紫块，不要在这一两帧里判撞墙死亡。
 	if not dream_dashing or _dream_time > 0.1:
 		return false
+	# 身体已经进入紫块（bbox 重叠）时仍处于进入过程，先不要判撞墙
+	if _dream_entered or _dream_inside_block():
+		return true
 	for db in get_tree().get_nodes_in_group("dream_blocks"):
 		if db.has_method("dash_enters_block") and bool(db.call("dash_enters_block", self, dream_dir)):
 			return true
