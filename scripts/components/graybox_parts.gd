@@ -208,10 +208,15 @@ class Spring extends StaticBody2D:
 		_area.collision_mask = 2
 		var acs := CollisionShape2D.new()
 		var arect := RectangleShape2D.new()
-		# 只在弹射面一侧外扩 4px：踩上去/落到上面才算接触，贴边不会触发
+		# 只在弹射面一侧外扩 4px：踩上去/落到上面才算接触，贴边不会触发。
+		# 横向弹簧额外向上扩一点，覆盖"贴墙下落踩到挡板上沿"的位置。
+		var horizontal_spring := absf(dir.x) > 0.5
 		arect.size = size + Vector2(absf(dir.x), absf(dir.y)) * 4.0
 		acs.shape = arect
 		acs.position = dir * 2.0
+		if horizontal_spring:
+			arect.size += Vector2(0.0, 6.0)
+			acs.position += Vector2(0.0, -3.0)
 		_area.add_child(acs)
 		add_child(_area)
 		_area.body_entered.connect(_on_body_entered)
@@ -266,6 +271,18 @@ class Spring extends StaticBody2D:
 		return true
 
 
+	func _on_top_of_horizontal(body: Node2D) -> bool:
+		# 横向弹簧：从上方落到挡板上沿时，也算接触弹射面（否则会站在上面不弹）
+		if absf(dir.x) < 0.5:
+			return false
+		var half := size * 0.5
+		var feet_y: float = body.global_position.y
+		var top_y: float = global_position.y - half.y
+		if feet_y > top_y + 2.0 or feet_y < top_y - 6.0:
+			return false
+		return absf(body.global_position.x - global_position.x) <= half.x + 4.0
+
+
 	func _from_valid_side(body: Node2D) -> bool:
 		var body_center: Vector2 = body.global_position + Vector2(0.0, -5.5)
 		return (body_center - global_position).dot(dir) >= 0.0
@@ -297,7 +314,7 @@ class Spring extends StaticBody2D:
 		# 只靠 body_entered 会漏掉"低矮天花板下弹一次又落回弹簧"的情况（没有再次进出区域）。
 		if p != null and _cooldown <= 0.0:
 			var approaching: bool = p.velocity.dot(dir) < -1.0
-			if _is_climbing(p) or (_from_valid_side(p) and approaching):
+			if _is_climbing(p) or (_from_valid_side(p) and approaching) or _on_top_of_horizontal(p):
 				_on_body_entered(p)
 				return
 		if p == null:
@@ -327,9 +344,10 @@ class Spring extends StaticBody2D:
 			# 冷却中落地：记下来，等冷却结束若还贴着弹簧就补一次弹射
 			_pending_body = body as CharacterBody2D
 			return
-		if not _from_valid_side(body) and not _is_climbing(body):
+		var top_land := _on_top_of_horizontal(body)
+		if not _from_valid_side(body) and not top_land and not _is_climbing(body):
 			return
-		if not _is_climbing(body) and not _on_spring_tile(body):
+		if not _is_climbing(body) and not top_land and not _on_spring_tile(body):
 			return
 		_cooldown = 0.25
 		_launched_body = body as CharacterBody2D
