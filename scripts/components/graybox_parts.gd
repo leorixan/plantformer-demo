@@ -152,6 +152,7 @@ class Crystal extends Area2D:
 			body.call("refill_dash")
 		if body.has_method("hitstop_frames"):
 			body.call("hitstop_frames", 4)
+		Sfx.play(&"crystal")
 		_cooldown = true
 		_monitor.set_deferred("disabled", true)
 		_sprite.visible = false
@@ -486,6 +487,7 @@ class Breakable extends StaticBody2D:
 						continue
 					var to_block: Vector2 = global_position - b.global_position
 					if to_block.length() < 0.01 or dir.normalized().dot(to_block.normalized()) > 0.2:
+						Sfx.play(&"breakable")
 						queue_free()
 						return
 

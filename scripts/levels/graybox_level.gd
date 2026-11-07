@@ -14,6 +14,7 @@ var _initial_entity_data: PackedByteArray = PackedByteArray()
 var _initial_terrain_data: PackedByteArray = PackedByteArray()
 var _collected_trophy_cells: Dictionary = {}
 var trophies_collected := 0
+var deaths := 0
 const KIND_ORDER := ["terrain", "hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
 const ENTITY_KINDS := ["hazard", "crystal", "spring", "breakable", "jelly", "checkpoint"]
 const ENTITY_ATLAS := ["hazard", "crystal", "breakable8", "breakable16", "dream", "checkpoint", "hazard_hidden", "trophy", "spring_up", "spring_down", "spring_left", "spring_right", "oneway_up", "oneway_down", "oneway_left", "oneway_right", "hazard_up", "hazard_down", "hazard_left", "hazard_right"]
@@ -30,6 +31,7 @@ const ENTITY_TILE_MIGRATION := {
 }
 
 var player: CharacterBody2D
+var _room_names: Array[String] = []
 var spawn_pos := Vector2.ZERO
 var checkpoint_pos := Vector2.ZERO
 var _terrain_cells: Dictionary = {}
@@ -73,6 +75,7 @@ func _ready() -> void:
 
 func _on_goal(body: Node2D) -> void:
 	if body is CharacterBody2D:
+		Sfx.play(&"level_complete")
 		print("LEVEL_COMPLETE")
 
 
@@ -418,6 +421,10 @@ func respawn_player() -> void:
 	if player == null or _dying:
 		return
 	_dying = true
+	deaths += 1
+	Sfx.play(&"death")
+	Sfx.stop_loop(&"wall_slide")
+	Sfx.stop_loop(&"dream_loop")
 	if player.has_method("end_dream_dash") and bool(player.get("dream_dashing")):
 		player.call("end_dream_dash")
 	if player.has_method("cancel_freeze"):
@@ -451,14 +458,29 @@ func respawn_player() -> void:
 	if player.has_method("set_input_locked"):
 		player.call("set_input_locked", false)
 	_dying = false
+	_show_death_hud()
 
 
 func collect_trophy(cells: Array = []) -> void:
 	for c in cells:
 		_collected_trophy_cells[c] = true
 	trophies_collected += 1
+	Sfx.play(&"trophy")
+	_show_trophy_hud()
 	trophy_collected.emit(trophies_collected)
 	print("[graybox] 奖杯计数: ", trophies_collected)
+
+
+func _show_death_hud() -> void:
+	var hud := get_node_or_null("HUD")
+	if hud and hud.has_method("show_death"):
+		hud.call("show_death", deaths, trophies_collected)
+
+
+func _show_trophy_hud() -> void:
+	var hud := get_node_or_null("HUD")
+	if hud and hud.has_method("show_trophy"):
+		hud.call("show_trophy", trophies_collected)
 
 
 func set_checkpoint(pos: Vector2) -> void:
@@ -487,11 +509,13 @@ func _setup_room_camera() -> void:
 	if rooms == null or player == null:
 		return
 	var rects: Array = []
+	_room_names.clear()
 	# 方式 0（推荐手动框选）：Rooms 下放 ReferenceRect 子节点，在 2D 视图里直接拖拽/缩放
 	for ch in rooms.get_children():
 		if ch is Control:
 			var c := ch as Control
 			rects.append(Rect2(c.global_position, c.size))
+			_room_names.append(String(ch.name))
 	# 方式 A：Rooms 节点自带 rooms 数组（仅在没有手动 ReferenceRect 时使用）
 	var arr = rooms.get("rooms")
 	if rects.is_empty() and arr is Array and not (arr as Array).is_empty():
@@ -511,6 +535,7 @@ func _setup_room_camera() -> void:
 	cam.set("top_level", true)
 	var rc: Node = load("res://scripts/components/room_camera.gd").new()
 	add_child(rc)
+	rc.connect("room_changed", Callable(self, "_on_room_changed"))
 	rc.call("attach", cam, player, rects)
 
 
@@ -926,3 +951,11 @@ func _ensure_cooldown_layer() -> TileMapLayer:
 	layer.z_index = 2
 	add_child(layer)
 	return layer
+
+
+func _on_room_changed(idx: int) -> void:
+	if idx < 0 or idx >= _room_names.size():
+		return
+	var bgm := get_node_or_null("Bgm")
+	if bgm and bgm.has_method("play_for_room"):
+		bgm.play_for_room(_room_names[idx])

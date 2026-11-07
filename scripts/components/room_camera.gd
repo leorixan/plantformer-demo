@@ -1,4 +1,5 @@
 extends Node
+signal room_changed(index: int)
 ## 蔚蓝式房间相机：
 ## - 房间是矩形（RoomArea）；玩家进入另一个房间时切换
 ## - 切换节奏：先停顿 PAUSE_TIME，再用 PAN_TIME 平滑滑动到新房间目标
@@ -28,6 +29,7 @@ func attach(cam: Camera2D, player: Node2D, rects: Array) -> void:
 	_cam.position_smoothing_enabled = false
 	_cam.process_callback = Camera2D.CAMERA2D_PROCESS_IDLE
 	_current = _room_at(_player.global_position)
+	room_changed.emit(_current)
 	_to = _target_for(_current)
 	_cam.global_position = _snap(_to)
 	_cam.reset_physics_interpolation()
@@ -50,6 +52,7 @@ func _process(delta: float) -> void:
 	var idx := _room_at(_player.global_position)
 	if idx != _current:
 		_current = idx
+		room_changed.emit(idx)
 		_from = _cam.global_position
 		_to = _target_for(idx)
 		_wait = PAUSE_TIME

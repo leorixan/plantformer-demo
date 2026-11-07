@@ -28,6 +28,7 @@ mouse_filter = 2
 color = Color(0, 0, 0, 0.55)
 
 [node name="Text" type="Label" parent="WorldLabel" unique_id=587215605]
+theme_override_constants/line_spacing = -2
 offset_left = -47.0
 offset_top = -6.0
 offset_right = 8.0

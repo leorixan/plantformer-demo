@@ -16,6 +16,7 @@ tile_map_data = PackedByteArray("AAACAB4AAAAHAAAAAAADAB4AAAAHAAAAAAA=")
 tile_set = ExtResource("2_wjpwq")
 
 [node name="@Label@2" type="Label" parent="." unique_id=2004659042]
+theme_override_constants/line_spacing = -2
 offset_left = 64.0
 offset_top = 16.0
 offset_right = 404.0
@@ -26,6 +27,7 @@ theme_override_colors/font_color = Color(0.78, 0.24, 0.28, 1)
 text = "Red: Hazard - touch to die, respawn at checkpoint"
 
 [node name="@Label@3" type="Label" parent="." unique_id=1298858539]
+theme_override_constants/line_spacing = -2
 offset_left = 64.0
 offset_top = 48.0
 offset_right = 480.0
@@ -36,6 +38,7 @@ theme_override_colors/font_color = Color(0.28, 0.78, 0.82, 1)
 text = "Cyan: Dash Crystal - refill dash & stamina (2.5s cooldown)"
 
 [node name="@Label@4" type="Label" parent="." unique_id=1866399691]
+theme_override_constants/line_spacing = -2
 offset_left = 64.0
 offset_top = 80.0
 offset_right = 404.0
@@ -46,6 +49,7 @@ theme_override_colors/font_color = Color(0.35, 0.75, 0.35, 1)
 text = "Green: Spring - launches you in its facing direction"
 
 [node name="@Label@5" type="Label" parent="." unique_id=1111316968]
+theme_override_constants/line_spacing = -2
 offset_left = 64.0
 offset_top = 112.0
 offset_right = 404.0
@@ -56,6 +60,7 @@ theme_override_colors/font_color = Color(0.67, 0.51, 0.35, 1)
 text = "Brown: Breakable - dash to break (8x8 unit)"
 
 [node name="@Label@6" type="Label" parent="." unique_id=131296880]
+theme_override_constants/line_spacing = -2
 offset_left = 64.0
 offset_top = 144.0
 offset_right = 404.0
@@ -66,6 +71,7 @@ theme_override_colors/font_color = Color(0.45, 0.3, 0.16, 1)
 text = "Dark brown: Breakable - dash to break (16x16 unit)"
 
 [node name="@Label@7" type="Label" parent="." unique_id=569160701]
+theme_override_constants/line_spacing = -2
 offset_left = 64.0
 offset_top = 176.0
 offset_right = 459.0
@@ -76,6 +82,7 @@ theme_override_colors/font_color = Color(0.59, 0.39, 0.86, 1)
 text = "Purple: Dream Block - dash through, refill on exit"
 
 [node name="@Label@8" type="Label" parent="." unique_id=2098099610]
+theme_override_constants/line_spacing = -2
 offset_left = 64.0
 offset_top = 208.0
 offset_right = 404.0
@@ -86,6 +93,7 @@ theme_override_colors/font_color = Color(0.95, 0.8, 0.25, 1)
 text = "Gold: Checkpoint - saves your respawn position"
 
 [node name="@Label@9" type="Label" parent="." unique_id=408111258]
+theme_override_constants/line_spacing = -2
 offset_left = 64.0
 offset_top = 240.0
 offset_right = 581.0
@@ -96,6 +104,7 @@ theme_override_colors/font_color = Color(1, 0.55, 0.55, 1)
 text = "Light red: Hidden hazard - terrain layer, invisible in game"
 
 [node name="@Label@10" type="Label" parent="." unique_id=153479984]
+theme_override_constants/line_spacing = -2
 offset_left = 14.0
 offset_top = 288.0
 offset_right = 14.0
@@ -106,6 +115,7 @@ theme_override_colors/font_color = Color(0.42, 0.42, 0.45, 1)
 text = "Up"
 
 [node name="@Label@11" type="Label" parent="." unique_id=227261224]
+theme_override_constants/line_spacing = -2
 offset_left = 38.0
 offset_top = 288.0
 offset_right = 38.0
@@ -116,6 +126,7 @@ theme_override_colors/font_color = Color(0.42, 0.42, 0.45, 1)
 text = "Down"
 
 [node name="@Label@12" type="Label" parent="." unique_id=698712854]
+theme_override_constants/line_spacing = -2
 offset_left = 62.0
 offset_top = 288.0
 offset_right = 62.0
@@ -126,6 +137,7 @@ theme_override_colors/font_color = Color(0.42, 0.42, 0.45, 1)
 text = "Left"
 
 [node name="@Label@13" type="Label" parent="." unique_id=1452911295]
+theme_override_constants/line_spacing = -2
 offset_left = 86.0
 offset_top = 288.0
 offset_right = 86.0
@@ -136,6 +148,7 @@ theme_override_colors/font_color = Color(0.42, 0.42, 0.45, 1)
 text = "Right"
 
 [node name="@Label@14" type="Label" parent="." unique_id=1124540001]
+theme_override_constants/line_spacing = -2
 offset_left = 64.0
 offset_top = 304.0
 offset_right = 579.0
@@ -146,6 +159,7 @@ theme_override_colors/font_color = Color(0.42, 0.42, 0.45, 1)
 text = "Dark gray: One-way walls x4 - pass toward the colored edge"
 
 [node name="@Label@15" type="Label" parent="." unique_id=743742294]
+theme_override_constants/line_spacing = -2
 offset_left = 8.0
 offset_right = 8.0
 theme_override_fonts/font = ExtResource("font_silk")

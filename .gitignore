@@ -15,3 +15,8 @@ AGENTS.md
 addons/funplay_mcp/
 
 # 鏈湴 project.godot 浼氬洜鍚敤缂栬緫鍣ㄦ彃浠惰€屽鍒?[autoload] / [editor_plugins] 鏉＄洰锛屾彁浜ゆ椂娉ㄦ剰涓嶈甯︿笂
+
+# 本地恢复备份与未采用的 BGM 候选（不入库）
+_backups/
+assets/audio/bgm/*.mp3
+assets/audio/bgm/*.mp3.import

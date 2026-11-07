@@ -1,0 +1,216 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/audio/sfx.gd" id="1_oxmqq"]
+[ext_resource type="Script" path="res://scripts/audio/sfx_entry.gd" id="2_22pb1"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/jump_01.wav" id="3_djmx8"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/jump_03.wav" id="4_ipgbu"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/land_heavy_01.wav" id="5_8fj3x"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/wall_jump_01.wav" id="6_74psa"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/wall_jump_02.wav" id="7_ja0eq"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/wall_slide_01.wav" id="8_a5s3i"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/climb_grab_01.wav" id="9_y8w3j"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/footstep_01.wav" id="10_1hqeb"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/footstep_02.wav" id="11_h3ymu"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/dash_02.wav" id="12_wds4i"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/dash_end_01.wav" id="13_lg1cv"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/dream_enter_02.wav" id="14_t441y"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/dream_exit_01.wav" id="15_gj0p0"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/dream_loop_01.wav" id="16_kbca0"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/crystal_01.wav" id="17_60lgd"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/crystal_02.wav" id="18_sivsr"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/trophy_01.wav" id="19_y014m"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/spring_01.wav" id="20_u4t8m"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/spring_02.wav" id="21_irtsn"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/breakable_01.wav" id="22_p8jnm"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/breakable_02.wav" id="23_tt7rv"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/death_01.wav" id="24_mj3hf"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/death_02.wav" id="25_vdsoj"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/ui_move_01.wav" id="26_58xb2"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/ui_confirm_01.wav" id="27_qrq43"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/ui_back_01.wav" id="28_vndqr"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/ui_pause_01.wav" id="29_8xs5e"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/level_complete_01.wav" id="30_pt4xi"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/jump_01_low.wav" id="jump_low_1"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/jump_03_low.wav" id="jump_low_2"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/jump_37.wav" id="jump_37"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/footstep_stone_01.wav" id="footstone1"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/footstep_stone_02.wav" id="footstone2"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/footstep_stone_03.wav" id="footstone3"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/footstep_stone_04.wav" id="footstone4"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/jump_46.wav" id="jump_46"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/land_short.wav" id="land_short"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/jump_stone_01.wav" id="jump_stone1"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/jump_stone_02.wav" id="jump_stone2"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/climb_grab_stone.wav" id="climb_stone"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/breakable_stone_01.wav" id="breakstone1"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/breakable_stone_02.wav" id="breakstone2"]
+
+[sub_resource type="Resource" id="Resource_f7eoy"]
+script = ExtResource("2_22pb1")
+id = &"jump"
+streams = Array[AudioStream]([ExtResource("jump_stone1"), ExtResource("jump_stone2")])
+volume_db = -17.0
+pitch_min = 0.97
+pitch_max = 1.03
+
+[sub_resource type="Resource" id="Resource_dvlkm"]
+script = ExtResource("2_22pb1")
+id = &"land"
+streams = Array[AudioStream]([ExtResource("land_short")])
+volume_db = -15.0
+pitch_min = 0.96
+pitch_max = 1.02
+
+[sub_resource type="Resource" id="Resource_bm1m5"]
+script = ExtResource("2_22pb1")
+id = &"wall_jump"
+streams = Array[AudioStream]([ExtResource("6_74psa"), ExtResource("7_ja0eq")])
+volume_db = -4.0
+pitch_min = 0.97
+pitch_max = 1.03
+
+[sub_resource type="Resource" id="Resource_iho2x"]
+script = ExtResource("2_22pb1")
+id = &"wall_slide"
+streams = Array[AudioStream]([ExtResource("8_a5s3i")])
+volume_db = -16.0
+loop = true
+
+[sub_resource type="Resource" id="Resource_lvhjv"]
+script = ExtResource("2_22pb1")
+id = &"climb_grab"
+streams = Array[AudioStream]([ExtResource("climb_stone")])
+volume_db = -13.0
+pitch_min = 0.97
+pitch_max = 1.03
+
+[sub_resource type="Resource" id="Resource_4l5cn"]
+script = ExtResource("2_22pb1")
+id = &"footstep"
+streams = Array[AudioStream]([ExtResource("footstone1"), ExtResource("footstone2"), ExtResource("footstone3"), ExtResource("footstone4")])
+volume_db = -20.0
+pitch_min = 0.95
+pitch_max = 1.05
+
+[sub_resource type="Resource" id="Resource_2dbuv"]
+script = ExtResource("2_22pb1")
+id = &"dash"
+streams = Array[AudioStream]([ExtResource("12_wds4i")])
+volume_db = -16.0
+pitch_min = 0.97
+pitch_max = 1.03
+
+[sub_resource type="Resource" id="Resource_ydj4k"]
+script = ExtResource("2_22pb1")
+id = &"dash_end"
+streams = Array[AudioStream]([ExtResource("13_lg1cv")])
+volume_db = -9.0
+pitch_min = 0.97
+pitch_max = 1.03
+
+[sub_resource type="Resource" id="Resource_7xm6k"]
+script = ExtResource("2_22pb1")
+id = &"dream_enter"
+streams = Array[AudioStream]([ExtResource("14_t441y")])
+volume_db = -5.0
+pitch_min = 0.98
+pitch_max = 1.02
+
+[sub_resource type="Resource" id="Resource_scbda"]
+script = ExtResource("2_22pb1")
+id = &"dream_exit"
+streams = Array[AudioStream]([ExtResource("15_gj0p0")])
+volume_db = -6.0
+pitch_min = 0.98
+pitch_max = 1.02
+
+[sub_resource type="Resource" id="Resource_e55gx"]
+script = ExtResource("2_22pb1")
+id = &"dream_loop"
+streams = Array[AudioStream]([ExtResource("16_kbca0")])
+volume_db = -18.0
+loop = true
+
+[sub_resource type="Resource" id="Resource_sxk5c"]
+script = ExtResource("2_22pb1")
+id = &"crystal"
+streams = Array[AudioStream]([ExtResource("17_60lgd"), ExtResource("18_sivsr")])
+volume_db = -9.0
+pitch_min = 0.97
+pitch_max = 1.03
+
+[sub_resource type="Resource" id="Resource_k4jmb"]
+script = ExtResource("2_22pb1")
+id = &"trophy"
+streams = Array[AudioStream]([ExtResource("19_y014m")])
+volume_db = -12.0
+pitch_min = 0.98
+pitch_max = 1.02
+
+[sub_resource type="Resource" id="Resource_j45o3"]
+script = ExtResource("2_22pb1")
+id = &"spring"
+streams = Array[AudioStream]([ExtResource("20_u4t8m"), ExtResource("21_irtsn")])
+volume_db = -17.0
+pitch_min = 0.97
+pitch_max = 1.03
+
+[sub_resource type="Resource" id="Resource_7uvhy"]
+script = ExtResource("2_22pb1")
+id = &"breakable"
+streams = Array[AudioStream]([ExtResource("breakstone1"), ExtResource("breakstone2")])
+volume_db = -13.0
+pitch_min = 0.96
+pitch_max = 1.04
+
+[sub_resource type="Resource" id="Resource_a3f5h"]
+script = ExtResource("2_22pb1")
+id = &"death"
+streams = Array[AudioStream]([ExtResource("24_mj3hf"), ExtResource("25_vdsoj")])
+volume_db = -1.0
+pitch_min = 0.98
+pitch_max = 1.02
+
+[sub_resource type="Resource" id="Resource_pvr3y"]
+script = ExtResource("2_22pb1")
+id = &"ui_move"
+streams = Array[AudioStream]([ExtResource("26_58xb2")])
+volume_db = -10.0
+pitch_min = 0.99
+pitch_max = 1.01
+
+[sub_resource type="Resource" id="Resource_khko2"]
+script = ExtResource("2_22pb1")
+id = &"ui_confirm"
+streams = Array[AudioStream]([ExtResource("27_qrq43")])
+volume_db = -9.0
+pitch_min = 0.99
+pitch_max = 1.01
+
+[sub_resource type="Resource" id="Resource_c6xud"]
+script = ExtResource("2_22pb1")
+id = &"ui_back"
+streams = Array[AudioStream]([ExtResource("28_vndqr")])
+volume_db = -10.0
+pitch_min = 0.99
+pitch_max = 1.01
+
+[sub_resource type="Resource" id="Resource_5o1ih"]
+script = ExtResource("2_22pb1")
+id = &"ui_pause"
+streams = Array[AudioStream]([ExtResource("29_8xs5e")])
+volume_db = -10.0
+pitch_min = 0.99
+pitch_max = 1.01
+
+[sub_resource type="Resource" id="Resource_83k5s"]
+script = ExtResource("2_22pb1")
+id = &"level_complete"
+streams = Array[AudioStream]([ExtResource("30_pt4xi")])
+volume_db = -4.0
+pitch_min = 0.99
+pitch_max = 1.01
+
+[node name="Sfx" type="Node" unique_id=1962150261]
+script = ExtResource("1_oxmqq")
+entries = Array[Resource]([SubResource("Resource_f7eoy"), SubResource("Resource_dvlkm"), SubResource("Resource_bm1m5"), SubResource("Resource_iho2x"), SubResource("Resource_lvhjv"), SubResource("Resource_4l5cn"), SubResource("Resource_2dbuv"), SubResource("Resource_ydj4k"), SubResource("Resource_7xm6k"), SubResource("Resource_scbda"), SubResource("Resource_e55gx"), SubResource("Resource_sxk5c"), SubResource("Resource_k4jmb"), SubResource("Resource_j45o3"), SubResource("Resource_7uvhy"), SubResource("Resource_a3f5h"), SubResource("Resource_pvr3y"), SubResource("Resource_khko2"), SubResource("Resource_c6xud"), SubResource("Resource_5o1ih"), SubResource("Resource_83k5s")])

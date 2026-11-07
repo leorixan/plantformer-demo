@@ -50,6 +50,9 @@ const CRYSTAL_COLOR := Color(0.28, 0.78, 0.82, 1.0)
 @export var fast_max_accel := 300.0 # FastMaxAccel
 @export var half_gravity_threshold := 40.0 # HalfGravThreshold
 
+@export_category("Audio")
+@export var footstep_interval := 0.34
+
 @export_category("Dash")
 @export var max_dashes := 1
 @export var dash_speed := 240.0 # DashSpeed
@@ -154,6 +157,9 @@ var _wall_boost_dir := 0
 var _wall_speed_retained := 0.0
 var _wall_speed_retention_timer := 0.0
 var _dash_refill_cooldown_timer := 0.0
+var _was_on_ground := true
+var _footstep_timer := 0.0
+var _wall_sliding_now := false
 var _floor_last_frame := false
 var _event_text := ""
 var _event_timer := 0.0
@@ -232,6 +238,7 @@ func _physics_process(delta: float) -> void:
 	if _is_frozen():
 		_poll_input(delta)
 		return
+	_wall_sliding_now = false
 	_dream_dash_lifecycle()
 	if is_dashing():
 		_spawn_afterimage_tick()
@@ -303,8 +310,27 @@ func _physics_process(delta: float) -> void:
 			velocity = Vector2.ZERO
 	var pre_move_velocity := velocity
 	move_and_slide()
+	# 落地音在碰撞发生的第一时间触发，不等 _on_ground 的 0.6px 探针
+	if is_on_floor() and not _was_on_ground and pre_move_velocity.y > 60.0:
+		Sfx.play(&"land")
 	_resolve_collisions(pre_move_velocity)
 	_resolve_collisions(pre_move_velocity)
+	var grounded_now := _on_ground()
+	if grounded_now:
+		if absf(velocity.x) > 20.0 and not is_ducking:
+			_footstep_timer -= delta
+			if _footstep_timer <= 0.0:
+				Sfx.play(&"footstep")
+				_footstep_timer = footstep_interval
+		# 地面上静止时不再重置计时器：左右快速交替时速度会瞬间低于阈值，
+		# 以前会把计时器清零，导致每帧都能再次触发脚步。
+	else:
+		_footstep_timer = 0.0
+	_was_on_ground = grounded_now
+	if _wall_sliding_now:
+		Sfx.start_loop(&"wall_slide")
+	else:
+		Sfx.stop_loop(&"wall_slide")
 	_update_indicators()
 	_update_debug()
 
@@ -746,6 +772,7 @@ func _apply_gravity(delta: float) -> void:
 			if velocity.y >= 0.0 and _wall_slide_timer > 0.0 and carried_item == null \
 					and _can_unduck() and test_move(global_transform, Vector2(facing, 0.0)):
 				_set_duck(false)
+				_wall_sliding_now = true
 				_wall_slide_dir = int(facing)
 				if _wall_slide_dir != 0:
 					limit = lerpf(max_fall_speed, wall_slide_start_max, _wall_slide_timer / wall_slide_time)
@@ -941,6 +968,7 @@ func _try_start_climb() -> bool:
 	# 参考 ClimbCheck：只检测面朝一侧，距离用 ClimbCheckDist。
 	var wall := get_climb_wall_direction()
 	if wall == 0: return false
+	Sfx.play(&"climb_grab")
 	mode = Mode.CLIMB
 	facing = wall
 	visuals.scale.x = facing
@@ -1040,6 +1068,9 @@ func _wall_jump_check(direction: int) -> bool:
 	# 普通 0.5px 墙跳检测会检测不到；宽限期内用抓墙距离检测，并允许已经在远离墙
 	if _climb_grace > 0.0:
 		return test_move(global_transform, Vector2(direction, 0.0) * (climb_check_distance + 0.5))
+	# 背向墙、但人还在墙 2px 内：允许触发，不再受“正在远离墙”限制
+	if test_move(global_transform, Vector2(direction, 0.0) * 2.0):
+		return true
 	# 预输入保护：如果人已经在往远离墙的方向移动，就不再判定为墙跳
 	if velocity.x * float(direction) < -20.0:
 		return false
@@ -1057,6 +1088,13 @@ func get_climb_wall_direction() -> int:
 	return 0
 
 func _event(event_name: String) -> void:
+	match event_name:
+		"Jump", "Hyper", "Ultra", "Super", "ClimbJump", "ClimbHop", "DreamJump":
+			Sfx.play(&"jump")
+		"WallJump", "SuperWallJump", "WallBoost":
+			Sfx.play(&"jump")
+		"Dash":
+			Sfx.play(&"dash")
 	last_technique = event_name
 	_event_text = event_name
 	_event_timer = 1.2
@@ -1117,6 +1155,7 @@ func set_facing(direction: float) -> void:
 
 
 func apply_spring_boost(duration: float = 0.25, force_dir: float = 0.0) -> void:
+	Sfx.play(&"spring")
 	_spring_boost_timer = maxf(_spring_boost_timer, duration)
 	# 弹簧发射时打断冲刺/爬墙：否则冲刺结束会重置速度、爬墙每帧覆写竖直速度
 	mode = Mode.NORMAL
@@ -1183,6 +1222,7 @@ func is_dashing() -> bool:
 func start_dream_dash(dir: Vector2, block: Node = null) -> void:
 	# Dream Block：冲刺穿过时保持方向持续冲刺；只对这个方块加碰撞例外（其他碰撞照常）
 	dream_dashing = true
+	Sfx.start_loop(&"dream_loop")
 	_dream_block = block
 	dream_dir = dir.normalized() if dir.length() > 0.01 else Vector2(facing, 0.0)
 	mode = Mode.DASH
@@ -1258,6 +1298,7 @@ func end_dream_dash(block: Node = null) -> void:
 	if not dream_dashing:
 		return
 	dream_dashing = false
+	Sfx.stop_loop(&"dream_loop")
 	_dream_exit_timer = 0.12
 	collision_mask = _dream_saved_mask if _dream_saved_mask != 0 else 1
 	dash_timer = 0.0
