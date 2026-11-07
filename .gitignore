@@ -1,22 +1,31 @@
-﻿# Godot 4+ specific ignores
+# Godot
 .godot/
 /android/
-.ai/settings.local.json
-.mcp.json
-.codemap/
 
-# 绗笁鏂瑰弬鑰冩簮鐮侊細闈炲紑婧愯鍙紝浠呮湰鍦颁繚鐣欙紝涓嶇撼鍏ョ増鏈帶鍒?docs/CelestePlayerReference.txt
-docs/Player.cs
-
-# 鏈湴 AI 宸ュ叿閰嶇疆涓庡伐浣滆褰曪紝涓嶇撼鍏ョ増鏈帶鍒?.ai/
+# Local AI/tool configuration and working notes. Not part of the published project.
+.ai/
+.claude/
 .funplay/
 CLAUDE.md
 AGENTS.md
+.mcp.json
+.codemap/
+
+# Third-party editor addon, installed locally. Not part of this repository.
 addons/funplay_mcp/
 
-# 鏈湴 project.godot 浼氬洜鍚敤缂栬緫鍣ㄦ彃浠惰€屽鍒?[autoload] / [editor_plugins] 鏉＄洰锛屾彁浜ゆ椂娉ㄦ剰涓嶈甯︿笂
+# Third-party reference source: publicly readable for study, not licensed for
+# redistribution. Kept locally only.
+docs/CelestePlayerReference.txt
+docs/Player.cs
+CelestePlayerReference.txt
 
-# 本地恢复备份与未采用的 BGM 候选（不入库）
+# Local recovery backups and unused audio candidates
 _backups/
 assets/audio/bgm/*.mp3
 assets/audio/bgm/*.mp3.import
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/
