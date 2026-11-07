@@ -48,7 +48,7 @@ Climb,climb_still_stamina_cost,10,float,每秒；Celeste ClimbStillCost 100/10
 Climb,climb_jump_stamina_cost,27.5,float,每次；Celeste ClimbJumpCost 110/4
 Climb,climb_check_distance,2,float,px；Celeste ClimbCheckDist；抓墙检测与贴墙吸附距离
 Climb,slip_check_depth,4,float,px；Celeste SlipCheck 的探针深度
-Climb,wall_check_distance,3,float,px；Celeste WallJumpCheckDist
+Climb,wall_check_distance,0.5,float,px；更严格的墙跳检测距离（原 Celeste 3，会导致隔半格墙跳）
 Climb,wall_jump_speed,130,float,px/s；Celeste WallJumpHSpeed = MaxRun+JumpHBoost
 Climb,climb_hop_x,100,float,px/s；Celeste ClimbHopX
 Climb,climb_hop_y,120,float,px/s 向上；Celeste ClimbHopY
@@ -60,6 +60,8 @@ Feel,corner_correction_px,4,int,px；Celeste UpwardCornerCorrection
 Feel,dash_corner_correction_px,4,int,px；Celeste DashCornerCorrection
 Feel,wall_jump_force_time,0.16,float,秒；Celeste WallJumpForceTime，墙跳后水平输入被强制推离墙
 Feel,super_wall_jump_force_time,0.2,float,秒；Celeste SuperWallJumpForceTime
-	Feel,wall_speed_retention_time,0.06,float,秒；Celeste WallSpeedRetentionTime；撞墙水平速度保留窗口（Cornerboost）
-	Attack,attack_speed_threshold,240.0,float,px/s；速度超此值 is_attacking() 为真，不限 dash 期
-	Damage,kill_plane_y,1000.0,float,px；玩家 y 超过此值即死亡重生（自定义场景按高度调）
+Feel,wall_speed_retention_time,0.06,float,秒；Celeste WallSpeedRetentionTime；撞墙水平速度保留窗口（Cornerboost）
+Carry,throw_speed,160,float,px/s
+Carry,throw_lift,120,float,px/s 向上
+Attack,attack_speed_threshold,240.0,float,px/s；速度超此值 is_attacking() 为真，不限 dash 期
+Damage,kill_plane_y,1000.0,float,px；玩家 y 超过此值即死亡重生（自定义场景按高度调）
