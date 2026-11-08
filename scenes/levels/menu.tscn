@@ -1,0 +1,408 @@
+[gd_scene format=3 uid="uid://ct8ujnoea8b31"]
+
+[ext_resource type="Script" uid="uid://c7aeer1qwlls6" path="res://scripts/ui/menu.gd" id="1_menu"]
+[ext_resource type="FontFile" uid="uid://caa4xiuri18nb" path="res://assets/fonts/Silkscreen-Regular.ttf" id="2_title_font"]
+[ext_resource type="FontFile" uid="uid://de5qwhfckjow3" path="res://assets/fonts/Silkscreen-Regular.ttf" id="3_ui_font"]
+
+[node name="Menu" type="Control" unique_id=377767452]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_menu")
+
+[node name="Parallax" type="Node2D" parent="." unique_id=291468492]
+
+[node name="Room" type="Node2D" parent="Parallax" unique_id=2892127]
+z_index = -10
+
+[node name="Wall" type="Polygon2D" parent="Parallax/Room" unique_id=1814751379]
+color = Color(0.12549, 0.141176, 0.180392, 1)
+polygon = PackedVector2Array(-15, -1, 492, 1, 493, 201, -15, 200)
+
+[node name="WallTop" type="Polygon2D" parent="Parallax/Room" unique_id=601024708]
+color = Color(0.105882, 0.117647, 0.152941, 1)
+polygon = PackedVector2Array(-15, -8, 492, -8, 492, 28, -15, 28)
+
+[node name="WallTrim" type="Polygon2D" parent="Parallax/Room" unique_id=1181324273]
+color = Color(0.176471, 0.196078, 0.247059, 1)
+polygon = PackedVector2Array(0, 26, 480, 26, 480, 29, 0, 29)
+
+[node name="Seam0" type="Polygon2D" parent="Parallax/Room" unique_id=272864672]
+color = Color(0.14902, 0.168627, 0.211765, 1)
+polygon = PackedVector2Array(0, 0, 1, 0, 1, 200, 0, 200)
+
+[node name="Seam1" type="Polygon2D" parent="Parallax/Room" unique_id=1457423755]
+color = Color(0.14902, 0.168627, 0.211765, 1)
+polygon = PackedVector2Array(80, 0, 81, 0, 81, 200, 80, 200)
+
+[node name="Seam2" type="Polygon2D" parent="Parallax/Room" unique_id=1931513772]
+color = Color(0.14902, 0.168627, 0.211765, 1)
+polygon = PackedVector2Array(160, 0, 161, 0, 161, 200, 160, 200)
+
+[node name="Seam3" type="Polygon2D" parent="Parallax/Room" unique_id=2056237685]
+color = Color(0.14902, 0.168627, 0.211765, 1)
+polygon = PackedVector2Array(240, 0, 241, 0, 241, 200, 240, 200)
+
+[node name="Seam4" type="Polygon2D" parent="Parallax/Room" unique_id=1733058803]
+color = Color(0.14902, 0.168627, 0.211765, 1)
+polygon = PackedVector2Array(320, 0, 321, 0, 321, 200, 320, 200)
+
+[node name="Seam5" type="Polygon2D" parent="Parallax/Room" unique_id=1652786989]
+color = Color(0.14902, 0.168627, 0.211765, 1)
+polygon = PackedVector2Array(400, 0, 401, 0, 401, 200, 400, 200)
+
+[node name="HLine0" type="Polygon2D" parent="Parallax/Room" unique_id=730248671]
+color = Color(0.14902, 0.168627, 0.211765, 1)
+polygon = PackedVector2Array(0, 56, 480, 56, 480, 57, 0, 57)
+
+[node name="HLine1" type="Polygon2D" parent="Parallax/Room" unique_id=645625819]
+color = Color(0.14902, 0.168627, 0.211765, 1)
+polygon = PackedVector2Array(0, 96, 480, 96, 480, 97, 0, 97)
+
+[node name="HLine2" type="Polygon2D" parent="Parallax/Room" unique_id=1939741237]
+color = Color(0.14902, 0.168627, 0.211765, 1)
+polygon = PackedVector2Array(0, 136, 480, 136, 480, 137, 0, 137)
+
+[node name="HLine3" type="Polygon2D" parent="Parallax/Room" unique_id=217128543]
+color = Color(0.14902, 0.168627, 0.211765, 1)
+polygon = PackedVector2Array(0, 176, 480, 176, 480, 177, 0, 177)
+
+[node name="Floor" type="Polygon2D" parent="Parallax/Room" unique_id=475187255]
+color = Color(0.168627, 0.188235, 0.231373, 1)
+polygon = PackedVector2Array(-15, 198, 493, 199, 493, 279, -14, 279)
+
+[node name="FloorEdge" type="Polygon2D" parent="Parallax/Room" unique_id=886812590]
+color = Color(0.227451, 0.25098, 0.309804, 1)
+polygon = PackedVector2Array(0, 200, 480, 200, 480, 203, 0, 203)
+
+[node name="Baseboard" type="Polygon2D" parent="Parallax/Room" unique_id=770973996]
+color = Color(0.227451, 0.25098, 0.309804, 1)
+polygon = PackedVector2Array(0, 194, 480, 194, 480, 200, 0, 200)
+
+[node name="BaseboardHi" type="Polygon2D" parent="Parallax/Room" unique_id=521893376]
+color = Color(0.309804, 0.345098, 0.415686, 1)
+polygon = PackedVector2Array(0, 194, 480, 194, 480, 195, 0, 195)
+
+[node name="Plank0" type="Polygon2D" parent="Parallax/Room" unique_id=225339929]
+color = Color(0.141176, 0.156863, 0.196078, 1)
+polygon = PackedVector2Array(0, 224, 480, 224, 480, 225, 0, 225)
+
+[node name="Plank1" type="Polygon2D" parent="Parallax/Room" unique_id=859965216]
+color = Color(0.141176, 0.156863, 0.196078, 1)
+polygon = PackedVector2Array(0, 246, 480, 246, 480, 247, 0, 247)
+
+[node name="Plank2" type="Polygon2D" parent="Parallax/Room" unique_id=2122062499]
+color = Color(0.141176, 0.156863, 0.196078, 1)
+polygon = PackedVector2Array(0, 264, 480, 264, 480, 265, 0, 265)
+
+[node name="Joint0" type="Polygon2D" parent="Parallax/Room" unique_id=2106518214]
+color = Color(0.141176, 0.156863, 0.196078, 1)
+polygon = PackedVector2Array(0, 204, 1, 204, 1, 270, 0, 270)
+
+[node name="Joint1" type="Polygon2D" parent="Parallax/Room" unique_id=1750183381]
+color = Color(0.141176, 0.156863, 0.196078, 1)
+polygon = PackedVector2Array(88, 204, 89, 204, 89, 270, 88, 270)
+
+[node name="Joint2" type="Polygon2D" parent="Parallax/Room" unique_id=344328289]
+color = Color(0.141176, 0.156863, 0.196078, 1)
+polygon = PackedVector2Array(128, 204, 129, 204, 129, 270, 128, 270)
+
+[node name="Joint3" type="Polygon2D" parent="Parallax/Room" unique_id=942989081]
+color = Color(0.141176, 0.156863, 0.196078, 1)
+polygon = PackedVector2Array(216, 204, 217, 204, 217, 270, 216, 270)
+
+[node name="Joint4" type="Polygon2D" parent="Parallax/Room" unique_id=1130725608]
+color = Color(0.141176, 0.156863, 0.196078, 1)
+polygon = PackedVector2Array(256, 204, 257, 204, 257, 270, 256, 270)
+
+[node name="Joint5" type="Polygon2D" parent="Parallax/Room" unique_id=490325484]
+color = Color(0.141176, 0.156863, 0.196078, 1)
+polygon = PackedVector2Array(344, 204, 345, 204, 345, 270, 344, 270)
+
+[node name="Joint6" type="Polygon2D" parent="Parallax/Room" unique_id=1241345020]
+color = Color(0.141176, 0.156863, 0.196078, 1)
+polygon = PackedVector2Array(384, 204, 385, 204, 385, 270, 384, 270)
+
+[node name="Joint7" type="Polygon2D" parent="Parallax/Room" unique_id=1681085671]
+color = Color(0.141176, 0.156863, 0.196078, 1)
+polygon = PackedVector2Array(472, 204, 473, 204, 473, 270, 472, 270)
+
+[node name="Bed" type="Node2D" parent="Parallax" unique_id=655352355]
+
+[node name="BedBase" type="Polygon2D" parent="Parallax/Bed" unique_id=1555785492]
+position = Vector2(0, -9)
+color = Color(0.239216, 0.180392, 0.141176, 1)
+polygon = PackedVector2Array(30, 232, 230, 232, 230, 248, 30, 248)
+
+[node name="BedLegL" type="Polygon2D" parent="Parallax/Bed" unique_id=97966269]
+color = Color(0.239216, 0.180392, 0.141176, 1)
+polygon = PackedVector2Array(30, 238, 38, 238, 38, 256, 30, 256)
+
+[node name="BedLegR" type="Polygon2D" parent="Parallax/Bed" unique_id=160501047]
+color = Color(0.239216, 0.180392, 0.141176, 1)
+polygon = PackedVector2Array(218, 238, 226, 238, 226, 256, 218, 256)
+
+[node name="Headboard" type="Polygon2D" parent="Parallax/Bed" unique_id=672666788]
+color = Color(0.239216, 0.180392, 0.141176, 1)
+polygon = PackedVector2Array(22, 158, 40, 158, 40, 240, 22, 240)
+
+[node name="HeadboardIn" type="Polygon2D" parent="Parallax/Bed" unique_id=530387997]
+color = Color(0.368627, 0.278431, 0.203922, 1)
+polygon = PackedVector2Array(24, 160, 38, 160, 38, 238, 24, 238)
+
+[node name="HeadboardTop" type="Polygon2D" parent="Parallax/Bed" unique_id=486325159]
+position = Vector2(-1, 31)
+color = Color(0.494118, 0.376471, 0.27451, 1)
+polygon = PackedVector2Array(26, 129, 31, 128, 36, 128, 36, 172, 26, 172)
+
+[node name="MattressDark" type="Polygon2D" parent="Parallax/Bed" unique_id=111878196]
+color = Color(0.537255, 0.513725, 0.470588, 1)
+polygon = PackedVector2Array(40, 186, 230, 186, 230, 228, 40, 228)
+
+[node name="Mattress" type="Polygon2D" parent="Parallax/Bed" unique_id=101035928]
+color = Color(0.72549, 0.701961, 0.654902, 1)
+polygon = PackedVector2Array(42, 184, 228, 184, 228, 222, 42, 222)
+
+[node name="PillowDark" type="Polygon2D" parent="Parallax/Bed" unique_id=2005415262]
+position = Vector2(-130, 273)
+rotation = -1.5707964
+color = Color(0.537255, 0.513725, 0.470588, 1)
+polygon = PackedVector2Array(48, 172, 96, 172, 96, 194, 48, 194)
+
+[node name="Pillow" type="Polygon2D" parent="Parallax/Bed" unique_id=2108702727]
+position = Vector2(-126, 273)
+rotation = -1.5707964
+color = Color(0.839216, 0.815686, 0.764706, 1)
+polygon = PackedVector2Array(50, 168, 94, 168, 94, 188, 76.4545, 187.99997, 50, 188)
+
+[node name="Player" type="Node2D" parent="Parallax/Bed" unique_id=987001074]
+position = Vector2(92, 160)
+
+[node name="Body" type="Polygon2D" parent="Parallax/Bed/Player" unique_id=1489115361]
+position = Vector2(-38, 22)
+color = Color(0.137255, 0.47451, 0.521569, 1)
+polygon = PackedVector2Array(0, 0, 33, 0, 33, 24, 0, 24)
+
+[node name="BodyFill" type="Polygon2D" parent="Parallax/Bed/Player" unique_id=867294081]
+position = Vector2(-38, 22)
+color = Color(0.278431, 0.776471, 0.819608, 1)
+polygon = PackedVector2Array(1, 1, 32, 1, 32, 23, 1, 23)
+
+[node name="Nose" type="Polygon2D" parent="Parallax/Bed/Player" unique_id=629916005]
+position = Vector2(-58, 13)
+color = Color(0.960784, 0.972549, 0.980392, 1)
+polygon = PackedVector2Array(31, 9, 37, 9, 37, 15, 31, 15)
+
+[node name="NoseHi" type="Polygon2D" parent="Parallax/Bed/Player" unique_id=419854683]
+position = Vector2(-58, 13)
+color = Color(0.823529, 0.964706, 0.972549, 1)
+polygon = PackedVector2Array(32, 10, 36, 10, 36, 14, 32, 14)
+
+[node name="Bubble" type="Node2D" parent="Parallax" unique_id=1327140954]
+z_index = 5
+
+[node name="BubbleFill" type="Polygon2D" parent="Parallax/Bubble" unique_id=1758843040]
+color = Color(0.054902, 0.0666667, 0.117647, 1)
+polygon = PackedVector2Array(254, 82, 253.196, 88.265, 250.797, 94.423, 246.845, 100.369, 241.406, 106, 234.575, 111.221, 226.468, 115.941, 217.224, 120.081, 207, 123.569, 195.972, 126.346, 184.329, 128.364, 172.269, 129.589, 160, 130, 147.731, 129.589, 135.671, 128.364, 124.028, 126.346, 113, 123.569, 102.776, 120.081, 93.532, 115.941, 85.425, 111.221, 78.594, 106, 73.155, 100.369, 69.203, 94.423, 66.804, 88.265, 66, 82, 66.804, 75.735, 69.203, 69.577, 73.155, 63.631, 78.594, 58, 85.425, 52.779, 93.532, 48.059, 102.776, 43.919, 113, 40.431, 124.028, 37.654, 135.671, 35.636, 147.731, 34.411, 160, 34, 172.269, 34.411, 184.329, 35.636, 195.972, 37.654, 207, 40.431, 217.224, 43.919, 226.468, 48.059, 234.575, 52.779, 241.406, 58, 246.845, 63.631, 250.797, 69.577, 253.196, 75.735)
+
+[node name="Nebula1" type="Polygon2D" parent="Parallax/Bubble" unique_id=401317168]
+color = Color(0.180392, 0.14902, 0.290196, 1)
+polygon = PackedVector2Array(218, 82, 217.119, 87.209, 214.502, 92.261, 210.229, 97, 204.431, 101.284, 197.282, 104.981, 189, 107.981, 179.837, 110.191, 170.072, 111.544, 160, 112, 149.928, 111.544, 140.163, 110.191, 131, 107.981, 122.718, 104.981, 115.569, 101.284, 109.771, 97, 105.498, 92.261, 102.881, 87.209, 102, 82, 102.881, 76.791, 105.498, 71.739, 109.771, 67, 115.569, 62.716, 122.718, 59.019, 131, 56.019, 140.163, 53.809, 149.928, 52.456, 160, 52, 170.072, 52.456, 179.837, 53.809, 189, 56.019, 197.282, 59.019, 204.431, 62.716, 210.229, 67, 214.502, 71.739, 217.119, 76.791)
+
+[node name="Nebula2" type="Polygon2D" parent="Parallax/Bubble" unique_id=226135999]
+color = Color(0.25098, 0.188235, 0.376471, 1)
+polygon = PackedVector2Array(198, 82, 197.27, 85.902, 195.107, 89.654, 191.596, 93.111, 186.87, 96.142, 181.112, 98.629, 174.542, 100.478, 167.413, 101.616, 160, 102, 152.587, 101.616, 145.458, 100.478, 138.888, 98.629, 133.13, 96.142, 128.404, 93.111, 124.893, 89.654, 122.73, 85.902, 122, 82, 122.73, 78.098, 124.893, 74.346, 128.404, 70.889, 133.13, 67.858, 138.888, 65.371, 145.458, 63.522, 152.587, 62.384, 160, 62, 167.413, 62.384, 174.542, 63.522, 181.112, 65.371, 186.87, 67.858, 191.596, 70.889, 195.107, 74.346, 197.27, 78.098)
+
+[node name="BubbleOutline" type="Line2D" parent="Parallax/Bubble" unique_id=1353406752]
+points = PackedVector2Array(254, 82, 253.196, 88.265, 250.797, 94.423, 246.845, 100.369, 241.406, 106, 234.575, 111.221, 226.468, 115.941, 217.224, 120.081, 207, 123.569, 195.972, 126.346, 184.329, 128.364, 172.269, 129.589, 160, 130, 147.731, 129.589, 135.671, 128.364, 124.028, 126.346, 113, 123.569, 102.776, 120.081, 93.532, 115.941, 85.425, 111.221, 78.594, 106, 73.155, 100.369, 69.203, 94.423, 66.804, 88.265, 66, 82, 66.804, 75.735, 69.203, 69.577, 73.155, 63.631, 78.594, 58, 85.425, 52.779, 93.532, 48.059, 102.776, 43.919, 113, 40.431, 124.028, 37.654, 135.671, 35.636, 147.731, 34.411, 160, 34, 172.269, 34.411, 184.329, 35.636, 195.972, 37.654, 207, 40.431, 217.224, 43.919, 226.468, 48.059, 234.575, 52.779, 241.406, 58, 246.845, 63.631, 250.797, 69.577, 253.196, 75.735)
+closed = true
+width = 4.0
+default_color = Color(0.576471, 0.611765, 0.698039, 1)
+
+[node name="BubbleInner" type="Line2D" parent="Parallax/Bubble" unique_id=1271332045]
+points = PackedVector2Array(250, 82, 249.23, 87.743, 246.933, 93.388, 243.149, 98.838, 237.942, 104, 231.402, 108.786, 223.64, 113.113, 214.789, 116.908, 205, 120.105, 194.442, 122.651, 183.294, 124.501, 171.747, 125.624, 160, 126, 148.253, 125.624, 136.706, 124.501, 125.558, 122.651, 115, 120.105, 105.211, 116.908, 96.36, 113.113, 88.598, 108.786, 82.058, 104, 76.851, 98.838, 73.067, 93.388, 70.77, 87.743, 70, 82, 70.77, 76.257, 73.067, 70.612, 76.851, 65.162, 82.058, 60, 88.598, 55.214, 96.36, 50.887, 105.211, 47.092, 115, 43.895, 125.558, 41.349, 136.706, 39.499, 148.253, 38.376, 160, 38, 171.747, 38.376, 183.294, 39.499, 194.442, 41.349, 205, 43.895, 214.789, 47.092, 223.64, 50.887, 231.402, 55.214, 237.942, 60, 243.149, 65.162, 246.933, 70.612, 249.23, 76.257)
+closed = true
+width = 1.0
+default_color = Color(0.329412, 0.360784, 0.439216, 1)
+
+[node name="Star0" type="Polygon2D" parent="Parallax/Bubble" unique_id=1391255472]
+color = Color(0.678431, 0.807843, 1, 1)
+polygon = PackedVector2Array(92, 56, 94, 56, 94, 58, 92, 58)
+
+[node name="Star1" type="Polygon2D" parent="Parallax/Bubble" unique_id=1794292506]
+color = Color(0.862745, 0.92549, 1, 1)
+polygon = PackedVector2Array(108, 48, 109, 48, 109, 49, 108, 49)
+
+[node name="Star2" type="Polygon2D" parent="Parallax/Bubble" unique_id=1194328661]
+color = Color(0.862745, 0.92549, 1, 1)
+polygon = PackedVector2Array(124, 70, 125, 70, 125, 71, 124, 71)
+
+[node name="Star3" type="Polygon2D" parent="Parallax/Bubble" unique_id=312537759]
+color = Color(0.678431, 0.807843, 1, 1)
+polygon = PackedVector2Array(138, 54, 140, 54, 140, 56, 138, 56)
+
+[node name="Star4" type="Polygon2D" parent="Parallax/Bubble" unique_id=1809316529]
+color = Color(0.862745, 0.92549, 1, 1)
+polygon = PackedVector2Array(156, 46, 157, 46, 157, 47, 156, 47)
+
+[node name="Star5" type="Polygon2D" parent="Parallax/Bubble" unique_id=832767445]
+color = Color(0.678431, 0.807843, 1, 1)
+polygon = PackedVector2Array(172, 62, 174, 62, 174, 64, 172, 64)
+
+[node name="Star6" type="Polygon2D" parent="Parallax/Bubble" unique_id=1605903682]
+color = Color(0.862745, 0.92549, 1, 1)
+polygon = PackedVector2Array(190, 50, 191, 50, 191, 51, 190, 51)
+
+[node name="Star7" type="Polygon2D" parent="Parallax/Bubble" unique_id=608590755]
+color = Color(0.862745, 0.92549, 1, 1)
+polygon = PackedVector2Array(206, 70, 207, 70, 207, 71, 206, 71)
+
+[node name="Star8" type="Polygon2D" parent="Parallax/Bubble" unique_id=1119247960]
+color = Color(0.678431, 0.807843, 1, 1)
+polygon = PackedVector2Array(218, 86, 220, 86, 220, 88, 218, 88)
+
+[node name="Star9" type="Polygon2D" parent="Parallax/Bubble" unique_id=545407287]
+color = Color(0.862745, 0.92549, 1, 1)
+polygon = PackedVector2Array(184, 92, 185, 92, 185, 93, 184, 93)
+
+[node name="Star10" type="Polygon2D" parent="Parallax/Bubble" unique_id=365313088]
+color = Color(0.678431, 0.807843, 1, 1)
+polygon = PackedVector2Array(160, 100, 162, 100, 162, 102, 160, 102)
+
+[node name="Star11" type="Polygon2D" parent="Parallax/Bubble" unique_id=462918887]
+color = Color(0.862745, 0.92549, 1, 1)
+polygon = PackedVector2Array(132, 94, 133, 94, 133, 95, 132, 95)
+
+[node name="Star12" type="Polygon2D" parent="Parallax/Bubble" unique_id=1384223428]
+color = Color(0.862745, 0.92549, 1, 1)
+polygon = PackedVector2Array(112, 88, 113, 88, 113, 89, 112, 89)
+
+[node name="Star13" type="Polygon2D" parent="Parallax/Bubble" unique_id=1048971255]
+color = Color(0.862745, 0.92549, 1, 1)
+polygon = PackedVector2Array(98, 74, 99, 74, 99, 75, 98, 75)
+
+[node name="Star14" type="Polygon2D" parent="Parallax/Bubble" unique_id=234451135]
+color = Color(0.678431, 0.807843, 1, 1)
+polygon = PackedVector2Array(146, 78, 148, 78, 148, 80, 146, 80)
+
+[node name="Star15" type="Polygon2D" parent="Parallax/Bubble" unique_id=202859900]
+color = Color(0.862745, 0.92549, 1, 1)
+polygon = PackedVector2Array(200, 62, 201, 62, 201, 63, 200, 63)
+
+[node name="Star16" type="Polygon2D" parent="Parallax/Bubble" unique_id=1327453448]
+color = Color(0.862745, 0.92549, 1, 1)
+polygon = PackedVector2Array(76, 84, 77, 84, 77, 85, 76, 85)
+
+[node name="Star17" type="Polygon2D" parent="Parallax/Bubble" unique_id=1784256212]
+color = Color(0.862745, 0.92549, 1, 1)
+polygon = PackedVector2Array(228, 76, 229, 76, 229, 77, 228, 77)
+
+[node name="SmallBubble1" type="Polygon2D" parent="Parallax/Bubble" unique_id=1960561433]
+position = Vector2(-181, 40)
+color = Color(0.054902, 0.0666667, 0.117647, 1)
+polygon = PackedVector2Array(263, 108, 262.625, 110.329, 261.526, 112.5, 259.778, 114.364, 257.5, 115.794, 254.847, 116.693, 252, 117, 249.153, 116.693, 246.5, 115.794, 244.222, 114.364, 242.474, 112.5, 241.375, 110.329, 241, 108, 241.375, 105.671, 242.474, 103.5, 244.222, 101.636, 246.5, 100.206, 249.153, 99.307, 252, 99, 254.847, 99.307, 257.5, 100.206, 259.778, 101.636, 261.526, 103.5, 262.625, 105.671)
+
+[node name="SmallOutline1" type="Line2D" parent="Parallax/Bubble" unique_id=1011342928]
+position = Vector2(-181, 40)
+points = PackedVector2Array(263, 108, 262.625, 110.329, 261.526, 112.5, 259.778, 114.364, 257.5, 115.794, 254.847, 116.693, 252, 117, 249.153, 116.693, 246.5, 115.794, 244.222, 114.364, 242.474, 112.5, 241.375, 110.329, 241, 108, 241.375, 105.671, 242.474, 103.5, 244.222, 101.636, 246.5, 100.206, 249.153, 99.307, 252, 99, 254.847, 99.307, 257.5, 100.206, 259.778, 101.636, 261.526, 103.5, 262.625, 105.671)
+closed = true
+width = 2.0
+default_color = Color(0.576471, 0.611765, 0.698039, 1)
+
+[node name="SmallBubble2" type="Polygon2D" parent="Parallax/Bubble" unique_id=1926328172]
+position = Vector2(-177, 49)
+color = Color(0.054902, 0.0666667, 0.117647, 1)
+polygon = PackedVector2Array(245, 124, 244.755, 125.545, 244.045, 126.939, 242.939, 128.045, 241.545, 128.755, 240, 129, 238.455, 128.755, 237.061, 128.045, 235.955, 126.939, 235.245, 125.545, 235, 124, 235.245, 122.455, 235.955, 121.061, 237.061, 119.955, 238.455, 119.245, 240, 119, 241.545, 119.245, 242.939, 119.955, 244.045, 121.061, 244.755, 122.455)
+
+[node name="SmallOutline2" type="Line2D" parent="Parallax/Bubble" unique_id=778747556]
+position = Vector2(-177, 49)
+points = PackedVector2Array(245, 124, 244.755, 125.545, 244.045, 126.939, 242.939, 128.045, 241.545, 128.755, 240, 129, 238.455, 128.755, 237.061, 128.045, 235.955, 126.939, 235.245, 125.545, 235, 124, 235.245, 122.455, 235.955, 121.061, 237.061, 119.955, 238.455, 119.245, 240, 119, 241.545, 119.245, 242.939, 119.955, 244.045, 121.061, 244.755, 122.455)
+closed = true
+width = 1.0
+default_color = Color(0.576471, 0.611765, 0.698039, 1)
+
+[node name="UI" type="Control" parent="." unique_id=791611839]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 1.0
+offset_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Plate" type="ColorRect" parent="UI" unique_id=3677672]
+layout_mode = 0
+offset_left = 276.0
+offset_top = 20.0
+offset_right = 470.0
+offset_bottom = 254.0
+mouse_filter = 2
+color = Color(0.054902, 0.066667, 0.094118, 0.35)
+
+[node name="Title" type="Label" parent="UI" unique_id=646376829]
+layout_mode = 0
+offset_left = 288.0
+offset_top = 32.0
+offset_right = 458.0
+offset_bottom = 62.0
+theme_override_colors/font_color = Color(0.84443027, 0.76673806, 0.9953006, 1)
+theme_override_colors/font_outline_color = Color(0.062745, 0.078431, 0.113725, 1)
+theme_override_constants/outline_size = 2
+theme_override_fonts/font = ExtResource("2_title_font")
+theme_override_font_sizes/font_size = 31
+text = "Dreamer"
+
+[node name="Rule" type="ColorRect" parent="UI" unique_id=1153802817]
+layout_mode = 0
+offset_left = 288.0
+offset_top = 71.0
+offset_right = 446.0
+offset_bottom = 75.0
+mouse_filter = 2
+color = Color(0.8563168, 0.76712644, 0.96670574, 0.8509804)
+
+[node name="Buttons" type="VBoxContainer" parent="UI" unique_id=918556563]
+layout_mode = 0
+offset_left = 288.0
+offset_top = 94.0
+offset_right = 448.0
+offset_bottom = 210.0
+theme_override_constants/separation = 6
+
+[node name="Start" type="Button" parent="UI/Buttons" unique_id=946417936]
+custom_minimum_size = Vector2(160, 23)
+layout_mode = 2
+text = "Dream"
+
+[node name="Continue" type="Button" parent="UI/Buttons" unique_id=2077235538]
+custom_minimum_size = Vector2(160, 23)
+layout_mode = 2
+text = "Continue"
+
+[node name="Settings" type="Button" parent="UI/Buttons" unique_id=1805934714]
+custom_minimum_size = Vector2(160, 23)
+layout_mode = 2
+text = "Setting"
+
+[node name="Quit" type="Button" parent="UI/Buttons" unique_id=979792086]
+custom_minimum_size = Vector2(160, 23)
+layout_mode = 2
+text = "Exit"
+
+[node name="Version" type="Label" parent="UI" unique_id=1270276437]
+layout_mode = 0
+offset_left = 430.0
+offset_top = 252.0
+offset_right = 462.0
+offset_bottom = 262.0
+theme_override_colors/font_color = Color(0.301961, 0.341176, 0.403922, 1)
+theme_override_fonts/font = ExtResource("3_ui_font")
+theme_override_font_sizes/font_size = 7
+text = "v0.1"
+horizontal_alignment = 2

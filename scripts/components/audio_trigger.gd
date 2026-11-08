@@ -18,6 +18,7 @@ func _ready() -> void:
 	monitoring = true
 	monitorable = false
 	if _player:
+		_player.bus = "SFX"
 		# 音频可以直接挂在子节点 AudioStreamPlayer 上；根节点的 Stream 作为补充
 		if _player.stream == null and stream != null:
 			_player.stream = stream

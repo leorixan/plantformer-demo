@@ -1,14 +1,14 @@
 extends Node2D
-## 灰盒关卡：
-## - Terrain  (TileMapLayer, 8px)：地形 + 机关 tile（兼容旧方式）
-## - Entities (TileMapLayer, 4px)：任意尺寸机关（画笔=Godot 自带 TileMap 画笔/矩形/油漆桶）
-## 运行时按 tile 生成碰撞/机关节点（纯代码，无 tscn 组件）
 
 const TILE := 8.0
 const HALF := 4.0
 const PLAYER_SCENE := "res://scenes/player/player.tscn"
+const PAUSE_MENU_SCENE := preload("res://scenes/ui/pause_menu.tscn")
+const MENU_SCENE := "res://scenes/levels/menu.tscn"
+const END_FONT := preload("res://assets/fonts/Silkscreen-Regular.ttf")
 const BG_STARFIELD := preload("res://assets/art/background/starfield.png")
-const BG_ROOM6 := preload("res://assets/art/background/room6_sky.jpg")
+const BG_SPACE := preload("res://assets/art/background/space.png")
+const BG_ROOM6 := preload("res://assets/art/background/space.png")
 
 signal trophy_collected(total: int)
 
@@ -37,7 +37,31 @@ var _room_names: Array[String] = []
 var spawn_pos := Vector2.ZERO
 var checkpoint_pos := Vector2.ZERO
 var _terrain_cells: Dictionary = {}
-var _bg_sky: TextureRect
+var _bg_sprite: Sprite2D
+var _room_camera: Node
+var _room6_layer: CanvasLayer
+var _room6_sprite: Sprite2D
+var elapsed_time := 0.0
+var _end_card: CanvasLayer
+var _end_card_label: Label
+var _end_timer: Timer
+var _end_card_visible := false
+
+
+func _process(delta: float) -> void:
+	elapsed_time += delta
+	if _room6_layer == null or not _room6_layer.visible or _room6_sprite == null:
+		return
+	if player == null:
+		return
+	var cam := player.get_node_or_null("Camera2D") as Camera2D
+	var room := get_node_or_null("Rooms/room6") as Control
+	if cam == null or room == null:
+		return
+	var center := room.global_position + room.size * 0.5
+	var vp := get_viewport_rect().size
+	# room6 的手动视差：相机移动时背景轻微反向偏移，但始终留在屏幕内
+	_room6_sprite.position = vp * 0.5 - (cam.global_position - center) * 0.22
 
 
 func _ready() -> void:
@@ -60,9 +84,19 @@ func _ready() -> void:
 	_build_node_entities()
 	var marker := get_node_or_null("Spawn") as Node2D
 	spawn_pos = marker.global_position if marker else Vector2(16, 0)
+	# Continue：从最近存档点开始
+	if Game.consume_continue():
+		var saved := Game.get_checkpoint()
+		if saved != Vector2.ZERO:
+			spawn_pos = saved
 	checkpoint_pos = spawn_pos
 	_spawn_player()
-	_bg_sky = get_node_or_null("Background/Sky") as TextureRect
+	_room6_layer = get_node_or_null("Room6Background") as CanvasLayer
+	if _room6_layer:
+		_room6_sprite = _room6_layer.get_node_or_null("Space") as Sprite2D
+	_bg_sprite = get_node_or_null("background/BackdropImage") as Sprite2D
+	if _bg_sprite == null:
+		_bg_sprite = get_node_or_null("ParallaxBackdrop/BackdropImage") as Sprite2D
 	_setup_room_camera()
 	var goal := get_node_or_null("Goal") as Node2D
 	if goal:
@@ -75,6 +109,78 @@ func _ready() -> void:
 		area.position = goal.position
 		area.body_entered.connect(_on_goal)
 		add_child(area)
+	_build_end_card()
+	var end_trigger := get_node_or_null("texts/end") as Area2D
+	if end_trigger:
+		end_trigger.body_entered.connect(_on_end_entered)
+	# 游戏内 Esc 暂停菜单
+	add_child(PAUSE_MENU_SCENE.instantiate())
+
+
+func _on_end_entered(body: Node2D) -> void:
+	if not body is CharacterBody2D:
+		return
+	var label := get_node_or_null("texts/end/WorldLabel/Text") as Label
+	if label == null:
+		return
+	label.text = "Congratulations!\nYou reached the end after %d attempts, in %s.\nYou collected %d trophies." % [deaths, _format_time(elapsed_time), trophies_collected]
+	if _end_timer:
+		_end_timer.start()
+
+
+func _format_time(seconds: float) -> String:
+	var total := maxi(0, int(seconds))
+	return "%02d:%02d:%02d" % [total / 3600, (total % 3600) / 60, total % 60]
+
+
+func _build_end_card() -> void:
+	_end_card = CanvasLayer.new()
+	_end_card.name = "EndCard"
+	_end_card.layer = 90
+	_end_card.visible = false
+	add_child(_end_card)
+
+	var dim := ColorRect.new()
+	dim.color = Color(0.02, 0.025, 0.04, 0.9)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_end_card.add_child(dim)
+
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_end_card.add_child(center)
+
+	_end_card_label = Label.new()
+	_end_card_label.text = "Thanks for playing\nIt's time to wake up\nF"
+	_end_card_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_end_card_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_end_card_label.add_theme_font_override("font", END_FONT)
+	_end_card_label.add_theme_font_size_override("font_size", 12)
+	_end_card_label.add_theme_color_override("font_color", Color(0.96, 0.96, 0.96))
+	_end_card_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	_end_card_label.add_theme_constant_override("outline_size", 2)
+	_end_card_label.add_theme_constant_override("line_spacing", 2)
+	center.add_child(_end_card_label)
+
+	_end_timer = Timer.new()
+	_end_timer.one_shot = true
+	_end_timer.wait_time = 6.2
+	_end_timer.timeout.connect(_show_end_card)
+	add_child(_end_timer)
+
+
+func _show_end_card() -> void:
+	# CanvasLayer 没有 modulate，直接显示，避免运行时属性错误
+	_end_card.visible = true
+	_end_card_visible = true
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not _end_card_visible:
+		return
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F:
+		get_tree().change_scene_to_file(MENU_SCENE)
 
 
 func _on_goal(body: Node2D) -> void:
@@ -489,6 +595,7 @@ func _show_trophy_hud() -> void:
 
 func set_checkpoint(pos: Vector2) -> void:
 	checkpoint_pos = pos
+	Game.save_checkpoint(pos)
 
 func _solid_px(px: Vector2) -> bool:
 	return _terrain_cells.has(Vector2i(int(floor(px.x / 8.0)), int(floor(px.y / 8.0))))
@@ -540,6 +647,8 @@ func _setup_room_camera() -> void:
 	var rc: Node = load("res://scripts/components/room_camera.gd").new()
 	add_child(rc)
 	rc.connect("room_changed", Callable(self, "_on_room_changed"))
+	rc.connect("room_pan_finished", Callable(self, "_on_room_pan_finished"))
+	_room_camera = rc
 	rc.call("attach", cam, player, rects)
 
 
@@ -957,16 +1066,74 @@ func _ensure_cooldown_layer() -> TileMapLayer:
 	return layer
 
 
+func _ensure_room6_background() -> void:
+	if _room6_layer == null:
+		_room6_layer = CanvasLayer.new()
+		_room6_layer.name = "Room6Background"
+		_room6_layer.layer = -10
+		_room6_layer.visible = false
+		add_child(_room6_layer)
+	if _room6_sprite == null:
+		_room6_sprite = Sprite2D.new()
+		_room6_sprite.name = "Space"
+		_room6_sprite.texture = BG_SPACE
+		_room6_sprite.centered = true
+		_room6_sprite.scale = Vector2(0.225, 0.225)
+		_room6_layer.add_child(_room6_sprite)
+
+
 func _update_background(room_name: String) -> void:
-	if _bg_sky == null:
+	_ensure_room6_background()
+	if _bg_sprite == null:
 		return
-	_bg_sky.texture = BG_ROOM6 if room_name == "room6" else BG_STARFIELD
+	var tex: Texture2D = BG_SPACE if room_name == "room6" else BG_STARFIELD
+	_bg_sprite.texture = tex
+	var vp := get_viewport_rect().size
+	var ts := Vector2(tex.get_width(), tex.get_height())
+	if ts.x <= 0.0 or ts.y <= 0.0:
+		return
+	var cover := maxf(vp.x / ts.x, vp.y / ts.y)
+	var par := _bg_sprite.get_parent() as Parallax2D
+	if par:
+		par.scroll_scale = Vector2(0.12, 0.12)
+	if par:
+		par.scroll_scale = Vector2(0.12, 0.12)
+	if room_name == "room6":
+		# room6 使用独立的屏幕层，保证一定可见
+		if _room6_layer:
+			_room6_layer.visible = true
+		if _room6_sprite:
+			_room6_sprite.position = vp * 0.5
+			_room6_sprite.scale = Vector2(0.225, 0.225)
+		if _bg_sprite.get_parent() is CanvasItem:
+			(_bg_sprite.get_parent() as CanvasItem).visible = false
+	else:
+		if _room6_layer:
+			_room6_layer.visible = false
+		if _bg_sprite.get_parent() is CanvasItem:
+			(_bg_sprite.get_parent() as CanvasItem).visible = true
+		_bg_sprite.scale = Vector2(cover * 2.0, cover * 2.0)
+		_bg_sprite.position = vp * 0.5
+		if par:
+			par.scroll_scale = Vector2(0.12, 0.12)
+			par.scroll_offset = Vector2.ZERO
+
+
+func _on_room_pan_finished(idx: int) -> void:
+	if idx < 0 or idx >= _room_names.size():
+		return
+	var room_name := _room_names[idx]
+	_update_background(room_name)
 
 
 func _on_room_changed(idx: int) -> void:
 	if idx < 0 or idx >= _room_names.size():
 		return
-	_update_background(_room_names[idx])
+	# 背景等镜头平移结束后再换，避免转场时露出空白
+	# 相机缩放在转场开始时完成，避免平移结束后突然跳变
+	var room_name := _room_names[idx]
+	if _room_camera:
+		_room_camera.call("set_view_width", 360.0 if room_name == "room6" else 480.0, false)
 	# 切房间时停止区域音频
 	get_tree().call_group("audio_triggers", "stop_audio")
 	var bgm := get_node_or_null("Bgm")

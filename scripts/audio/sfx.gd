@@ -11,7 +11,7 @@
 @export var entries: Array[Resource] = []
 @export var pool_size := 12
 @export var pitch_jitter := 0.03
-@export var bus_name := "Master"
+@export var bus_name := "SFX"
 
 var _map: Dictionary = {}
 var _pool: Array[AudioStreamPlayer] = []
@@ -20,6 +20,7 @@ var _next_player := 0
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_build_map()
 	for i in pool_size:
 		var p := AudioStreamPlayer.new()

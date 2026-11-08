@@ -1,5 +1,6 @@
 extends Node
 signal room_changed(index: int)
+signal room_pan_finished(index: int)
 ## 蔚蓝式房间相机：
 ## - 房间是矩形（RoomArea）；玩家进入另一个房间时切换
 ## - 切换节奏：先停顿 PAUSE_TIME，再用 PAN_TIME 平滑滑动到新房间目标
@@ -33,6 +34,7 @@ func attach(cam: Camera2D, player: Node2D, rects: Array) -> void:
 	_to = _target_for(_current)
 	_cam.global_position = _snap(_to)
 	_cam.reset_physics_interpolation()
+	room_pan_finished.emit(_current)
 
 
 func _process(delta: float) -> void:
@@ -48,6 +50,8 @@ func _process(delta: float) -> void:
 		_t = minf(1.0, _t + delta / PAN_TIME)
 		var k := _t * _t * (3.0 - 2.0 * _t)
 		_cam.global_position = _snap(_from.lerp(_to, k))
+		if _t >= 1.0:
+			room_pan_finished.emit(_current)
 		return
 	var idx := _room_at(_player.global_position)
 	if idx != _current:
@@ -65,6 +69,18 @@ func _process(delta: float) -> void:
 		_cam.global_position = _snap(_cam.global_position.lerp(target, k))
 	else:
 		_cam.global_position = _snap(target)
+
+
+func set_view_width(width: float, snap := true) -> void:
+	if _cam == null or width <= 0.0:
+		return
+	var vp := get_viewport().get_visible_rect().size
+	var z := vp.x / width
+	_cam.zoom = Vector2(z, z)
+	_view = vp / _cam.zoom
+	_to = _target_for(_current)
+	if snap:
+		_cam.global_position = _snap(_to)
 
 
 func _snap(v: Vector2) -> Vector2:

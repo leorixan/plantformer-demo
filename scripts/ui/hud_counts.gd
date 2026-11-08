@@ -27,6 +27,40 @@ func _ready() -> void:
 	set_process(false)
 
 
+func show_pause_stats(death_count: int, trophy_count: int) -> void:
+	if _death_label:
+		_death_label.text = "× %d" % death_count
+	if _trophy_label:
+		_trophy_label.text = "× %d" % trophy_count
+	_timers.clear()
+	_kill_tween("death")
+	_kill_tween("trophy")
+	if _death_group:
+		_death_group.modulate.a = 1.0
+	if _trophy_group:
+		_trophy_group.modulate.a = 1.0
+	set_process(false)
+
+
+func hide_pause_stats() -> void:
+	_timers.clear()
+	_kill_tween("death")
+	_kill_tween("trophy")
+	if _death_group:
+		_death_group.modulate.a = 0.0
+	if _trophy_group:
+		_trophy_group.modulate.a = 0.0
+	set_process(false)
+
+
+func _kill_tween(key: String) -> void:
+	if _tweens.has(key):
+		var old: Tween = _tweens[key]
+		if old != null and old.is_valid():
+			old.kill()
+		_tweens.erase(key)
+
+
 func show_death(death_count: int, trophy_count: int) -> void:
 	if _death_label:
 		_death_label.text = "× %d" % death_count
