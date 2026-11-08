@@ -7,6 +7,8 @@ extends Node2D
 const TILE := 8.0
 const HALF := 4.0
 const PLAYER_SCENE := "res://scenes/player/player.tscn"
+const BG_STARFIELD := preload("res://assets/art/background/starfield.png")
+const BG_ROOM6 := preload("res://assets/art/background/room6_sky.jpg")
 
 signal trophy_collected(total: int)
 
@@ -35,6 +37,7 @@ var _room_names: Array[String] = []
 var spawn_pos := Vector2.ZERO
 var checkpoint_pos := Vector2.ZERO
 var _terrain_cells: Dictionary = {}
+var _bg_sky: TextureRect
 
 
 func _ready() -> void:
@@ -59,6 +62,7 @@ func _ready() -> void:
 	spawn_pos = marker.global_position if marker else Vector2(16, 0)
 	checkpoint_pos = spawn_pos
 	_spawn_player()
+	_bg_sky = get_node_or_null("Background/Sky") as TextureRect
 	_setup_room_camera()
 	var goal := get_node_or_null("Goal") as Node2D
 	if goal:
@@ -953,9 +957,18 @@ func _ensure_cooldown_layer() -> TileMapLayer:
 	return layer
 
 
+func _update_background(room_name: String) -> void:
+	if _bg_sky == null:
+		return
+	_bg_sky.texture = BG_ROOM6 if room_name == "room6" else BG_STARFIELD
+
+
 func _on_room_changed(idx: int) -> void:
 	if idx < 0 or idx >= _room_names.size():
 		return
+	_update_background(_room_names[idx])
+	# 切房间时停止区域音频
+	get_tree().call_group("audio_triggers", "stop_audio")
 	var bgm := get_node_or_null("Bgm")
 	if bgm and bgm.has_method("play_for_room"):
 		bgm.play_for_room(_room_names[idx])
