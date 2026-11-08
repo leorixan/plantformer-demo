@@ -2,18 +2,6 @@
 .godot/
 /android/
 
-# Local AI/tool configuration and working notes. Not part of the published project.
-.ai/
-.claude/
-.funplay/
-CLAUDE.md
-AGENTS.md
-.mcp.json
-.codemap/
-
-# Third-party editor addon, installed locally. Not part of this repository.
-addons/funplay_mcp/
-
 # Third-party reference source: publicly readable for study, not licensed for
 # redistribution. Kept locally only.
 docs/CelestePlayerReference.txt
