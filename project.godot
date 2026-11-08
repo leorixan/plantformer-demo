@@ -8,8 +8,6 @@
 
 config_version=5
 
-"ï»¿config_version"=5
-"茂禄驴config_version"=5
 
 [application]
 
@@ -36,7 +34,7 @@ window/vsync/vsync_mode=0
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/funplay_mcp/plugin.cfg")
+enabled=PackedStringArray()
 
 [input]
 
